@@ -13,31 +13,29 @@ use ggez::graphics;
 use ggez::nalgebra as na;
 use ggez::{Context, GameResult};
 
-struct MainState<S:Simd> {
+struct MainState {
     pos_x: f32,
     imgui_wrapper: ImGuiWrapper,
-    hidpi_factor: f32,
-    pic: MonoPic<S>,
+    hidpi_factor: f32,    
     img: graphics::Image,
 }
 
-impl<S:Simd> MainState<S> {
-    fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState<S>> {
+impl MainState {
+    fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pic = MonoPic::new(10);
-        let img = graphics::Image::from_rgba8(ctx,500,500, &pic.get_rgba8(500,500)[0..]).unwrap();
+        let pic = RgbPic::<Avx2>::new(5);
+        let img = graphics::Image::from_rgba8(ctx,400,400, &pic.get_rgba8(400,400)[0..]).unwrap();
         let s = MainState {
             pos_x: 0.0,
             imgui_wrapper,
-            hidpi_factor,
-            pic,
+            hidpi_factor,            
             img,
         };
         Ok(s)
     }
 }
 
-impl<S:Simd> EventHandler for MainState<S> {
+impl EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         self.pos_x = self.pos_x % 800.0 + 1.0;
         Ok(())
@@ -126,10 +124,10 @@ pub fn main() -> ggez::GameResult {
 
     let cb = ggez::ContextBuilder::new("super_simple with imgui", "ggez")
         .window_setup(conf::WindowSetup::default().title("super_simple with imgui"))
-        .window_mode(conf::WindowMode::default().dimensions(750.0, 500.0));
+        .window_mode(conf::WindowMode::default().dimensions(1024.0, 768.0));
     let (ref mut ctx, event_loop) = &mut cb.build()?;
 
-    let state = &mut MainState::<Avx2>::new(ctx, hidpi_factor)?;
+    let state = &mut MainState::new(ctx, hidpi_factor)?;
 
     event::run(ctx, event_loop, state)
 }
