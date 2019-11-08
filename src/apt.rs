@@ -1,6 +1,8 @@
 use rand::prelude::*;
 use simdeez::*;
 use variant_count::*;
+use simdnoise::*;
+
 
 pub struct MonoPic<S: Simd> {
     c: APTNode<S>,
@@ -68,12 +70,15 @@ pub struct RgbPic<S: Simd> {
 impl<S: Simd> RgbPic<S> {
     pub fn new(size:usize) -> RgbPic<S>{
         let mut rng = rand::thread_rng();
-        let r = APTNode::generate_tree(size, &mut rng);
-        let g = APTNode::generate_tree(size, &mut rng);
-        let b = APTNode::generate_tree(size, &mut rng);
+        let r = APTNode::<S>::generate_tree(size, &mut rng);
+        let g = APTNode::<S>::generate_tree(size, &mut rng);
+        let b = APTNode::<S>::generate_tree(size, &mut rng);
+        let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
         unsafe {
             RgbPic {
-                r,g,b
+                r: noise.clone(),
+                g: noise.clone(),
+                b: noise.clone()
             }
         }
     }
@@ -129,6 +134,7 @@ pub enum APTNode<S: Simd> {
     Sub(Vec<APTNode<S>>),
     Mul(Vec<APTNode<S>>),
     Div(Vec<APTNode<S>>),
+    FBM(Vec<APTNode<S>>),
     Constant(S::Vf32),
     X,
     Y,
@@ -142,6 +148,7 @@ impl<S:Simd> Clone for APTNode<S> {
             APTNode::Sub(children) => APTNode::Sub(children.clone()),
             APTNode::Mul(children) => APTNode::Mul(children.clone()),
             APTNode::Div(children) => APTNode::Div(children.clone()),
+            APTNode::FBM(children) => APTNode::FBM(children.clone()),
             APTNode::Constant(v) => APTNode::Constant(*v),
             APTNode::X => APTNode::X,
             APTNode::Y => APTNode::Y,
@@ -158,6 +165,7 @@ impl<S: Simd> APTNode<S> {
             1 => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
             2 => APTNode::Mul(vec![APTNode::Empty, APTNode::Empty]),
             3 => APTNode::Div(vec![APTNode::Empty, APTNode::Empty]),
+            4 => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty]),
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
     }
@@ -224,6 +232,7 @@ impl<S: Simd> APTNode<S> {
             APTNode::Sub(children) => Some(children),
             APTNode::Mul(children) => Some(children),
             APTNode::Div(children) => Some(children),
+            APTNode::FBM(children) => Some(children),
             _ => None,
         }
     }
@@ -245,6 +254,13 @@ impl<S: Simd> APTNode<S> {
                 APTNode::Sub(children) => children[0].eval_2d(x, y) - children[1].eval_2d(x, y),
                 APTNode::Mul(children) => children[0].eval_2d(x, y) * children[1].eval_2d(x, y),
                 APTNode::Div(children) => children[0].eval_2d(x, y) / children[1].eval_2d(x, y),
+                APTNode::FBM(children) => {
+                    let freq = S::set1_ps(3.05);
+                    let lacunarity = S::set1_ps(0.5);
+                    let gain = S::set1_ps(2.0);
+                    let octaves = 4;                    
+                    simdnoise::simplex::fbm_2d::<S>(children[0].eval_2d(x,y)*freq, children[1].eval_2d(x,y)*freq, lacunarity, gain, octaves,3)
+                }
                 APTNode::Constant(v) => *v,
                 APTNode::X => x,
                 APTNode::Y => y,

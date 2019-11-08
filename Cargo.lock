@@ -488,6 +488,7 @@ dependencies = [
  "nalgebra 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "simdeez 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "simdnoise 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "variant_count 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1787,6 +1788,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "simdnoise"
+version = "3.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "simdeez 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "skeptic"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2435,6 +2444,7 @@ dependencies = [
 "checksum shlex 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
 "checksum sid 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "29e0a6006cf04d568a49363baca3dabddbbe46538f7c76692d405f5f5d140ecd"
 "checksum simdeez 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "6eaaa1b6a7768fd2a1a79fded911a3e831409b0d1cada1b9081ce611df0078db"
+"checksum simdnoise 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e57211b4b8dd0bdcdc8e69017efb8c2e98be33022a151328816a62b6c779b710"
 "checksum skeptic 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)" = "d6fb8ed853fdc19ce09752d63f3a2e5b5158aeb261520cd75eb618bd60305165"
 "checksum slice-deque 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "ffddf594f5f597f63533d897427a570dbaa9feabaaa06595b74b71b7014507d7"
 "checksum smallvec 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)" = "f7b0758c52e15a8b5e3691eae6cc559f08eee9406e548a4477ba4e67770a82b6"
