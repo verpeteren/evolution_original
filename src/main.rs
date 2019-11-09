@@ -2,21 +2,22 @@ extern crate ggez;
 
 mod apt;
 mod imgui_wrapper;
+mod pic;
+mod stack_machine;
 
 use crate::imgui_wrapper::ImGuiWrapper;
-use apt::*;
-use simdeez::*;
-use simdeez::avx2::*;
+use crate::pic::*;
 use ggez::conf;
 use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
 use ggez::graphics;
 use ggez::nalgebra as na;
 use ggez::{Context, GameResult};
+use simdeez::avx2::*;
 
 struct MainState {
     pos_x: f32,
     imgui_wrapper: ImGuiWrapper,
-    hidpi_factor: f32,    
+    hidpi_factor: f32,
     img: graphics::Image,
 }
 
@@ -24,11 +25,12 @@ impl MainState {
     fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
         let pic = RgbPic::<Avx2>::new(5);
-        let img = graphics::Image::from_rgba8(ctx,400,400, &pic.get_rgba8(400,400)[0..]).unwrap();
+        let img =
+            graphics::Image::from_rgba8(ctx, 400, 400, &pic.get_rgba8_sm(400, 400)[0..]).unwrap();
         let s = MainState {
             pos_x: 0.0,
             imgui_wrapper,
-            hidpi_factor,            
+            hidpi_factor,
             img,
         };
         Ok(s)
@@ -43,7 +45,7 @@ impl EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::BLACK);
-        let _ = graphics::draw(ctx,&self.img,graphics::DrawParam::default());
+        let _ = graphics::draw(ctx, &self.img, graphics::DrawParam::default());
         // Render game stuff
         {
             let circle = graphics::Mesh::new_circle(
