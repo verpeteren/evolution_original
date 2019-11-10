@@ -1,8 +1,6 @@
 use crate::apt::*;
 use crate::stack_machine::*;
 use rayon::prelude::*;
-use rayon::slice::*;
-
 use rand::rngs::StdRng;
 use rand::{SeedableRng};
 use simdeez::*;
@@ -106,15 +104,11 @@ impl Pic for RgbPic {
             let r_sm = StackMachine::<S>::build(&self.r);
             let g_sm = StackMachine::<S>::build(&self.g);
             let b_sm = StackMachine::<S>::build(&self.b);
+            let max_len = *[r_sm.instructions.len(),g_sm.instructions.len(),b_sm.instructions.len()].iter().max().unwrap();
            
             result.par_chunks_mut(4*w).enumerate().for_each(|(y_pixel,chunk)| {      
-                let mut r_stack = Vec::with_capacity(r_sm.instructions.len());
-                r_stack.set_len(r_sm.instructions.len());
-                let mut g_stack = Vec::with_capacity(g_sm.instructions.len());
-                g_stack.set_len(g_sm.instructions.len());
-                let mut b_stack = Vec::with_capacity(b_sm.instructions.len());
-                b_stack.set_len(b_sm.instructions.len());
-                
+                let mut stack = Vec::with_capacity(max_len);
+                stack.set_len(max_len);                                
                 let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);                
                 let x_step = 2.0 / (w - 1) as f32;
                 let mut x = S::setzero_ps();
@@ -124,11 +118,11 @@ impl Pic for RgbPic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);               
                 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH*4) {
-                    let rs = (r_sm.execute_no_bounds(&mut r_stack,x, y) + S::set1_ps(1.0))
+                    let rs = (r_sm.execute_no_bounds(&mut stack,x, y) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
-                    let gs = (g_sm.execute_no_bounds(&mut g_stack,x, y) + S::set1_ps(1.0))
+                    let gs = (g_sm.execute_no_bounds(&mut stack,x, y) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
-                    let bs = (b_sm.execute_no_bounds(&mut b_stack,x, y) + S::set1_ps(1.0))
+                    let bs = (b_sm.execute_no_bounds(&mut stack,x, y) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
                     for j in 0..S::VF32_WIDTH {
                         let r = (rs[j] as i32 % 255) as u8;
