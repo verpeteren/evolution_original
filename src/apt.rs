@@ -33,7 +33,7 @@ impl<S: Simd> Clone for APTNode<S> {
 }
 
 impl<S: Simd> APTNode<S> {
-    pub fn get_random_node(rng: &mut ThreadRng) -> APTNode<S> {
+    pub fn get_random_node(rng: &mut StdRng) -> APTNode<S> {
         let r = rng.gen_range(0, APTNode::<S>::VARIANT_COUNT - 4);
         match r {
             0 => APTNode::Add(vec![APTNode::Empty, APTNode::Empty]),
@@ -45,7 +45,7 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn get_random_leaf(rng: &mut ThreadRng) -> APTNode<S> {
+    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode<S> {
         unsafe {
             let count = APTNode::<S>::VARIANT_COUNT;
             let r = rng.gen_range(0, 3);
@@ -58,7 +58,7 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn add_random(&mut self, node: APTNode<S>, rng: &mut ThreadRng) {
+    pub fn add_random(&mut self, node: APTNode<S>, rng: &mut StdRng) {
         let children = match self.get_children_mut() {
             Some(children) => children,
             None => panic!("tried to add_random to a leaf"),
@@ -92,7 +92,7 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn generate_tree(count: usize, rng: &mut ThreadRng) -> APTNode<S> {
+    pub fn generate_tree(count: usize, rng: &mut StdRng) -> APTNode<S> {
         let mut first = APTNode::get_random_node(rng);
         for _ in 1..count {
             first.add_random(APTNode::get_random_node(rng), rng);
@@ -130,32 +130,5 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn eval_2d(&self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
-        unsafe {
-            match self {
-                APTNode::Add(children) => children[0].eval_2d(x, y) + children[1].eval_2d(x, y),
-                APTNode::Sub(children) => children[0].eval_2d(x, y) - children[1].eval_2d(x, y),
-                APTNode::Mul(children) => children[0].eval_2d(x, y) * children[1].eval_2d(x, y),
-                APTNode::Div(children) => children[0].eval_2d(x, y) / children[1].eval_2d(x, y),
-                APTNode::FBM(children) => {
-                    let freq = S::set1_ps(3.05);
-                    let lacunarity = S::set1_ps(0.5);
-                    let gain = S::set1_ps(2.0);
-                    let octaves = 4;
-                    simdnoise::simplex::fbm_2d::<S>(
-                        children[0].eval_2d(x, y) * freq,
-                        children[1].eval_2d(x, y) * freq,
-                        lacunarity,
-                        gain,
-                        octaves,
-                        3,
-                    )
-                }
-                APTNode::Constant(v) => *v,
-                APTNode::X => x,
-                APTNode::Y => y,
-                APTNode::Empty => panic!("tried to eval an empty node"),
-            }
-        }
-    }
+    
 }
