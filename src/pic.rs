@@ -1,15 +1,16 @@
 use crate::apt::*;
 use crate::stack_machine::*;
-use rand::prelude::*;
+use rayon::prelude::*;
+use rayon::slice::*;
+
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::{SeedableRng};
 use simdeez::*;
-use simdnoise::*;
-use std::time::{Duration, Instant};
-use variant_count::*;
+use std::time::{Instant};
+
 
 pub trait Pic {
-    fn get_rgba8<S: Simd>(&self, w: usize, h: usize) -> Vec<u8>;
+    fn get_rgba8<S: Simd>(&self, w: usize, h: usize) -> Vec<u8>;    
 }
 
 pub struct MonoPic {
@@ -31,43 +32,43 @@ impl MonoPic {
 impl Pic for MonoPic {
     fn get_rgba8<S: Simd>(&self, w: usize, h: usize) -> Vec<u8> {
         unsafe {
-            let mut sm = StackMachine::<S>::new();
-            sm.build(&self.c);
+            let now = Instant::now();
+           
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
 
-            let x_step = 2.0 / (w - 1) as f32;
-            let mut x = S::setzero_ps();
-            for i in (0..S::VF32_WIDTH).rev() {
-                x[i] = -1.0 + (x_step * i as f32);
-            }
-            let init_x = x;
-            //println!("xstep1:{}",x_step);
-            let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
-            //println!("xstep2:{:?}",x_step);
-            let y_step = 2.0 / h as f32;
-            let mut y = -1.0;
-            let mut i = 0;
-            for _ in 0..h {
-                for _ in 0..w / S::VF32_WIDTH {
-                    let color =
-                        (sm.execute(x, S::set1_ps(y)) + S::set1_ps(1.0)) * S::set1_ps(128.0);
+            let sm = StackMachine::<S>::build(&self.c);
+            
+            result.par_chunks_mut(4*w).enumerate().for_each(|(y_pixel,chunk)| {      
+                let mut stack = Vec::with_capacity(sm.instructions.len());
+                stack.set_len(sm.instructions.len());
+              
+                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);                
+                let x_step = 2.0 / (w - 1) as f32;
+                let mut x = S::setzero_ps();
+                for i in (0..S::VF32_WIDTH).rev() {
+                    x[i] = -1.0 + (x_step * i as f32);
+                }        
+                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);               
+                
+                for i in (0..w * 4).step_by(S::VF32_WIDTH*4) {
+                    let cs = (sm.execute_no_bounds(&mut stack,x, y) + S::set1_ps(1.0))
+                        * S::set1_ps(128.0);
+                   
                     for j in 0..S::VF32_WIDTH {
-                        let c = (color[j] as i32 % 255) as u8;
-                        result[i + j * 4] = c;
-                        result[i + 1 + j * 4] = c;
-                        result[i + 2 + j * 4] = c;
-                        result[i + 3 + j * 4] = 255 as u8;
-                        //          println!("{},{},{},{}",i+j*4,i+1+j*4,i+2+j*4,i+3+j*4);
-                    }
-                    //    println!("x:{:?}",x);
-                    x = x + x_step;
-                    i += S::VF32_WIDTH * 4;
-                }
-                y += y_step;
-                x = init_x;
-            }
+                        let r = (cs[j] as i32 % 255) as u8;
+                        let g = (cs[j] as i32 % 255) as u8;
+                        let b = (cs[j] as i32 % 255) as u8;
+                        chunk[i+ j * 4] = r;
+                        chunk[i + 1 + j * 4] = g;
+                        chunk[i+ 2 + j * 4] = b;
+                        chunk[i+ 3 + j * 4] = 255 as u8;                     
+                    }                    
+                    x = x + x_step;                    
+                }               
+            });
+            println!("parallel elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
@@ -89,63 +90,59 @@ impl RgbPic {
         let g = APTNode::generate_tree(size, &mut rng);
         let b = APTNode::generate_tree(size, &mut rng);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
-        unsafe { RgbPic { r, g, b } }
+        RgbPic { r, g, b }
     }
 }
 impl Pic for RgbPic {
+   
     fn get_rgba8<S: Simd>(&self, w: usize, h: usize) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
-
-            let mut r_sm = StackMachine::<S>::new();
-            let mut g_sm = StackMachine::<S>::new();
-            let mut b_sm = StackMachine::<S>::new();
-            r_sm.build(&self.r);
-            g_sm.build(&self.g);
-            b_sm.build(&self.b);
-
+           
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
 
-            let x_step = 2.0 / (w - 1) as f32;
-            let mut x = S::setzero_ps();
-            for i in (0..S::VF32_WIDTH).rev() {
-                x[i] = -1.0 + (x_step * i as f32);
-            }
-            let init_x = x;
-            //println!("xstep1:{}",x_step);
-            let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
-            //println!("xstep2:{:?}",x_step);
-            let y_step = 2.0 / h as f32;
-            let mut y = -1.0;
-            let mut i = 0;
-            for _ in 0..h {
-                for _ in 0..w / S::VF32_WIDTH {
-                    let rs = (r_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0))
+            let r_sm = StackMachine::<S>::build(&self.r);
+            let g_sm = StackMachine::<S>::build(&self.g);
+            let b_sm = StackMachine::<S>::build(&self.b);
+           
+            result.par_chunks_mut(4*w).enumerate().for_each(|(y_pixel,chunk)| {      
+                let mut r_stack = Vec::with_capacity(r_sm.instructions.len());
+                r_stack.set_len(r_sm.instructions.len());
+                let mut g_stack = Vec::with_capacity(g_sm.instructions.len());
+                g_stack.set_len(g_sm.instructions.len());
+                let mut b_stack = Vec::with_capacity(b_sm.instructions.len());
+                b_stack.set_len(b_sm.instructions.len());
+                
+                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);                
+                let x_step = 2.0 / (w - 1) as f32;
+                let mut x = S::setzero_ps();
+                for i in (0..S::VF32_WIDTH).rev() {
+                    x[i] = -1.0 + (x_step * i as f32);
+                }        
+                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);               
+                
+                for i in (0..w * 4).step_by(S::VF32_WIDTH*4) {
+                    let rs = (r_sm.execute_no_bounds(&mut r_stack,x, y) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
-                    let gs = (g_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0))
+                    let gs = (g_sm.execute_no_bounds(&mut g_stack,x, y) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
-                    let bs = (b_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0))
+                    let bs = (b_sm.execute_no_bounds(&mut b_stack,x, y) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
                     for j in 0..S::VF32_WIDTH {
                         let r = (rs[j] as i32 % 255) as u8;
                         let g = (gs[j] as i32 % 255) as u8;
                         let b = (bs[j] as i32 % 255) as u8;
-                        result[i + j * 4] = r;
-                        result[i + 1 + j * 4] = g;
-                        result[i + 2 + j * 4] = b;
-                        result[i + 3 + j * 4] = 255 as u8;
-                        //          println!("{},{},{},{}",i+j*4,i+1+j*4,i+2+j*4,i+3+j*4);
-                    }
-                    //    println!("x:{:?}",x);
-                    x = x + x_step;
-                    i += S::VF32_WIDTH * 4;
-                }
-                y += y_step;
-                x = init_x;
-            }
-            println!("sm elapsed:{}", now.elapsed().as_millis());
+                        chunk[i+ j * 4] = r;
+                        chunk[i + 1 + j * 4] = g;
+                        chunk[i+ 2 + j * 4] = b;
+                        chunk[i+ 3 + j * 4] = 255 as u8;                     
+                    }                    
+                    x = x + x_step;                    
+                }               
+            });
+            println!("parallel elapsed:{}", now.elapsed().as_millis());
             result
         }
     }

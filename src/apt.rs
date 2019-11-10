@@ -1,6 +1,4 @@
 use rand::prelude::*;
-use simdeez::*;
-use simdnoise::*;
 use variant_count::*;
 
 #[derive(VariantCount)]
@@ -45,17 +43,14 @@ impl APTNode {
         }
     }
 
-    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode {
-        unsafe {
-            let count = APTNode::VARIANT_COUNT;
+    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode {                    
             let r = rng.gen_range(0, 3);
             match r {
                 0 => APTNode::X,
                 1 => APTNode::Y,
                 2 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
                 _ => panic!("get_random_leaf generated unhandled r:{}", r),
-            }
-        }
+            }        
     }
 
     pub fn add_random(&mut self, node: APTNode, rng: &mut StdRng) {

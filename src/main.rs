@@ -17,31 +17,34 @@ use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
 
-const SIZE: usize = 2048;
+const SIZE: usize = 1920;
 
 struct MainState {
     pos_x: f32,
     imgui_wrapper: ImGuiWrapper,
     hidpi_factor: f32,
     img1: graphics::Image,
+  //  img2: graphics::Image,
 }
 
 impl MainState {
     fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pic = RgbPic::new(20);
+        let pic = RgbPic::new(12);
         let img1 = graphics::Image::from_rgba8(
             ctx,
-            SIZE as u16,
-            SIZE as u16,
-            &pic.get_rgba8::<Sse2>(SIZE, SIZE)[0..],
+            1920 as u16,
+            1080 as u16,
+            &pic.get_rgba8::<Sse2>(1920, 1080)[0..],
         )
         .unwrap();
+      
         let s = MainState {
             pos_x: 0.0,
             imgui_wrapper,
             hidpi_factor,
             img1,
+           // img2,
         };
         Ok(s)
     }
@@ -56,6 +59,7 @@ impl EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::BLACK);
         let _ = graphics::draw(ctx, &self.img1, graphics::DrawParam::default());
+        //let _ = graphics::draw(ctx, &self.img2, graphics::DrawParam::default().dest(na::Point2::new(SIZE as f32,0.0)));
         // Render game stuff
         {
             let circle = graphics::Mesh::new_circle(

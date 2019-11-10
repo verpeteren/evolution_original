@@ -13,18 +13,11 @@ pub enum Instruction<S: Simd> {
 }
 
 pub struct StackMachine<S: Simd> {
-    instructions: Vec<Instruction<S>>,
-    stack: Vec<S::Vf32>,
+    pub instructions: Vec<Instruction<S>>,    
 }
 
 impl<S: Simd> StackMachine<S> {
-    pub fn new() -> StackMachine<S> {
-        StackMachine {
-            instructions: Vec::new(),
-            stack: Vec::new(),
-        }
-    }
-
+  
     pub fn get_instruction(node: &APTNode) -> Instruction<S> {
         match node {
             APTNode::Add(_) => Instruction::Add,
@@ -51,34 +44,34 @@ impl<S: Simd> StackMachine<S> {
         self.instructions.push(StackMachine::get_instruction(node));
     }
 
-    pub fn build(&mut self, node: &APTNode) {
-        self.build_helper(node);
-        self.stack = Vec::with_capacity(self.instructions.len());
-        unsafe {
-            self.stack.set_len(self.instructions.len());
-        }
+    pub fn build(node: &APTNode) -> StackMachine<S> {
+        let mut sm = StackMachine {
+                instructions: Vec::new(),            
+            };
+        sm.build_helper(node);        
+        sm
     }
 
-    pub fn execute(&mut self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
+    pub fn execute(&self,stack:&mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
             for ins in &self.instructions {
                 match ins {
                     Instruction::Add => {
                         sp -= 1;
-                        self.stack[sp - 1] = self.stack[sp] + self.stack[sp - 1];
+                        stack[sp - 1] = stack[sp] + stack[sp - 1];
                     }
                     Instruction::Sub => {
                         sp -= 1;
-                        self.stack[sp - 1] = self.stack[sp] - self.stack[sp - 1];
+                        stack[sp - 1] = stack[sp] - stack[sp - 1];
                     }
                     Instruction::Mul => {
                         sp -= 1;
-                        self.stack[sp - 1] = self.stack[sp] * self.stack[sp - 1];
+                        stack[sp - 1] = stack[sp] * stack[sp - 1];
                     }
                     Instruction::Div => {
                         sp -= 1;
-                        self.stack[sp - 1] = self.stack[sp] / self.stack[sp - 1];
+                        stack[sp - 1] = stack[sp] / stack[sp - 1];
                     }
                     Instruction::FBM => {
                         sp -= 1;
@@ -86,9 +79,9 @@ impl<S: Simd> StackMachine<S> {
                         let lacunarity = S::set1_ps(0.5);
                         let gain = S::set1_ps(2.0);
                         let octaves = 4;
-                        self.stack[sp - 1] = simdnoise::simplex::fbm_2d::<S>(
-                            self.stack[sp] * freq,
-                            self.stack[sp - 1] * freq,
+                        stack[sp - 1] = simdnoise::simplex::fbm_2d::<S>(
+                            stack[sp] * freq,
+                            stack[sp - 1] * freq,
                             lacunarity,
                             gain,
                             octaves,
@@ -96,47 +89,47 @@ impl<S: Simd> StackMachine<S> {
                         );
                     }
                     Instruction::Constant(v) => {
-                        self.stack[sp] = *v;
+                        stack[sp] = *v;
                         sp += 1;
                     }
                     Instruction::X => {
-                        self.stack[sp] = x;
+                        stack[sp] = x;
                         sp += 1;
                     }
                     Instruction::Y => {
-                        self.stack[sp] = y;
+                        stack[sp] = y;
                         sp += 1;
                     }
                 }
             }
-            self.stack[sp - 1]
+            stack[sp - 1]
         }
     }
 
-    pub fn execute_no_bounds(&mut self, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
+    pub fn execute_no_bounds(&self,stack:&mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
             for ins in &self.instructions {
                 match ins {
                     Instruction::Add => {
                         sp -= 1;
-                        *self.stack.get_unchecked_mut(sp - 1) =
-                            *self.stack.get_unchecked(sp) + *self.stack.get_unchecked(sp - 1);
+                        *stack.get_unchecked_mut(sp - 1) =
+                            *stack.get_unchecked(sp) + *stack.get_unchecked(sp - 1);
                     }
                     Instruction::Sub => {
                         sp -= 1;
-                        *self.stack.get_unchecked_mut(sp - 1) =
-                            *self.stack.get_unchecked(sp) - *self.stack.get_unchecked(sp - 1);
+                        *stack.get_unchecked_mut(sp - 1) =
+                            *stack.get_unchecked(sp) - *stack.get_unchecked(sp - 1);
                     }
                     Instruction::Mul => {
                         sp -= 1;
-                        *self.stack.get_unchecked_mut(sp - 1) =
-                            *self.stack.get_unchecked(sp) * *self.stack.get_unchecked(sp - 1);
+                        *stack.get_unchecked_mut(sp - 1) =
+                            *stack.get_unchecked(sp) * *stack.get_unchecked(sp - 1);
                     }
                     Instruction::Div => {
                         sp -= 1;
-                        *self.stack.get_unchecked_mut(sp - 1) =
-                            *self.stack.get_unchecked(sp) / *self.stack.get_unchecked(sp - 1);
+                        *stack.get_unchecked_mut(sp - 1) =
+                            *stack.get_unchecked(sp) / *stack.get_unchecked(sp - 1);
                     }
                     Instruction::FBM => {
                         sp -= 1;
@@ -144,9 +137,9 @@ impl<S: Simd> StackMachine<S> {
                         let lacunarity = S::set1_ps(0.5);
                         let gain = S::set1_ps(2.0);
                         let octaves = 4;
-                        *self.stack.get_unchecked_mut(sp - 1) = simdnoise::simplex::fbm_2d::<S>(
-                            *self.stack.get_unchecked(sp) * freq,
-                            *self.stack.get_unchecked(sp - 1) * freq,
+                        *stack.get_unchecked_mut(sp - 1) = simdnoise::simplex::fbm_2d::<S>(
+                            *stack.get_unchecked(sp) * freq,
+                            *stack.get_unchecked(sp - 1) * freq,
                             lacunarity,
                             gain,
                             octaves,
@@ -154,20 +147,20 @@ impl<S: Simd> StackMachine<S> {
                         );
                     }
                     Instruction::Constant(v) => {
-                        *self.stack.get_unchecked_mut(sp) = *v;
+                        *stack.get_unchecked_mut(sp) = *v;
                         sp += 1;
                     }
                     Instruction::X => {
-                        *self.stack.get_unchecked_mut(sp) = x;
+                        *stack.get_unchecked_mut(sp) = x;
                         sp += 1;
                     }
                     Instruction::Y => {
-                        *self.stack.get_unchecked_mut(sp) = y;
+                        *stack.get_unchecked_mut(sp) = y;
                         sp += 1;
                     }
                 }
             }
-            *self.stack.get_unchecked(sp - 1)
+            *stack.get_unchecked(sp - 1)
         }
     }
 }
