@@ -13,30 +13,35 @@ use ggez::graphics;
 use ggez::nalgebra as na;
 use ggez::{Context, GameResult};
 use simdeez::avx2::*;
+use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
-use simdeez::scalar::*;
 
-const SIZE : usize = 2048;
+const SIZE: usize = 2048;
 
 struct MainState {
     pos_x: f32,
     imgui_wrapper: ImGuiWrapper,
     hidpi_factor: f32,
-    img1: graphics::Image,    
+    img1: graphics::Image,
 }
 
 impl MainState {
     fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pic = RgbPic::<Avx2>::new(20);
-        let img1 =
-            graphics::Image::from_rgba8(ctx, SIZE as  u16, SIZE as u16, &pic.get_rgba8(SIZE, SIZE)[0..]).unwrap();          
+        let pic = RgbPic::new(20);
+        let img1 = graphics::Image::from_rgba8(
+            ctx,
+            SIZE as u16,
+            SIZE as u16,
+            &pic.get_rgba8::<Sse2>(SIZE, SIZE)[0..],
+        )
+        .unwrap();
         let s = MainState {
             pos_x: 0.0,
             imgui_wrapper,
             hidpi_factor,
-            img1,            
+            img1,
         };
         Ok(s)
     }
@@ -50,7 +55,7 @@ impl EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::BLACK);
-        let _ = graphics::draw(ctx, &self.img1, graphics::DrawParam::default());        
+        let _ = graphics::draw(ctx, &self.img1, graphics::DrawParam::default());
         // Render game stuff
         {
             let circle = graphics::Mesh::new_circle(
@@ -131,7 +136,7 @@ pub fn main() -> ggez::GameResult {
 
     let cb = ggez::ContextBuilder::new("super_simple with imgui", "ggez")
         .window_setup(conf::WindowSetup::default().title("super_simple with imgui"))
-        .window_mode(conf::WindowMode::default().dimensions(SIZE as f32 * 1.0, SIZE as f32 *1.0));
+        .window_mode(conf::WindowMode::default().dimensions(SIZE as f32 * 1.0, SIZE as f32 * 1.0));
     let (ref mut ctx, event_loop) = &mut cb.build()?;
 
     let state = &mut MainState::new(ctx, hidpi_factor)?;

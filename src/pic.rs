@@ -1,34 +1,37 @@
 use crate::apt::*;
 use crate::stack_machine::*;
-use std::time::{Duration, Instant};
 use rand::prelude::*;
-use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use simdeez::*;
 use simdnoise::*;
+use std::time::{Duration, Instant};
 use variant_count::*;
 
-pub trait Pic<S: Simd> {
-    fn get_rgba8(&self, w: usize, h: usize) -> Vec<u8>;    
+pub trait Pic {
+    fn get_rgba8<S: Simd>(&self, w: usize, h: usize) -> Vec<u8>;
 }
 
-pub struct MonoPic<S: Simd> {
-    c: APTNode<S>,
+pub struct MonoPic {
+    c: APTNode,
 }
-impl<S: Simd> MonoPic<S> {
-    pub fn new(size: usize) -> MonoPic<S> {
-        let seed = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,20,31,32];
-        let mut rng = StdRng::from_seed(seed);        
+impl MonoPic {
+    pub fn new(size: usize) -> MonoPic {
+        let seed = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 20, 31, 32,
+        ];
+        let mut rng = StdRng::from_seed(seed);
         let tree = APTNode::generate_tree(size, &mut rng);
         //let tree = APTNode::Add(vec![APTNode::X,APTNode::Y]);
         MonoPic { c: tree }
     }
 }
 
-impl<S: Simd> Pic<S> for MonoPic<S> {   
-    fn get_rgba8(&self, w: usize, h: usize) -> Vec<u8> {
+impl Pic for MonoPic {
+    fn get_rgba8<S: Simd>(&self, w: usize, h: usize) -> Vec<u8> {
         unsafe {
-            let mut sm = StackMachine::<S>::new();           
+            let mut sm = StackMachine::<S>::new();
             sm.build(&self.c);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
@@ -70,25 +73,27 @@ impl<S: Simd> Pic<S> for MonoPic<S> {
     }
 }
 
-pub struct RgbPic<S: Simd> {
-    r: APTNode<S>,
-    g: APTNode<S>,
-    b: APTNode<S>,
+pub struct RgbPic {
+    r: APTNode,
+    g: APTNode,
+    b: APTNode,
 }
-impl<S: Simd> RgbPic<S> {
-    pub fn new(size: usize) -> RgbPic<S> {
-        let seed = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,20,31,32];
-        let mut rng = StdRng::from_seed(seed);        
-        let r = APTNode::<S>::generate_tree(size, &mut rng);
-        let g = APTNode::<S>::generate_tree(size, &mut rng);
-        let b = APTNode::<S>::generate_tree(size, &mut rng);
+impl RgbPic {
+    pub fn new(size: usize) -> RgbPic {
+        let seed = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 20, 31, 32,
+        ];
+        let mut rng = StdRng::from_seed(seed);
+        let r = APTNode::generate_tree(size, &mut rng);
+        let g = APTNode::generate_tree(size, &mut rng);
+        let b = APTNode::generate_tree(size, &mut rng);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
         unsafe { RgbPic { r, g, b } }
     }
 }
-impl<S: Simd> Pic<S> for RgbPic<S> {
-   
-    fn get_rgba8(&self, w: usize, h: usize) -> Vec<u8> {
+impl Pic for RgbPic {
+    fn get_rgba8<S: Simd>(&self, w: usize, h: usize) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
 
@@ -117,9 +122,12 @@ impl<S: Simd> Pic<S> for RgbPic<S> {
             let mut i = 0;
             for _ in 0..h {
                 for _ in 0..w / S::VF32_WIDTH {
-                    let rs = (r_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0)) * S::set1_ps(128.0);
-                    let gs = (g_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0)) * S::set1_ps(128.0);
-                    let bs = (b_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0)) * S::set1_ps(128.0);
+                    let rs = (r_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0))
+                        * S::set1_ps(128.0);
+                    let gs = (g_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0))
+                        * S::set1_ps(128.0);
+                    let bs = (b_sm.execute_no_bounds(x, S::set1_ps(y)) + S::set1_ps(1.0))
+                        * S::set1_ps(128.0);
                     for j in 0..S::VF32_WIDTH {
                         let r = (rs[j] as i32 % 255) as u8;
                         let g = (gs[j] as i32 % 255) as u8;
@@ -137,7 +145,7 @@ impl<S: Simd> Pic<S> for RgbPic<S> {
                 y += y_step;
                 x = init_x;
             }
-            println!("sm elapsed:{}",now.elapsed().as_millis());
+            println!("sm elapsed:{}", now.elapsed().as_millis());
             result
         }
     }

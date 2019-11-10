@@ -4,19 +4,19 @@ use simdnoise::*;
 use variant_count::*;
 
 #[derive(VariantCount)]
-pub enum APTNode<S: Simd> {
-    Add(Vec<APTNode<S>>),
-    Sub(Vec<APTNode<S>>),
-    Mul(Vec<APTNode<S>>),
-    Div(Vec<APTNode<S>>),
-    FBM(Vec<APTNode<S>>),
-    Constant(S::Vf32),
+pub enum APTNode {
+    Add(Vec<APTNode>),
+    Sub(Vec<APTNode>),
+    Mul(Vec<APTNode>),
+    Div(Vec<APTNode>),
+    FBM(Vec<APTNode>),
+    Constant(f32),
     X,
     Y,
     Empty,
 }
 
-impl<S: Simd> Clone for APTNode<S> {
+impl Clone for APTNode {
     fn clone(&self) -> Self {
         match self {
             APTNode::Add(children) => APTNode::Add(children.clone()),
@@ -32,9 +32,9 @@ impl<S: Simd> Clone for APTNode<S> {
     }
 }
 
-impl<S: Simd> APTNode<S> {
-    pub fn get_random_node(rng: &mut StdRng) -> APTNode<S> {
-        let r = rng.gen_range(0, APTNode::<S>::VARIANT_COUNT - 4);
+impl APTNode {
+    pub fn get_random_node(rng: &mut StdRng) -> APTNode {
+        let r = rng.gen_range(0, APTNode::VARIANT_COUNT - 4);
         match r {
             0 => APTNode::Add(vec![APTNode::Empty, APTNode::Empty]),
             1 => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
@@ -45,20 +45,20 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode<S> {
+    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode {
         unsafe {
-            let count = APTNode::<S>::VARIANT_COUNT;
+            let count = APTNode::VARIANT_COUNT;
             let r = rng.gen_range(0, 3);
             match r {
                 0 => APTNode::X,
                 1 => APTNode::Y,
-                2 => APTNode::Constant(S::set1_ps(rng.gen_range(-1.0, 1.0))),
+                2 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
                 _ => panic!("get_random_leaf generated unhandled r:{}", r),
             }
         }
     }
 
-    pub fn add_random(&mut self, node: APTNode<S>, rng: &mut StdRng) {
+    pub fn add_random(&mut self, node: APTNode, rng: &mut StdRng) {
         let children = match self.get_children_mut() {
             Some(children) => children,
             None => panic!("tried to add_random to a leaf"),
@@ -70,7 +70,7 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn add_leaf(&mut self, leaf: &APTNode<S>) -> bool {
+    pub fn add_leaf(&mut self, leaf: &APTNode) -> bool {
         match self.get_children_mut() {
             None => false,
             Some(children) => {
@@ -92,7 +92,7 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn generate_tree(count: usize, rng: &mut StdRng) -> APTNode<S> {
+    pub fn generate_tree(count: usize, rng: &mut StdRng) -> APTNode {
         let mut first = APTNode::get_random_node(rng);
         for _ in 1..count {
             first.add_random(APTNode::get_random_node(rng), rng);
@@ -101,7 +101,7 @@ impl<S: Simd> APTNode<S> {
         first
     }
 
-    pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode<S>>> {
+    pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode>> {
         match self {
             APTNode::Add(children) => Some(children),
             APTNode::Sub(children) => Some(children),
@@ -112,7 +112,7 @@ impl<S: Simd> APTNode<S> {
         }
     }
 
-    pub fn get_children(&self) -> Option<&Vec<APTNode<S>>> {
+    pub fn get_children(&self) -> Option<&Vec<APTNode>> {
         match self {
             APTNode::Add(children) => Some(children),
             APTNode::Sub(children) => Some(children),
@@ -129,6 +129,4 @@ impl<S: Simd> APTNode<S> {
             _ => false,
         }
     }
-
-    
 }
