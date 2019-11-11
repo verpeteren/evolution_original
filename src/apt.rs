@@ -8,6 +8,9 @@ pub enum APTNode {
     Mul(Vec<APTNode>),
     Div(Vec<APTNode>),
     FBM(Vec<APTNode>),
+    Ridge(Vec<APTNode>),
+    Turbulence(Vec<APTNode>),
+    Sqrt(Vec<APTNode>),
     Constant(f32),
     X,
     Y,
@@ -21,7 +24,10 @@ impl Clone for APTNode {
             APTNode::Sub(children) => APTNode::Sub(children.clone()),
             APTNode::Mul(children) => APTNode::Mul(children.clone()),
             APTNode::Div(children) => APTNode::Div(children.clone()),
-            APTNode::FBM(children) => APTNode::FBM(children.clone()),
+            APTNode::Sqrt(children) => APTNode::Sqrt(children.clone()),
+            APTNode::FBM(child) => APTNode::FBM(child.clone()),
+            APTNode::Ridge(child) => APTNode::Ridge(child.clone()),
+            APTNode::Turbulence(child) => APTNode::Turbulence(child.clone()),
             APTNode::Constant(v) => APTNode::Constant(*v),
             APTNode::X => APTNode::X,
             APTNode::Y => APTNode::Y,
@@ -38,19 +44,22 @@ impl APTNode {
             1 => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
             2 => APTNode::Mul(vec![APTNode::Empty, APTNode::Empty]),
             3 => APTNode::Div(vec![APTNode::Empty, APTNode::Empty]),
-            4 => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty]),
+            4 => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
+            5 => APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
+            6 => APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
+            7 => APTNode::Sqrt(vec![APTNode::Empty]),
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
     }
 
-    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode {                    
-            let r = rng.gen_range(0, 3);
-            match r {
-                0 => APTNode::X,
-                1 => APTNode::Y,
-                2 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
-                _ => panic!("get_random_leaf generated unhandled r:{}", r),
-            }        
+    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode {
+        let r = rng.gen_range(0, 3);
+        match r {
+            0 => APTNode::X,
+            1 => APTNode::Y,
+            2 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
+            _ => panic!("get_random_leaf generated unhandled r:{}", r),
+        }
     }
 
     pub fn add_random(&mut self, node: APTNode, rng: &mut StdRng) {
@@ -103,6 +112,9 @@ impl APTNode {
             APTNode::Mul(children) => Some(children),
             APTNode::Div(children) => Some(children),
             APTNode::FBM(children) => Some(children),
+            APTNode::Ridge(children) => Some(children),
+            APTNode::Turbulence(children) => Some(children),
+            APTNode::Sqrt(children) => Some(children),
             _ => None,
         }
     }
@@ -114,6 +126,9 @@ impl APTNode {
             APTNode::Mul(children) => Some(children),
             APTNode::Div(children) => Some(children),
             APTNode::FBM(children) => Some(children),
+            APTNode::Ridge(children) => Some(children),
+            APTNode::Turbulence(children) => Some(children),
+            APTNode::Sqrt(children) => Some(children),
             _ => None,
         }
     }

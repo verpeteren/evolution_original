@@ -7,17 +7,19 @@ pub enum Instruction<S: Simd> {
     Mul,
     Div,
     FBM,
+    Ridge,
+    Turbulence,
+    Sqrt,
     Constant(S::Vf32),
     X,
     Y,
 }
 
 pub struct StackMachine<S: Simd> {
-    pub instructions: Vec<Instruction<S>>,    
+    pub instructions: Vec<Instruction<S>>,
 }
 
 impl<S: Simd> StackMachine<S> {
-  
     pub fn get_instruction(node: &APTNode) -> Instruction<S> {
         match node {
             APTNode::Add(_) => Instruction::Add,
@@ -25,6 +27,9 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Mul(_) => Instruction::Mul,
             APTNode::Div(_) => Instruction::Div,
             APTNode::FBM(_) => Instruction::FBM,
+            APTNode::Ridge(_) => Instruction::Ridge,
+            APTNode::Turbulence(_) => Instruction::Turbulence,
+            APTNode::Sqrt(_) => Instruction::Sqrt,
             APTNode::Constant(v) => Instruction::Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => Instruction::X,
             APTNode::Y => Instruction::Y,
@@ -46,13 +51,13 @@ impl<S: Simd> StackMachine<S> {
 
     pub fn build(node: &APTNode) -> StackMachine<S> {
         let mut sm = StackMachine {
-                instructions: Vec::new(),            
-            };
-        sm.build_helper(node);        
+            instructions: Vec::new(),
+        };
+        sm.build_helper(node);
         sm
     }
 
-    pub fn execute(&self,stack:&mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
+    pub fn execute(&self, stack: &mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
             for ins in &self.instructions {
@@ -73,20 +78,54 @@ impl<S: Simd> StackMachine<S> {
                         sp -= 1;
                         stack[sp - 1] = stack[sp] / stack[sp - 1];
                     }
+                    Instruction::Sqrt => {
+                        stack[sp-1] = S::sqrt_ps(stack[sp-1]);
+                    }
                     Instruction::FBM => {
-                        sp -= 1;
-                        let freq = S::set1_ps(3.05);
+                        sp -= 2;
+                        let freq = stack[sp-1]*S::set1_ps(25.0);
                         let lacunarity = S::set1_ps(0.5);
                         let gain = S::set1_ps(2.0);
-                        let octaves = 4;
+                        let octaves = 3;                        
                         stack[sp - 1] = simdnoise::simplex::fbm_2d::<S>(
+                            stack[sp+1] * freq,
                             stack[sp] * freq,
-                            stack[sp - 1] * freq,
                             lacunarity,
                             gain,
                             octaves,
                             3,
-                        );
+                        ) * S::set1_ps(7.35) - S::set1_ps(0.028); //todo clamp between -1 and 1??                         
+                    }
+                    Instruction::Ridge => {
+                        sp -= 2;
+                        let freq = stack[sp-1]*S::set1_ps(25.0);
+                        let lacunarity = S::set1_ps(0.5);
+                        let gain = S::set1_ps(2.0);
+                        let octaves = 3;                        
+                        stack[sp - 1] = simdnoise::simplex::ridge_2d::<S>(
+                            stack[sp+1] * freq,
+                            stack[sp] * freq,
+                            lacunarity,
+                            gain,
+                            octaves,
+                            3,
+                        ) * S::set1_ps(7.35) - S::set1_ps(0.028); //todo clamp between -1 and 1??                         
+                    }
+                    Instruction::Turbulence => {                        
+                        sp -= 2;
+                        let freq = stack[sp-1]*S::set1_ps(15.0);
+                        let lacunarity = S::set1_ps(0.5);
+                        let gain = S::set1_ps(2.0);
+                        let octaves = 3;                        
+                        stack[sp - 1] = simdnoise::simplex::turbulence_2d::<S>(
+                            stack[sp+1] * freq,
+                            stack[sp] * freq,
+                            lacunarity,
+                            gain,
+                            octaves,
+                            3,
+                        ) * S::set1_ps(7.35) - S::set1_ps(0.028); //todo clamp between -1 and 1?? \
+                        
                     }
                     Instruction::Constant(v) => {
                         stack[sp] = *v;
@@ -105,62 +144,5 @@ impl<S: Simd> StackMachine<S> {
             stack[sp - 1]
         }
     }
-
-    pub fn execute_no_bounds(&self,stack:&mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
-        unsafe {
-            let mut sp = 0;
-            for ins in &self.instructions {
-                match ins {
-                    Instruction::Add => {
-                        sp -= 1;
-                        *stack.get_unchecked_mut(sp - 1) =
-                            *stack.get_unchecked(sp) + *stack.get_unchecked(sp - 1);
-                    }
-                    Instruction::Sub => {
-                        sp -= 1;
-                        *stack.get_unchecked_mut(sp - 1) =
-                            *stack.get_unchecked(sp) - *stack.get_unchecked(sp - 1);
-                    }
-                    Instruction::Mul => {
-                        sp -= 1;
-                        *stack.get_unchecked_mut(sp - 1) =
-                            *stack.get_unchecked(sp) * *stack.get_unchecked(sp - 1);
-                    }
-                    Instruction::Div => {
-                        sp -= 1;
-                        *stack.get_unchecked_mut(sp - 1) =
-                            *stack.get_unchecked(sp) / *stack.get_unchecked(sp - 1);
-                    }
-                    Instruction::FBM => {
-                        sp -= 1;
-                        let freq = S::set1_ps(3.05);
-                        let lacunarity = S::set1_ps(0.5);
-                        let gain = S::set1_ps(2.0);
-                        let octaves = 4;
-                        *stack.get_unchecked_mut(sp - 1) = simdnoise::simplex::fbm_2d::<S>(
-                            *stack.get_unchecked(sp) * freq,
-                            *stack.get_unchecked(sp - 1) * freq,
-                            lacunarity,
-                            gain,
-                            octaves,
-                            3,
-                        );
-                    }
-                    Instruction::Constant(v) => {
-                        *stack.get_unchecked_mut(sp) = *v;
-                        sp += 1;
-                    }
-                    Instruction::X => {
-                        *stack.get_unchecked_mut(sp) = x;
-                        sp += 1;
-                    }
-                    Instruction::Y => {
-                        *stack.get_unchecked_mut(sp) = y;
-                        sp += 1;
-                    }
-                }
-            }
-            *stack.get_unchecked(sp - 1)
-        }
-    }
+   
 }

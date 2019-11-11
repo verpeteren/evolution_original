@@ -17,34 +17,35 @@ use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
 
-const SIZE: usize = 1920;
+const WIDTH: usize = 1920;
+const HEIGHT: usize = 1080;
 
 struct MainState {
     pos_x: f32,
     imgui_wrapper: ImGuiWrapper,
     hidpi_factor: f32,
     img1: graphics::Image,
-  //  img2: graphics::Image,
+    //  img2: graphics::Image,
 }
 
 impl MainState {
     fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pic = RgbPic::new(12);
+        let pic = MonoPic::new(5);
         let img1 = graphics::Image::from_rgba8(
             ctx,
-            1920 as u16,
-            1080 as u16,
-            &pic.get_rgba8::<Sse2>(1920, 1080)[0..],
+            WIDTH as u16,
+            HEIGHT as u16,
+            &pic.get_rgba8_single_thread::<Scalar>(WIDTH, HEIGHT)[0..],
         )
         .unwrap();
-      
+
         let s = MainState {
             pos_x: 0.0,
             imgui_wrapper,
             hidpi_factor,
             img1,
-           // img2,
+            // img2,
         };
         Ok(s)
     }
@@ -140,7 +141,7 @@ pub fn main() -> ggez::GameResult {
 
     let cb = ggez::ContextBuilder::new("super_simple with imgui", "ggez")
         .window_setup(conf::WindowSetup::default().title("super_simple with imgui"))
-        .window_mode(conf::WindowMode::default().dimensions(SIZE as f32 * 1.0, SIZE as f32 * 1.0));
+        .window_mode(conf::WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0));
     let (ref mut ctx, event_loop) = &mut cb.build()?;
 
     let state = &mut MainState::new(ctx, hidpi_factor)?;
