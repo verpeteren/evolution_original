@@ -11,7 +11,8 @@ pub enum APTNode {
     Ridge(Vec<APTNode>),
     Turbulence(Vec<APTNode>),
     Sqrt(Vec<APTNode>),
-    Constant(f32),
+    Sin(Vec<APTNode>),
+    Constant(f32),    
     X,
     Y,
     Empty,
@@ -23,11 +24,12 @@ impl Clone for APTNode {
             APTNode::Add(children) => APTNode::Add(children.clone()),
             APTNode::Sub(children) => APTNode::Sub(children.clone()),
             APTNode::Mul(children) => APTNode::Mul(children.clone()),
-            APTNode::Div(children) => APTNode::Div(children.clone()),
-            APTNode::Sqrt(children) => APTNode::Sqrt(children.clone()),
+            APTNode::Div(children) => APTNode::Div(children.clone()),            
             APTNode::FBM(child) => APTNode::FBM(child.clone()),
             APTNode::Ridge(child) => APTNode::Ridge(child.clone()),
             APTNode::Turbulence(child) => APTNode::Turbulence(child.clone()),
+            APTNode::Sqrt(children) => APTNode::Sqrt(children.clone()),
+            APTNode::Sin(children) => APTNode::Sin(children.clone()),
             APTNode::Constant(v) => APTNode::Constant(*v),
             APTNode::X => APTNode::X,
             APTNode::Y => APTNode::Y,
@@ -48,6 +50,7 @@ impl APTNode {
             5 => APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
             6 => APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
             7 => APTNode::Sqrt(vec![APTNode::Empty]),
+            8 => APTNode::Sin(vec![APTNode::Empty]),
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
     }
@@ -115,6 +118,7 @@ impl APTNode {
             APTNode::Ridge(children) => Some(children),
             APTNode::Turbulence(children) => Some(children),
             APTNode::Sqrt(children) => Some(children),
+            APTNode::Sin(children) => Some(children),
             _ => None,
         }
     }
@@ -129,6 +133,7 @@ impl APTNode {
             APTNode::Ridge(children) => Some(children),
             APTNode::Turbulence(children) => Some(children),
             APTNode::Sqrt(children) => Some(children),
+            APTNode::Sin(children) => Some(children),
             _ => None,
         }
     }

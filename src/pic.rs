@@ -21,8 +21,9 @@ impl MonoPic {
             25, 26, 27, 28, 29, 20, 31, 32,
         ];
         let mut rng = StdRng::from_seed(seed);
-        let tree = APTNode::generate_tree(size, &mut rng);
-       // let tree = APTNode::Turbulence(vec![APTNode::X,APTNode::Y,APTNode::Mul(vec![APTNode::X,APTNode::Y])]);
+       // let tree = APTNode::generate_tree(size, &mut rng);
+        let tree = APTNode::Sin(vec![APTNode::X]);
+        
         MonoPic { c: tree }
     }
 }
@@ -55,7 +56,7 @@ impl Pic for MonoPic {
 
                     for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                         let v = sm.execute(&mut stack, x, y);
-                        let cs = (v + S::set1_ps(1.0)) * S::set1_ps(128.0);                        
+                        let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);                           
 
 
                         for j in 0..S::VF32_WIDTH {
@@ -101,11 +102,12 @@ impl Pic for MonoPic {
 
                     for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                         let v = sm.execute(&mut stack, x, y);
+                        
                         max = S::max_ps(max,v);
                         min = S::min_ps(min,v);
-                        
-                        let cs = (v + S::set1_ps(1.0)) * S::set1_ps(128.0);                        
-
+                        //todo think about a more rigorous way of converting [-1.0,1.0] -> [0,255]
+                        let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);                        
+                        //println!("x:{} = v:{} = cs:{}",x[0],v[0],cs[0]);
 
                         for j in 0..S::VF32_WIDTH {
                             let c = (cs[j] as i32 % 255) as u8;                                                        

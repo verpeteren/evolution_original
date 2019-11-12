@@ -1,6 +1,9 @@
 use crate::apt::*;
 use simdeez::*;
 
+const SIMPLEX_MULTIPLIER : f32 = 7.35;
+const SIMPLEX_OFFSET : f32 = 0.028;
+
 pub enum Instruction<S: Simd> {
     Add,
     Sub,
@@ -10,6 +13,7 @@ pub enum Instruction<S: Simd> {
     Ridge,
     Turbulence,
     Sqrt,
+    Sin,
     Constant(S::Vf32),
     X,
     Y,
@@ -30,6 +34,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Ridge(_) => Instruction::Ridge,
             APTNode::Turbulence(_) => Instruction::Turbulence,
             APTNode::Sqrt(_) => Instruction::Sqrt,
+            APTNode::Sin(_) => Instruction::Sin,
             APTNode::Constant(v) => Instruction::Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => Instruction::X,
             APTNode::Y => Instruction::Y,
@@ -77,10 +82,7 @@ impl<S: Simd> StackMachine<S> {
                     Instruction::Div => {
                         sp -= 1;
                         stack[sp - 1] = stack[sp] / stack[sp - 1];
-                    }
-                    Instruction::Sqrt => {
-                        stack[sp-1] = S::sqrt_ps(stack[sp-1]);
-                    }
+                    }                    
                     Instruction::FBM => {
                         sp -= 2;
                         let freq = stack[sp-1]*S::set1_ps(25.0);
@@ -94,7 +96,7 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        ) * S::set1_ps(7.35) - S::set1_ps(0.028); //todo clamp between -1 and 1??                         
+                        ) * S::set1_ps(SIMPLEX_MULTIPLIER) - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??                         
                     }
                     Instruction::Ridge => {
                         sp -= 2;
@@ -109,11 +111,11 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        ) * S::set1_ps(7.35) - S::set1_ps(0.028); //todo clamp between -1 and 1??                         
+                        ) * S::set1_ps(SIMPLEX_OFFSET) - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??                         
                     }
                     Instruction::Turbulence => {                        
                         sp -= 2;
-                        let freq = stack[sp-1]*S::set1_ps(15.0);
+                        let freq = stack[sp-1]*S::set1_ps(25.0);
                         let lacunarity = S::set1_ps(0.5);
                         let gain = S::set1_ps(2.0);
                         let octaves = 3;                        
@@ -124,8 +126,14 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        ) * S::set1_ps(7.35) - S::set1_ps(0.028); //todo clamp between -1 and 1?? \
+                        ) * S::set1_ps(SIMPLEX_MULTIPLIER) - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                         
+                    }
+                    Instruction::Sqrt => {
+                        stack[sp-1] = S::sqrt_ps(stack[sp-1]);
+                    }
+                    Instruction::Sin => {
+                        stack[sp-1] = S::sin_ps(stack[sp-1]*S::set1_ps(3.14159));
                     }
                     Instruction::Constant(v) => {
                         stack[sp] = *v;

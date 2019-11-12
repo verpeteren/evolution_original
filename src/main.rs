@@ -17,8 +17,8 @@ use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1080;
+const WIDTH: usize = 4920;
+const HEIGHT: usize = 4080;
 
 struct MainState {
     pos_x: f32,
@@ -36,7 +36,7 @@ impl MainState {
             ctx,
             WIDTH as u16,
             HEIGHT as u16,
-            &pic.get_rgba8_single_thread::<Scalar>(WIDTH, HEIGHT)[0..],
+            &pic.get_rgba8::<Scalar>(WIDTH, HEIGHT)[0..],
         )
         .unwrap();
 
@@ -59,7 +59,7 @@ impl EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::BLACK);
-        let _ = graphics::draw(ctx, &self.img1, graphics::DrawParam::default());
+        let _ = graphics::draw(ctx, &self.img1, graphics::DrawParam::default().scale(na::Vector2::new(1.0,1.0)));
         //let _ = graphics::draw(ctx, &self.img2, graphics::DrawParam::default().dest(na::Point2::new(SIZE as f32,0.0)));
         // Render game stuff
         {
