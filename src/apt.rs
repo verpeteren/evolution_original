@@ -12,7 +12,7 @@ pub enum APTNode {
     Turbulence(Vec<APTNode>),
     Sqrt(Vec<APTNode>),
     Sin(Vec<APTNode>),
-    Constant(f32),    
+    Constant(f32),
     X,
     Y,
     Empty,
@@ -24,10 +24,10 @@ impl Clone for APTNode {
             APTNode::Add(children) => APTNode::Add(children.clone()),
             APTNode::Sub(children) => APTNode::Sub(children.clone()),
             APTNode::Mul(children) => APTNode::Mul(children.clone()),
-            APTNode::Div(children) => APTNode::Div(children.clone()),            
-            APTNode::FBM(child) => APTNode::FBM(child.clone()),
-            APTNode::Ridge(child) => APTNode::Ridge(child.clone()),
-            APTNode::Turbulence(child) => APTNode::Turbulence(child.clone()),
+            APTNode::Div(children) => APTNode::Div(children.clone()),
+            APTNode::FBM(children) => APTNode::FBM(children.clone()),
+            APTNode::Ridge(children) => APTNode::Ridge(children.clone()),
+            APTNode::Turbulence(children) => APTNode::Turbulence(children.clone()),
             APTNode::Sqrt(children) => APTNode::Sqrt(children.clone()),
             APTNode::Sin(children) => APTNode::Sin(children.clone()),
             APTNode::Constant(v) => APTNode::Constant(*v),
@@ -38,7 +38,28 @@ impl Clone for APTNode {
     }
 }
 
+
 impl APTNode {
+
+
+    pub fn to_lisp(&self) -> String {
+        match self {
+            APTNode::Add(children) => format!("( + {} {} )",children[0].to_lisp(),children[1].to_lisp()),
+            APTNode::Sub(children) => format!("( - {} {} )",children[0].to_lisp(),children[1].to_lisp()),
+            APTNode::Mul(children) => format!("( * {} {} )",children[0].to_lisp(),children[1].to_lisp()),
+            APTNode::Div(children) => format!("( / {} {} )",children[0].to_lisp(),children[1].to_lisp()),
+            APTNode::FBM(children) => format!("( FBM {} {} {} )",children[0].to_lisp(),children[1].to_lisp(),children[2].to_lisp()),
+            APTNode::Ridge(children) => format!("( Ridge {} {} {} )",children[0].to_lisp(),children[1].to_lisp(),children[2].to_lisp()),
+            APTNode::Turbulence(children) => format!("( Turbulence {} {} {} )",children[0].to_lisp(),children[1].to_lisp(),children[2].to_lisp()),
+            APTNode::Sqrt(children) => format!("( Sqrt {} )",children[0].to_lisp()),
+            APTNode::Sin(children) => format!("( Sin {} )",children[0].to_lisp()),
+            APTNode::Constant(v) => format!("{}",v),
+            APTNode::X => format!("X"),
+            APTNode::Y => format!("Y"),
+            APTNode::Empty => format!("EMPTY"),
+        }
+    }
+
     pub fn get_random_node(rng: &mut StdRng) -> APTNode {
         let r = rng.gen_range(0, APTNode::VARIANT_COUNT - 4);
         match r {
@@ -46,9 +67,9 @@ impl APTNode {
             1 => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
             2 => APTNode::Mul(vec![APTNode::Empty, APTNode::Empty]),
             3 => APTNode::Div(vec![APTNode::Empty, APTNode::Empty]),
-            4 => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
-            5 => APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
-            6 => APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty,APTNode::Empty]),
+            4 => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            5 => APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            6 => APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
             7 => APTNode::Sqrt(vec![APTNode::Empty]),
             8 => APTNode::Sin(vec![APTNode::Empty]),
             _ => panic!("get_random_node generated unhandled r:{}", r),

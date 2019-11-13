@@ -17,8 +17,8 @@ use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
 
-const WIDTH: usize = 4920;
-const HEIGHT: usize = 4080;
+const WIDTH: usize = 800;
+const HEIGHT: usize = 800;
 
 struct MainState {
     pos_x: f32,
@@ -31,12 +31,13 @@ struct MainState {
 impl MainState {
     fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pic = MonoPic::new(5);
+        let pic = HsvPic::new(3);
+        println!("{}",pic.to_lisp());
         let img1 = graphics::Image::from_rgba8(
             ctx,
             WIDTH as u16,
             HEIGHT as u16,
-            &pic.get_rgba8::<Scalar>(WIDTH, HEIGHT)[0..],
+            &pic.get_rgba8::<Sse2>(WIDTH, HEIGHT)[0..],
         )
         .unwrap();
 
@@ -59,7 +60,11 @@ impl EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::BLACK);
-        let _ = graphics::draw(ctx, &self.img1, graphics::DrawParam::default().scale(na::Vector2::new(1.0,1.0)));
+        let _ = graphics::draw(
+            ctx,
+            &self.img1,
+            graphics::DrawParam::default().scale(na::Vector2::new(1.0, 1.0)),
+        );
         //let _ = graphics::draw(ctx, &self.img2, graphics::DrawParam::default().dest(na::Point2::new(SIZE as f32,0.0)));
         // Render game stuff
         {
@@ -141,7 +146,9 @@ pub fn main() -> ggez::GameResult {
 
     let cb = ggez::ContextBuilder::new("super_simple with imgui", "ggez")
         .window_setup(conf::WindowSetup::default().title("super_simple with imgui"))
-        .window_mode(conf::WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0));
+        .window_mode(
+            conf::WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0),
+        );
     let (ref mut ctx, event_loop) = &mut cb.build()?;
 
     let state = &mut MainState::new(ctx, hidpi_factor)?;
