@@ -15,6 +15,7 @@ pub enum APTNode {
     Constant(f32),
     X,
     Y,
+    T,
     Empty,
 }
 
@@ -33,6 +34,7 @@ impl Clone for APTNode {
             APTNode::Constant(v) => APTNode::Constant(*v),
             APTNode::X => APTNode::X,
             APTNode::Y => APTNode::Y,
+            APTNode::T => APTNode::T,
             APTNode::Empty => panic!("tried to eval an empty node"),
         }
     }
@@ -56,12 +58,13 @@ impl APTNode {
             APTNode::Constant(v) => format!("{}",v),
             APTNode::X => format!("X"),
             APTNode::Y => format!("Y"),
+            APTNode::T => format!("T"),
             APTNode::Empty => format!("EMPTY"),
         }
     }
 
     pub fn get_random_node(rng: &mut StdRng) -> APTNode {
-        let r = rng.gen_range(0, APTNode::VARIANT_COUNT - 4);
+        let r = rng.gen_range(0, APTNode::VARIANT_COUNT - 5);
         match r {
             0 => APTNode::Add(vec![APTNode::Empty, APTNode::Empty]),
             1 => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
@@ -80,8 +83,19 @@ impl APTNode {
         let r = rng.gen_range(0, 3);
         match r {
             0 => APTNode::X,
-            1 => APTNode::Y,
+            1 => APTNode::Y,            
             2 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
+            _ => panic!("get_random_leaf generated unhandled r:{}", r),
+        }
+    }
+
+    pub fn get_random_leaf_video(rng: &mut StdRng) -> APTNode {
+        let r = rng.gen_range(0, 4);
+        match r {
+            0 => APTNode::X,
+            1 => APTNode::Y,            
+            2 => APTNode::T,
+            3 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
             _ => panic!("get_random_leaf generated unhandled r:{}", r),
         }
     }
@@ -129,6 +143,15 @@ impl APTNode {
         first
     }
 
+    pub fn generate_tree_video(count: usize, rng: &mut StdRng) -> APTNode {
+        let mut first = APTNode::get_random_node(rng);
+        for _ in 1..count {
+            first.add_random(APTNode::get_random_node(rng), rng);
+        }
+        while first.add_leaf(&APTNode::get_random_leaf_video(rng)) {}
+        first
+    }
+
     pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode>> {
         match self {
             APTNode::Add(children) => Some(children),
@@ -161,7 +184,7 @@ impl APTNode {
 
     pub fn is_leaf(&self) -> bool {
         match self {
-            APTNode::X | APTNode::Y | APTNode::Constant(_) | APTNode::Empty => true,
+            APTNode::X | APTNode::Y | APTNode::T | APTNode::Constant(_) | APTNode::Empty => true,
             _ => false,
         }
     }

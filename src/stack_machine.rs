@@ -17,6 +17,7 @@ pub enum Instruction<S: Simd> {
     Constant(S::Vf32),
     X,
     Y,
+    T,
 }
 
 pub struct StackMachine<S: Simd> {
@@ -38,6 +39,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Constant(v) => Instruction::Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => Instruction::X,
             APTNode::Y => Instruction::Y,
+            APTNode::T => Instruction::T,
             APTNode::Empty => panic!("got empty building stack machine"),
         }
     }
@@ -62,7 +64,8 @@ impl<S: Simd> StackMachine<S> {
         sm
     }
 
-    pub fn execute(&self, stack: &mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32) -> S::Vf32 {
+
+    pub fn execute(&self, stack: &mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32,t: S::Vf32) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
             for ins in &self.instructions {
@@ -149,9 +152,24 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp] = y;
                         sp += 1;
                     }
+                    Instruction::T => {
+                        stack[sp] = t;
+                        sp += 1;
+                    }
                 }
             }
-            stack[sp - 1]
+            let mut result = stack[sp-1];
+            for i in 0 .. S::VF32_WIDTH {
+                if result[i] == std::f32::INFINITY {
+                    result[i] = 1.0;
+                } else if result[i] == std::f32::NEG_INFINITY {
+                    result[i] = -1.0;
+                }
+                else if result[i].is_nan() {
+                    result[i] = 0.0;
+                }                   
+            }
+            result
         }
     }
 }
