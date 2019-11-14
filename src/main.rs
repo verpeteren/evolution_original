@@ -39,7 +39,7 @@ struct MainState {
 impl MainState {
     fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pic = HsvPic::new(1,15,true);
+        let pic = RgbPic::new(1,15,true);
         println!("{}",pic.to_lisp());
         let img1 = graphics::Image::from_rgba8(
             ctx,

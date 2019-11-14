@@ -15,6 +15,7 @@ pub enum Instruction<S: Simd> {
     Sqrt,
     Sin,
     Atan,
+    Atan2,
     Tan,
     Log,
     Constant(S::Vf32),
@@ -40,6 +41,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Sqrt(_) => Instruction::Sqrt,
             APTNode::Sin(_) => Instruction::Sin,
             APTNode::Atan(_) => Instruction::Atan,
+            APTNode::Atan2(_) => Instruction::Atan2,
             APTNode::Tan(_) => Instruction::Tan,
             APTNode::Log(_) => Instruction::Log,
             APTNode::Constant(v) => Instruction::Constant(unsafe { S::set1_ps(*v) }),
@@ -70,6 +72,23 @@ impl<S: Simd> StackMachine<S> {
         sm
     }
 
+    #[inline(always)]
+    pub fn deal_with_nan(mut a: S::Vf32) -> S::Vf32 {        
+        for i in 0 .. S::VF32_WIDTH {
+            if a[i] == std::f32::INFINITY {                
+             //   println!("inf");
+                a[i] = 1.0;
+            } else if a[i] == std::f32::NEG_INFINITY {                
+              //  println!("neg inf");
+                a[i] = -1.0;
+            }
+            else if a[i].is_nan() {                
+              //  println!("nan");
+                a[i] = 0.0;
+            }                   
+        }
+        a
+    }
 
     pub fn execute(&self, stack: &mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32,t: S::Vf32) -> S::Vf32 {
         unsafe {
@@ -90,7 +109,7 @@ impl<S: Simd> StackMachine<S> {
                     }
                     Instruction::Div => {
                         sp -= 1;
-                        stack[sp - 1] = stack[sp] / stack[sp - 1];
+                        stack[sp - 1] = StackMachine::<S>::deal_with_nan(stack[sp] / stack[sp - 1]);
                     }
                     Instruction::FBM => {
                         sp -= 2;
@@ -140,20 +159,34 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(SIMPLEX_MULTIPLIER)
                             - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                     }
-                    Instruction::Sqrt => {
-                        stack[sp - 1] = S::sqrt_ps(stack[sp - 1]);
+                    Instruction::Sqrt => {                    
+                        let v = stack[sp-1];
+                        let positive =  S::sqrt_ps(v);
+                        let negative  = S::mul_ps(S::set1_ps(-1.0),S::sqrt_ps(S::abs_ps(v)));
+                        let mask = S::cmpge_ps(v,S::setzero_ps());
+                        stack[sp - 1] = S::blendv_ps(negative, positive, mask);                         
                     }
                     Instruction::Sin => {
                         stack[sp - 1] = S::fast_sin_ps(stack[sp - 1] * S::set1_ps(3.14159));
                     }
                     Instruction::Atan => {
-                        stack[sp - 1] = S::fast_atan_ps(stack[sp - 1] * S::set1_ps(3.14159));
+                        stack[sp - 1] = S::fast_atan_ps(stack[sp - 1] * S::set1_ps(4.0))*S::set1_ps(0.666666666);
+                    }
+                    Instruction::Atan2 => {                        
+                        sp-=1;
+                        let x = stack[sp-1];
+                        let y = stack[sp] * S::set1_ps(4.0);
+                        stack[sp - 1] = S::fast_atan2_ps(y,x)*S::set1_ps(0.318309);
                     }
                     Instruction::Tan => {
-                        stack[sp - 1] = S::fast_tan_ps(stack[sp - 1] * S::set1_ps(3.14159)) ;
+                        stack[sp - 1] =  S::fast_tan_ps(stack[sp - 1] * S::set1_ps(1.57079632679));
                     }
                     Instruction::Log => {
-                        stack[sp - 1] = S::fast_log_ps(stack[sp - 1] * S::set1_ps(3.14159)) ;
+                        let v = stack[sp-1] * S::set1_ps(4.0);
+                        let positive =  S::fast_log_ps(v);
+                        let negative  = S::mul_ps(S::set1_ps(-1.0),S::fast_log_ps(S::abs_ps(v)));
+                        let mask = S::cmpge_ps(v,S::setzero_ps());
+                        stack[sp - 1] =S::blendv_ps(negative, positive, mask) * S::set1_ps(0.367879); 
                     }
                     Instruction::Constant(v) => {
                         stack[sp] = *v;
@@ -173,18 +206,7 @@ impl<S: Simd> StackMachine<S> {
                     }
                 }
             }
-            let mut result = stack[sp-1];
-            for i in 0 .. S::VF32_WIDTH {
-                if result[i] == std::f32::INFINITY {
-                    result[i] = 1.0;
-                } else if result[i] == std::f32::NEG_INFINITY {
-                    result[i] = -1.0;
-                }
-                else if result[i].is_nan() {
-                    result[i] = 0.0;
-                }                   
-            }
-            result
+            stack[sp-1]            
         }
     }
 }

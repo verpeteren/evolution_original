@@ -35,11 +35,11 @@ impl MonoPic {
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
             25, 26, 27, 28, 29, 20, 31, 32,
         ];
-        let mut rng = StdRng::from_seed(seed);
-        //let tree = APTNode::generate_tree(size, &mut rng);
-     //   let tree = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
+        //let mut rng = StdRng::from_seed(seed);
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();        
+        let tree = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
         // let tree = APTNode::Sub(vec![APTNode::X,APTNode::Atan(vec![APTNode::Tan(vec![APTNode::X])])]);
-        let tree = APTNode::Log(vec![APTNode::X]);
+       // let tree = APTNode::Atan2(vec![APTNode::X,APTNode::Constant(-1.0)]);
         MonoPic { c: tree }
     }
 }
@@ -79,7 +79,7 @@ impl Pic for MonoPic {
                         let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);
 
                         for j in 0..S::VF32_WIDTH {
-                            let c = (cs[j] as i32 % 255) as u8;
+                            let c = (cs[j] as i32 % 256) as u8;
                             chunk[i + j * 4] = c;
                             chunk[i + 1 + j * 4] = c;
                             chunk[i + 2 + j * 4] = c;
