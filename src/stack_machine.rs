@@ -14,6 +14,9 @@ pub enum Instruction<S: Simd> {
     Turbulence,
     Sqrt,
     Sin,
+    Atan,
+    Tan,
+    Log,
     Constant(S::Vf32),
     X,
     Y,
@@ -36,6 +39,9 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Turbulence(_) => Instruction::Turbulence,
             APTNode::Sqrt(_) => Instruction::Sqrt,
             APTNode::Sin(_) => Instruction::Sin,
+            APTNode::Atan(_) => Instruction::Atan,
+            APTNode::Tan(_) => Instruction::Tan,
+            APTNode::Log(_) => Instruction::Log,
             APTNode::Constant(v) => Instruction::Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => Instruction::X,
             APTNode::Y => Instruction::Y,
@@ -138,7 +144,16 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp - 1] = S::sqrt_ps(stack[sp - 1]);
                     }
                     Instruction::Sin => {
-                        stack[sp - 1] = S::sin_ps(stack[sp - 1] * S::set1_ps(3.14159));
+                        stack[sp - 1] = S::fast_sin_ps(stack[sp - 1] * S::set1_ps(3.14159));
+                    }
+                    Instruction::Atan => {
+                        stack[sp - 1] = S::fast_atan_ps(stack[sp - 1] * S::set1_ps(3.14159));
+                    }
+                    Instruction::Tan => {
+                        stack[sp - 1] = S::fast_tan_ps(stack[sp - 1] * S::set1_ps(3.14159)) ;
+                    }
+                    Instruction::Log => {
+                        stack[sp - 1] = S::fast_log_ps(stack[sp - 1] * S::set1_ps(3.14159)) ;
                     }
                     Instruction::Constant(v) => {
                         stack[sp] = *v;

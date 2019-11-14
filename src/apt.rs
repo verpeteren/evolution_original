@@ -12,6 +12,9 @@ pub enum APTNode {
     Turbulence(Vec<APTNode>),
     Sqrt(Vec<APTNode>),
     Sin(Vec<APTNode>),
+    Atan(Vec<APTNode>),
+    Tan(Vec<APTNode>),
+    Log(Vec<APTNode>),
     Constant(f32),
     X,
     Y,
@@ -31,6 +34,9 @@ impl Clone for APTNode {
             APTNode::Turbulence(children) => APTNode::Turbulence(children.clone()),
             APTNode::Sqrt(children) => APTNode::Sqrt(children.clone()),
             APTNode::Sin(children) => APTNode::Sin(children.clone()),
+            APTNode::Atan(children) => APTNode::Atan(children.clone()),
+            APTNode::Tan(children) => APTNode::Tan(children.clone()),
+            APTNode::Log(children) => APTNode::Log(children.clone()),
             APTNode::Constant(v) => APTNode::Constant(*v),
             APTNode::X => APTNode::X,
             APTNode::Y => APTNode::Y,
@@ -55,6 +61,9 @@ impl APTNode {
             APTNode::Turbulence(children) => format!("( Turbulence {} {} {} )",children[0].to_lisp(),children[1].to_lisp(),children[2].to_lisp()),
             APTNode::Sqrt(children) => format!("( Sqrt {} )",children[0].to_lisp()),
             APTNode::Sin(children) => format!("( Sin {} )",children[0].to_lisp()),
+            APTNode::Atan(children) => format!("( Atan {} )",children[0].to_lisp()),
+            APTNode::Log(children) => format!("( Log {} )",children[0].to_lisp()),
+            APTNode::Tan(children) => format!("( Tan {} )",children[0].to_lisp()),
             APTNode::Constant(v) => format!("{}",v),
             APTNode::X => format!("X"),
             APTNode::Y => format!("Y"),
@@ -75,6 +84,9 @@ impl APTNode {
             6 => APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
             7 => APTNode::Sqrt(vec![APTNode::Empty]),
             8 => APTNode::Sin(vec![APTNode::Empty]),
+            9 => APTNode::Atan(vec![APTNode::Empty]),            
+            10 => APTNode::Tan(vec![APTNode::Empty]),
+            11 => APTNode::Log(vec![APTNode::Empty]),
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
     }
@@ -134,21 +146,18 @@ impl APTNode {
         }
     }
 
-    pub fn generate_tree(count: usize, rng: &mut StdRng) -> APTNode {
-        let mut first = APTNode::get_random_node(rng);
-        for _ in 1..count {
-            first.add_random(APTNode::get_random_node(rng), rng);
-        }
-        while first.add_leaf(&APTNode::get_random_leaf(rng)) {}
-        first
-    }
 
-    pub fn generate_tree_video(count: usize, rng: &mut StdRng) -> APTNode {
+    pub fn generate_tree(count: usize,video:bool, rng: &mut StdRng) -> APTNode {
+        let leaf_func = if video {
+            APTNode::get_random_leaf_video
+        } else {
+            APTNode::get_random_leaf
+        };
         let mut first = APTNode::get_random_node(rng);
         for _ in 1..count {
             first.add_random(APTNode::get_random_node(rng), rng);
         }
-        while first.add_leaf(&APTNode::get_random_leaf_video(rng)) {}
+        while first.add_leaf(&leaf_func(rng)) {}
         first
     }
 
@@ -163,6 +172,9 @@ impl APTNode {
             APTNode::Turbulence(children) => Some(children),
             APTNode::Sqrt(children) => Some(children),
             APTNode::Sin(children) => Some(children),
+            APTNode::Atan(children) => Some(children),
+            APTNode::Tan(children) => Some(children),
+            APTNode::Log(children) => Some(children),
             _ => None,
         }
     }
@@ -178,6 +190,9 @@ impl APTNode {
             APTNode::Turbulence(children) => Some(children),
             APTNode::Sqrt(children) => Some(children),
             APTNode::Sin(children) => Some(children),
+            APTNode::Atan(children) => Some(children),
+            APTNode::Tan(children) => Some(children),
+            APTNode::Log(children) => Some(children),
             _ => None,
         }
     }

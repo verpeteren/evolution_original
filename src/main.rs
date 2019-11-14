@@ -19,6 +19,7 @@ use simdeez::sse41::*;
 use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 use ggez::timer;
+use std::time::Instant;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
@@ -38,18 +39,19 @@ struct MainState {
 impl MainState {
     fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pic = HsvPic::new(15);
+        let pic = HsvPic::new(1,15,true);
         println!("{}",pic.to_lisp());
         let img1 = graphics::Image::from_rgba8(
             ctx,
             WIDTH as u16,
             HEIGHT as u16,
-            &pic.get_rgba8::<Sse2>(WIDTH, HEIGHT,0.0)[0..],
+            &pic.get_rgba8::<Avx2>(WIDTH, HEIGHT,0.0)[0..],
         )
         .unwrap();
 
         let mut frames = Vec::new();
-        let video_data = &pic.get_video::<Sse2>(WIDTH,HEIGHT,32,DURATION);
+        let video_data = &pic.get_video::<Avx2>(WIDTH,HEIGHT,32,DURATION);
+        let now = Instant::now();
         for frame in video_data {
             frames.push(graphics::Image::from_rgba8(
                 ctx,
@@ -59,7 +61,7 @@ impl MainState {
             )
             .unwrap())
         }
-
+        println!("building textures time:{}", now.elapsed().as_millis());
 
         let s = MainState {
             pos_x: 0.0,

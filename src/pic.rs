@@ -5,6 +5,7 @@ use rand::SeedableRng;
 use rayon::prelude::*;
 use simdeez::*;
 use std::time::Instant;
+use rand::*;
 
 pub trait Pic {    
     fn get_rgba8<S: Simd>(&self, w: usize, h: usize,t:f32) -> Vec<u8>;
@@ -29,16 +30,16 @@ pub struct MonoPic {
     c: APTNode,
 }
 impl MonoPic {
-    pub fn new(size: usize) -> MonoPic {
+    pub fn new(min: usize,max: usize, video:bool) -> MonoPic {
         let seed = [
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
             25, 26, 27, 28, 29, 20, 31, 32,
         ];
         let mut rng = StdRng::from_seed(seed);
         //let tree = APTNode::generate_tree(size, &mut rng);
-        let tree = APTNode::generate_tree_video(size, &mut rng);
-        // let tree = APTNode::Sin(vec![APTNode::X]);
-
+     //   let tree = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
+        // let tree = APTNode::Sub(vec![APTNode::X,APTNode::Atan(vec![APTNode::Tan(vec![APTNode::X])])]);
+        let tree = APTNode::Log(vec![APTNode::X]);
         MonoPic { c: tree }
     }
 }
@@ -87,7 +88,7 @@ impl Pic for MonoPic {
                         x = x + x_step;
                     }
                 });
-            println!("parallel elapsed:{}", now.elapsed().as_millis());
+            println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
@@ -100,15 +101,16 @@ pub struct RgbPic {
     b: APTNode,
 }
 impl RgbPic {
-    pub fn new(size: usize) -> RgbPic {
+    pub fn new(min: usize,max: usize,video:bool) -> RgbPic {
         let seed = [
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
             25, 26, 27, 28, 29, 20, 31, 32,
         ];
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-        let r = APTNode::generate_tree_video(size, &mut rng);
-        let g = APTNode::generate_tree_video(size, &mut rng);
-        let b = APTNode::generate_tree_video(size, &mut rng);
+        
+        let r = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
+        let g = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
+        let b = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
         RgbPic { r, g, b }
     }
@@ -173,7 +175,7 @@ impl Pic for RgbPic {
                         x = x + x_step;
                     }
                 });
-            println!("parallel elapsed:{}", now.elapsed().as_millis());
+            println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     } 
@@ -185,15 +187,15 @@ pub struct HsvPic {
     v: APTNode,
 }
 impl HsvPic {
-    pub fn new(size: usize) -> HsvPic {
+    pub fn new(min: usize,max:usize, video:bool) -> HsvPic {
         let seed = [
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
             25, 26, 27, 28, 29, 20, 31, 32,
         ];
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-        let h = APTNode::generate_tree_video(size, &mut rng);
-        let s = APTNode::generate_tree_video(size, &mut rng);
-        let v = APTNode::generate_tree_video(size, &mut rng);               
+        let h = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
+        let s = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);
+        let v = APTNode::generate_tree(rng.gen_range(min,max),video, &mut rng);               
         HsvPic { h, s, v }
     }
 }
@@ -259,9 +261,9 @@ impl Pic for HsvPic {
                             chunk[i + 3 + j * 4] = 255 as u8;
                         }
                         x = x + x_step;
-                    }
+                    } 
                 });
-            println!("parallel elapsed:{}", now.elapsed().as_millis());
+         //   println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
@@ -283,7 +285,7 @@ fn hsv_to_rgb<S: Simd>(h: S::Vf32, s: S::Vf32, v: S::Vf32) -> (S::Vf32, S::Vf32,
     unsafe {        
         let six = S::set1_ps(6.0);
         let one = S::set1_ps(1.0);
-        let hi = S::cvtps_epi32(S::fastfloor_ps(h * six));
+        let hi = S::cvtps_epi32(S::fast_floor_ps(h * six));
         let f = h * six - S::cvtepi32_ps(hi);
         let p = v * (one - s);
         let q = v * (one - f * s);

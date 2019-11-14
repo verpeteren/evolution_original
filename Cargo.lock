@@ -2252,6 +2252,7 @@ dependencies = [
 name = "simdeez"
 version = "0.6.6"
 dependencies = [
+ "cfg-if",
  "paste",
  "sleef-sys",
 ]
