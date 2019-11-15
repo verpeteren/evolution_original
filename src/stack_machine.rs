@@ -73,24 +73,23 @@ impl<S: Simd> StackMachine<S> {
     }
 
     #[inline(always)]
-    pub fn deal_with_nan(mut a: S::Vf32) -> S::Vf32 {        
-        for i in 0 .. S::VF32_WIDTH {
-            if a[i] == std::f32::INFINITY {                
-             //   println!("inf");
+    pub fn deal_with_nan(mut a: S::Vf32) -> S::Vf32 {
+        for i in 0..S::VF32_WIDTH {
+            if a[i] == std::f32::INFINITY {
+                //   println!("inf");
                 a[i] = 1.0;
-            } else if a[i] == std::f32::NEG_INFINITY {                
-              //  println!("neg inf");
+            } else if a[i] == std::f32::NEG_INFINITY {
+                //  println!("neg inf");
                 a[i] = -1.0;
-            }
-            else if a[i].is_nan() {                
-              //  println!("nan");
+            } else if a[i].is_nan() {
+                //  println!("nan");
                 a[i] = 0.0;
-            }                   
+            }
         }
         a
     }
 
-    pub fn execute(&self, stack: &mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32,t: S::Vf32) -> S::Vf32 {
+    pub fn execute(&self, stack: &mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32, t: S::Vf32) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
             for ins in &self.instructions {
@@ -159,34 +158,36 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(SIMPLEX_MULTIPLIER)
                             - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                     }
-                    Instruction::Sqrt => {                    
-                        let v = stack[sp-1];
-                        let positive =  S::sqrt_ps(v);
-                        let negative  = S::mul_ps(S::set1_ps(-1.0),S::sqrt_ps(S::abs_ps(v)));
-                        let mask = S::cmpge_ps(v,S::setzero_ps());
-                        stack[sp - 1] = S::blendv_ps(negative, positive, mask);                         
+                    Instruction::Sqrt => {
+                        let v = stack[sp - 1];
+                        let positive = S::sqrt_ps(v);
+                        let negative = S::mul_ps(S::set1_ps(-1.0), S::sqrt_ps(S::abs_ps(v)));
+                        let mask = S::cmpge_ps(v, S::setzero_ps());
+                        stack[sp - 1] = S::blendv_ps(negative, positive, mask);
                     }
                     Instruction::Sin => {
                         stack[sp - 1] = S::fast_sin_ps(stack[sp - 1] * S::set1_ps(3.14159));
                     }
                     Instruction::Atan => {
-                        stack[sp - 1] = S::fast_atan_ps(stack[sp - 1] * S::set1_ps(4.0))*S::set1_ps(0.666666666);
+                        stack[sp - 1] = S::fast_atan_ps(stack[sp - 1] * S::set1_ps(4.0))
+                            * S::set1_ps(0.666666666);
                     }
-                    Instruction::Atan2 => {                        
-                        sp-=1;
-                        let x = stack[sp-1];
+                    Instruction::Atan2 => {
+                        sp -= 1;
+                        let x = stack[sp - 1];
                         let y = stack[sp] * S::set1_ps(4.0);
-                        stack[sp - 1] = S::fast_atan2_ps(y,x)*S::set1_ps(0.318309);
+                        stack[sp - 1] = S::fast_atan2_ps(y, x) * S::set1_ps(0.318309);
                     }
                     Instruction::Tan => {
-                        stack[sp - 1] =  S::fast_tan_ps(stack[sp - 1] * S::set1_ps(1.57079632679));
+                        stack[sp - 1] = S::fast_tan_ps(stack[sp - 1] * S::set1_ps(1.57079632679));
                     }
                     Instruction::Log => {
-                        let v = stack[sp-1] * S::set1_ps(4.0);
-                        let positive =  S::fast_log_ps(v);
-                        let negative  = S::mul_ps(S::set1_ps(-1.0),S::fast_log_ps(S::abs_ps(v)));
-                        let mask = S::cmpge_ps(v,S::setzero_ps());
-                        stack[sp - 1] =S::blendv_ps(negative, positive, mask) * S::set1_ps(0.367879); 
+                        let v = stack[sp - 1] * S::set1_ps(4.0);
+                        let positive = S::fast_log_ps(v);
+                        let negative = S::mul_ps(S::set1_ps(-1.0), S::fast_log_ps(S::abs_ps(v)));
+                        let mask = S::cmpge_ps(v, S::setzero_ps());
+                        stack[sp - 1] =
+                            S::blendv_ps(negative, positive, mask) * S::set1_ps(0.367879);
                     }
                     Instruction::Constant(v) => {
                         stack[sp] = *v;
@@ -206,7 +207,7 @@ impl<S: Simd> StackMachine<S> {
                     }
                 }
             }
-            stack[sp-1]            
+            stack[sp - 1]
         }
     }
 }

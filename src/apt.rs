@@ -48,26 +48,50 @@ impl Clone for APTNode {
     }
 }
 
-
 impl APTNode {
-
-
     pub fn to_lisp(&self) -> String {
         match self {
-            APTNode::Add(children) => format!("( + {} {} )",children[0].to_lisp(),children[1].to_lisp()),
-            APTNode::Sub(children) => format!("( - {} {} )",children[0].to_lisp(),children[1].to_lisp()),
-            APTNode::Mul(children) => format!("( * {} {} )",children[0].to_lisp(),children[1].to_lisp()),
-            APTNode::Div(children) => format!("( / {} {} )",children[0].to_lisp(),children[1].to_lisp()),
-            APTNode::FBM(children) => format!("( FBM {} {} {} )",children[0].to_lisp(),children[1].to_lisp(),children[2].to_lisp()),
-            APTNode::Ridge(children) => format!("( Ridge {} {} {} )",children[0].to_lisp(),children[1].to_lisp(),children[2].to_lisp()),
-            APTNode::Turbulence(children) => format!("( Turbulence {} {} {} )",children[0].to_lisp(),children[1].to_lisp(),children[2].to_lisp()),
-            APTNode::Sqrt(children) => format!("( Sqrt {} )",children[0].to_lisp()),
-            APTNode::Sin(children) => format!("( Sin {} )",children[0].to_lisp()),
-            APTNode::Atan(children) => format!("( Atan {} )",children[0].to_lisp()),
-            APTNode::Atan2(children) => format!("( Atan2 {} {} )",children[0].to_lisp(),children[1].to_lisp()),
-            APTNode::Log(children) => format!("( Log {} )",children[0].to_lisp()),
-            APTNode::Tan(children) => format!("( Tan {} )",children[0].to_lisp()),
-            APTNode::Constant(v) => format!("{}",v),
+            APTNode::Add(children) => {
+                format!("( + {} {} )", children[0].to_lisp(), children[1].to_lisp())
+            }
+            APTNode::Sub(children) => {
+                format!("( - {} {} )", children[0].to_lisp(), children[1].to_lisp())
+            }
+            APTNode::Mul(children) => {
+                format!("( * {} {} )", children[0].to_lisp(), children[1].to_lisp())
+            }
+            APTNode::Div(children) => {
+                format!("( / {} {} )", children[0].to_lisp(), children[1].to_lisp())
+            }
+            APTNode::FBM(children) => format!(
+                "( FBM {} {} {} )",
+                children[0].to_lisp(),
+                children[1].to_lisp(),
+                children[2].to_lisp()
+            ),
+            APTNode::Ridge(children) => format!(
+                "( Ridge {} {} {} )",
+                children[0].to_lisp(),
+                children[1].to_lisp(),
+                children[2].to_lisp()
+            ),
+            APTNode::Turbulence(children) => format!(
+                "( Turbulence {} {} {} )",
+                children[0].to_lisp(),
+                children[1].to_lisp(),
+                children[2].to_lisp()
+            ),
+            APTNode::Sqrt(children) => format!("( Sqrt {} )", children[0].to_lisp()),
+            APTNode::Sin(children) => format!("( Sin {} )", children[0].to_lisp()),
+            APTNode::Atan(children) => format!("( Atan {} )", children[0].to_lisp()),
+            APTNode::Atan2(children) => format!(
+                "( Atan2 {} {} )",
+                children[0].to_lisp(),
+                children[1].to_lisp()
+            ),
+            APTNode::Log(children) => format!("( Log {} )", children[0].to_lisp()),
+            APTNode::Tan(children) => format!("( Tan {} )", children[0].to_lisp()),
+            APTNode::Constant(v) => format!("{}", v),
             APTNode::X => format!("X"),
             APTNode::Y => format!("Y"),
             APTNode::T => format!("T"),
@@ -87,8 +111,8 @@ impl APTNode {
             6 => APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
             7 => APTNode::Sqrt(vec![APTNode::Empty]),
             8 => APTNode::Sin(vec![APTNode::Empty]),
-            9 => APTNode::Atan(vec![APTNode::Empty]),            
-            10 => APTNode::Atan2(vec![APTNode::Empty,APTNode::Empty]),            
+            9 => APTNode::Atan(vec![APTNode::Empty]),
+            10 => APTNode::Atan2(vec![APTNode::Empty, APTNode::Empty]),
             11 => APTNode::Tan(vec![APTNode::Empty]),
             12 => APTNode::Log(vec![APTNode::Empty]),
             _ => panic!("get_random_node generated unhandled r:{}", r),
@@ -99,7 +123,7 @@ impl APTNode {
         let r = rng.gen_range(0, 3);
         match r {
             0 => APTNode::X,
-            1 => APTNode::Y,            
+            1 => APTNode::Y,
             2 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
             _ => panic!("get_random_leaf generated unhandled r:{}", r),
         }
@@ -109,7 +133,7 @@ impl APTNode {
         let r = rng.gen_range(0, 4);
         match r {
             0 => APTNode::X,
-            1 => APTNode::Y,            
+            1 => APTNode::Y,
             2 => APTNode::T,
             3 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
             _ => panic!("get_random_leaf generated unhandled r:{}", r),
@@ -150,8 +174,7 @@ impl APTNode {
         }
     }
 
-
-    pub fn generate_tree(count: usize,video:bool, rng: &mut StdRng) -> APTNode {
+    pub fn generate_tree(count: usize, video: bool, rng: &mut StdRng) -> APTNode {
         let leaf_func = if video {
             APTNode::get_random_leaf_video
         } else {
