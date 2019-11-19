@@ -1,8 +1,11 @@
 use crate::apt::*;
 use simdeez::*;
-
+use simdnoise::*;
 const SIMPLEX_MULTIPLIER: f32 = 7.35;
 const SIMPLEX_OFFSET: f32 = 0.028;
+const CELL1_MULTUPLIER: f32 = 1.661291;
+const CELL1_OFFSET: f32 = 1.0;
+
 
 pub enum Instruction<S: Simd> {
     Add,
@@ -12,12 +15,15 @@ pub enum Instruction<S: Simd> {
     FBM,
     Ridge,
     Turbulence,
+    Cell1,
+    Cell2,
     Sqrt,
     Sin,
     Atan,
     Atan2,
     Tan,
     Log,
+    Abs,
     Constant(S::Vf32),
     X,
     Y,
@@ -38,12 +44,15 @@ impl<S: Simd> StackMachine<S> {
             APTNode::FBM(_) => Instruction::FBM,
             APTNode::Ridge(_) => Instruction::Ridge,
             APTNode::Turbulence(_) => Instruction::Turbulence,
+            APTNode::Cell1(_) => Instruction::Cell1,
+            APTNode::Cell2(_) => Instruction::Cell2,
             APTNode::Sqrt(_) => Instruction::Sqrt,
             APTNode::Sin(_) => Instruction::Sin,
             APTNode::Atan(_) => Instruction::Atan,
             APTNode::Atan2(_) => Instruction::Atan2,
             APTNode::Tan(_) => Instruction::Tan,
             APTNode::Log(_) => Instruction::Log,
+            APTNode::Abs(_) => Instruction::Abs,
             APTNode::Constant(v) => Instruction::Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => Instruction::X,
             APTNode::Y => Instruction::Y,
@@ -158,6 +167,31 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(SIMPLEX_MULTIPLIER)
                             - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                     }
+                    Instruction::Cell1 => {                      
+                        sp -= 2;
+                        let freq = stack[sp - 1] * S::set1_ps(4.0);
+                        stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
+                            stack[sp + 1] * freq,
+                            stack[sp] * freq,
+                            CellDistanceFunction::Euclidean,
+                            CellReturnType::Distance,
+                            S::set1_ps(0.45),
+                            1
+                        ) * S::set1_ps(CELL1_MULTUPLIER)
+                          - S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
+                    }
+                    Instruction::Cell2 => {                      
+                        sp -= 2;
+                        let freq = stack[sp - 1] * S::set1_ps(4.0);
+                        stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
+                            stack[sp + 1] * freq,
+                            stack[sp] * freq,
+                            CellDistanceFunction::Euclidean,
+                            CellReturnType::CellValue,
+                            S::set1_ps(0.45),
+                            1
+                        );
+                    }
                     Instruction::Sqrt => {
                         let v = stack[sp - 1];
                         let positive = S::sqrt_ps(v);
@@ -188,6 +222,9 @@ impl<S: Simd> StackMachine<S> {
                         let mask = S::cmpge_ps(v, S::setzero_ps());
                         stack[sp - 1] =
                             S::blendv_ps(negative, positive, mask) * S::set1_ps(0.367879);
+                    }
+                    Instruction::Abs => {
+                        stack[sp - 1] = S::abs_ps(stack[sp - 1]);
                     }
                     Instruction::Constant(v) => {
                         stack[sp] = *v;
