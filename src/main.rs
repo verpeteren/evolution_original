@@ -7,6 +7,9 @@ mod stack_machine;
 mod ui;
 mod ggez_utility;
 
+use std::thread;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::*;
 use crate::ui::*;
 use crate::imgui_wrapper::ImGuiWrapper;
 use crate::pic::*;
@@ -33,30 +36,37 @@ const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 
-const THUMB_ROWS: u16 = 4;
-const THUMB_COLS: u16 = 5;
+const THUMB_ROWS: u16 = 6;
+const THUMB_COLS: u16 = 7;
 
 const TREE_MIN: usize = 2;
-const TREE_MAX: usize = 15;
+const TREE_MAX: usize = 30;
 
 enum GameState {
     Select,
-    Zoom(Image)
+    Zoom(usize)
 }
 
-struct MainState<S:Simd> {
+enum BackgroundImage {
+    NotYet,    
+    Complete(graphics::Image),
+}
+
+struct MainState {
     state: GameState,
     mouse_state: MouseState,
     imgui_wrapper: ImGuiWrapper,
     hidpi_factor: f32,
     img_buttons: Vec<Button>,
-    pics: Vec<Box<dyn Pic<S>>>,
+    pics: Vec<Pic>,
     dt: std::time::Duration,
     frame_elapsed: f32,
     rng: StdRng,        
+    zoom_image: BackgroundImage,
+    receiver: Option<Receiver<Vec<u8>>>
 }
 
-impl<S:Simd> MainState<S> {
+impl MainState {
     fn gen_population(&mut self, ctx: &mut Context) {
 
         // todo make this layout code less dumb
@@ -70,18 +80,18 @@ impl<S:Simd> MainState<S> {
             for _ in 0 .. THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
                 //let pic_type = 0;
-                let pic: Box<dyn Pic<S>> = match pic_type {
-                    0 => Box::new(GradientPic::new(TREE_MIN, TREE_MAX, false, &mut self.rng)),
-                    1 => Box::new(MonoPic::new(TREE_MIN, TREE_MAX, false, &mut self.rng)),
-                    2 => Box::new(RgbPic::new(TREE_MIN, TREE_MAX, false, &mut self.rng)),
-                    3 => Box::new(HsvPic::new(TREE_MIN, TREE_MAX, false, &mut self.rng)),
+                let pic = match pic_type {
+                    0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
+                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
+                    2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng),
+                    3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     _ => panic!("invalid"),
                 };
                 let img = graphics::Image::from_rgba8(
                     ctx,
                     256 as u16,
                     256 as u16,
-                    &pic.get_rgba8(256, 256, 0.0)[0..],
+                    &pic.get_rgba8::<Avx2>(256, 256, 0.0)[0..],
                 )
                 .unwrap();                                    
                 self.pics.push(pic);                        
@@ -94,10 +104,10 @@ impl<S:Simd> MainState<S> {
         println!("genpop elapsed:{}", now.elapsed().as_millis());
     }
 
-    fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState<S>> {
+    fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
 
-        let s = MainState::<S> {            
+        let s = MainState {            
             state: GameState::Select,
             imgui_wrapper,
             hidpi_factor,
@@ -107,6 +117,8 @@ impl<S:Simd> MainState<S> {
             frame_elapsed: 0.0,
             rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
             mouse_state: MouseState::Nothing,
+            zoom_image: BackgroundImage::NotYet,
+            receiver:None
         };
         Ok(s)
     }
@@ -119,21 +131,43 @@ impl<S:Simd> MainState<S> {
                 break;
             }
             if img_button.right_clicked(ctx,&self.mouse_state) {
-                println!("button right clicked");
-                let (w,h) = graphics::size(ctx);
-                let img = graphics::Image::from_rgba8(
-                    ctx,
-                    1920 as u16,
-                    1080 as u16,
-                    &self.pics[i].get_rgba8(1920 as usize, 1080 as usize, 0.0)[0..],
-                ).unwrap();
-                self.state = GameState::Zoom(img);
+                println!("button right clicked");                
+                let pic = self.pics[i].clone();
+                let (send, recv) = channel();
+                self.receiver = Some(recv);
+                thread::spawn(move || {
+                    println!("create image");
+                    let img_data = pic.get_rgba8::<Avx2>(1920 as usize, 1080 as usize, 0.0);
+                    send.send(img_data).unwrap();
+                });                
+                self.state = GameState::Zoom(i);
                 break;
             }
         }
     }
 
     fn update_zoom(&mut self, ctx: &mut Context) {
+        match &self.zoom_image {
+            BackgroundImage::NotYet => {
+                match &self.receiver {
+                    Some(recv) => match recv.try_recv() {
+                        Ok(data) => {
+                            println!("setting zoom image");
+                            let img = graphics::Image::from_rgba8(
+                                ctx,
+                                1920 as u16,
+                                1080 as u16,
+                                &data[0..],
+                            ).unwrap();
+                            self.zoom_image = BackgroundImage::Complete(img)
+                        },
+                        Err(_) => ()
+                    },
+                    None => ()
+                }
+            },
+            BackgroundImage::Complete(img) => ()
+        }
         for (i,img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx,&self.mouse_state) {
                 println!("{}",self.pics[i].to_lisp());    
@@ -141,6 +175,7 @@ impl<S:Simd> MainState<S> {
             }
             if img_button.right_clicked(ctx,&self.mouse_state) {
                 println!("button right clicked");
+                self.zoom_image = BackgroundImage::NotYet;                
                 self.state = GameState::Select;
             }
         }
@@ -156,14 +191,17 @@ impl<S:Simd> MainState<S> {
         }
     }
 
-    fn draw_zoom(&self, ctx:&mut Context, img: &Image) {        
-        let _ = graphics::draw(ctx,img,graphics::DrawParam::new());
+    fn draw_zoom(&self, ctx:&mut Context, index:usize) {        
+        match &self.zoom_image {
+            BackgroundImage::NotYet => (),
+            BackgroundImage::Complete(img) => {  let _ = graphics::draw(ctx,img,graphics::DrawParam::new()); }
+        }
     }
 }
 
 
 
-impl<S:Simd> EventHandler for MainState<S> {
+impl EventHandler for MainState {
 
     
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {        
@@ -182,7 +220,7 @@ impl<S:Simd> EventHandler for MainState<S> {
         
         match &self.state { 
             GameState::Select => self.draw_select(ctx),
-            GameState::Zoom(img) => self.draw_zoom(ctx,&img),
+            GameState::Zoom(index) => self.draw_zoom(ctx,*index),
         }        
 
         graphics::present(ctx)?;
@@ -267,7 +305,7 @@ pub fn main() -> ggez::GameResult {
         );
     let (ref mut ctx, event_loop) = &mut cb.build()?;
 
-    let state = &mut MainState::<Avx2>::new(ctx, hidpi_factor)?;
+    let state = &mut MainState::new(ctx, hidpi_factor)?;
     state.gen_population(ctx);
     event::run(ctx, event_loop, state)
 }

@@ -13,36 +13,51 @@ const MAX_GRADIENT_COUNT : usize = 10;
 const MIN_GRADIENT_COUNT : usize = 2;
 const GRADIENT_SIZE : usize = 512;
 
-pub trait Pic<S: Simd> {
-    fn get_rgba8(&self, w: usize, h: usize, t: f32) -> Vec<u8>;
-    /// d is duration in milliseconds
-    fn get_video(&self, w: usize, h: usize, fps: u16, d: f32) -> Vec<Vec<u8>> {
-        let now = Instant::now();
-        let frames = (fps as f32 * (d / 1000.0)) as i32;
-        let frame_dt = 2.0 / frames as f32;
-
-        let mut t = -1.0;
-        let mut result = Vec::new();
-        for _ in 0..frames {
-            let frame_buffer = self.get_rgba8(w, h, t);
-            result.push(frame_buffer);
-            t += frame_dt;
-        }
-        println!("img elapsed:{}", now.elapsed().as_millis());
-        result
-    }
-    fn to_lisp(&self) -> String;
-}
-
-pub struct GradientPic {
+#[derive(Clone)]
+pub struct GradientData {
     gradient: Vec<Color>,
     index: APTNode,
 }
 
-impl GradientPic {
-    pub fn new(min: usize, max: usize, video: bool, rng:&mut StdRng) -> GradientPic {
+#[derive(Clone)]
+pub struct MonoData {    
+    c: APTNode,
+}
 
-        //todo cleanup 
+#[derive(Clone)]
+pub struct RGBData {
+    r: APTNode,
+    g: APTNode,
+    b: APTNode,
+}
+
+#[derive(Clone)]
+pub struct HSVData {
+    h: APTNode,
+    s: APTNode,
+    v: APTNode,
+}
+
+#[derive(Clone)]
+pub enum Pic {
+    Mono(MonoData),
+    RGB(RGBData),
+    HSV(HSVData),
+    Gradient(GradientData),    
+}
+
+
+impl Pic {
+    pub fn new_mono(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic
+    {
+        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
+        Pic::Mono(MonoData { c: tree })
+    }
+
+    pub fn new_gradient(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic
+    {
+         //todo cleanup 
         //color theory? 
         let num_colors = rng.gen_range(MIN_GRADIENT_COUNT,MAX_GRADIENT_COUNT);        
         let mut gradient = Vec::with_capacity(GRADIENT_SIZE);
@@ -74,26 +89,82 @@ impl GradientPic {
                 gradient.push(lerp_color(color1,color2,pct));
             }
         }                        
-        GradientPic {
+        Pic::Gradient(
+            GradientData {
             gradient: gradient,
             index: APTNode::generate_tree(rng.gen_range(min, max), video, rng)
+        })
+    }
+
+    pub fn new_rgb(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
+        let r = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
+        Pic::RGB(RGBData { r, g, b })
+    }
+
+    pub fn new_hsv(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
+        let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        Pic::HSV(HSVData { h, s, v })
+    }
+
+   
+
+    pub fn to_lisp(&self) -> String {
+        match self {
+            Pic::Mono(data) => format!("Mono\n {}", data.c.to_lisp()),
+            Pic::Gradient(data) => format!("Gradient\n {}", data.index.to_lisp()),
+            Pic::RGB(data) =>  format!(
+                "RGB\n{} \n{}\n{}",
+                data.r.to_lisp(),
+                data.g.to_lisp(),
+                data.b.to_lisp()
+                ),
+            Pic::HSV(data) =>  format!(
+                "HSV\n{} \n{}\n{}",
+                data.h.to_lisp(),
+                data.s.to_lisp(),
+                data.v.to_lisp()
+            )                                            
         }
     }
-}
 
-impl<S: Simd> Pic<S> for GradientPic {
-    fn to_lisp(&self) -> String {
-        format!("Gradient\n {}", self.index.to_lisp())
+    pub fn get_video<S:Simd>(&self, w: usize, h: usize, fps: u16, d: f32) -> Vec<Vec<u8>> {
+        let now = Instant::now();
+        let frames = (fps as f32 * (d / 1000.0)) as i32;
+        let frame_dt = 2.0 / frames as f32;
+
+        let mut t = -1.0;
+        let mut result = Vec::new();
+        for _ in 0..frames {
+            let frame_buffer = self.get_rgba8::<S>(w, h, t);
+            result.push(frame_buffer);
+            t += frame_dt;
+        }
+        println!("img elapsed:{}", now.elapsed().as_millis());
+        result
     }
 
-    fn get_rgba8(&self, w: usize, h: usize, t: f32) -> Vec<u8> {
+    pub fn get_rgba8<S:Simd>(&self,w: usize, h:usize, t:f32) -> Vec<u8> {
+        match self {
+            Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data,w,h,t),
+            Pic::Gradient(data) => Pic::get_rgba8_gradient::<S>(data,w,h,t),
+            Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data,w,h,t),
+            Pic::HSV(data) =>Pic::get_rgba8_hsv::<S>(data,w,h,t),
+        }
+    }
+
+    fn get_rgba8_gradient<S:Simd>(data:&GradientData, w: usize, h: usize, t: f32) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
-            let sm = StackMachine::<S>::build(&self.index);
+            let sm = StackMachine::<S>::build(&data.index);
             let mut min = 999999.0;
             let mut max = -99999.0;
             result
@@ -118,7 +189,7 @@ impl<S: Simd> Pic<S> for GradientPic {
                         let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
 
                         for j in 0..S::VF32_WIDTH {
-                            let c = self.gradient[index[j] as usize % GRADIENT_SIZE];                            
+                            let c = data.gradient[index[j] as usize % GRADIENT_SIZE];                            
                             chunk[i + j * 4] = (c.r * 255.0) as u8;
                             chunk[i + 1 + j * 4] = (c.g * 255.0) as u8;
                             chunk[i + 2 + j * 4] = (c.b * 255.0) as u8;
@@ -133,32 +204,15 @@ impl<S: Simd> Pic<S> for GradientPic {
             result
         }
     }
-}
 
-pub struct MonoPic {    
-    c: APTNode,
-}
-impl MonoPic {
-    pub fn new(min: usize, max: usize, video: bool, rng: &mut StdRng) -> MonoPic {
-        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
-        MonoPic { c: tree }
-    }
-}
-
-impl<S: Simd> Pic<S> for MonoPic {
-    fn to_lisp(&self) -> String {
-        format!("Mono\n {}", self.c.to_lisp())
-    }
-
-    fn get_rgba8(&self, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_mono<S:Simd>(data:&MonoData, w: usize, h: usize, t: f32) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
-            let sm = StackMachine::<S>::build(&self.c);
+            let sm = StackMachine::<S>::build(&data.c);
             let mut min = 999999.0;
             let mut max = -99999.0;
             result
@@ -202,33 +256,8 @@ impl<S: Simd> Pic<S> for MonoPic {
             result
         }
     }
-}
 
-pub struct RgbPic {
-    r: APTNode,
-    g: APTNode,
-    b: APTNode,
-}
-impl RgbPic {
-    pub fn new(min: usize, max: usize, video: bool, rng: &mut StdRng) -> RgbPic {
-        let r = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
-        RgbPic { r, g, b }
-    }
-}
-impl<S: Simd> Pic<S> for RgbPic {
-    fn to_lisp(&self) -> String {
-        format!(
-            "RGB\n{} \n{}\n{}",
-            self.r.to_lisp(),
-            self.g.to_lisp(),
-            self.b.to_lisp()
-        )
-    }
-
-    fn get_rgba8(&self, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_rgb<S:Simd>(data:&RGBData, w: usize, h: usize, t: f32) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
@@ -237,9 +266,9 @@ impl<S: Simd> Pic<S> for RgbPic {
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
 
-            let r_sm = StackMachine::<S>::build(&self.r);
-            let g_sm = StackMachine::<S>::build(&self.g);
-            let b_sm = StackMachine::<S>::build(&self.b);
+            let r_sm = StackMachine::<S>::build(&data.r);
+            let g_sm = StackMachine::<S>::build(&data.g);
+            let b_sm = StackMachine::<S>::build(&data.b);
             let max_len = *[
                 r_sm.instructions.len(),
                 g_sm.instructions.len(),
@@ -286,33 +315,8 @@ impl<S: Simd> Pic<S> for RgbPic {
             result
         }
     }
-}
 
-pub struct HsvPic {
-    h: APTNode,
-    s: APTNode,
-    v: APTNode,
-}
-impl HsvPic {
-    pub fn new(min: usize, max: usize, video: bool, rng: &mut StdRng) -> HsvPic {
-        let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        HsvPic { h, s, v }
-    }
-}
-
-impl<S: Simd> Pic<S> for HsvPic {
-    fn to_lisp(&self) -> String {
-        format!(
-            "HSV\n{} \n{}\n{}",
-            self.h.to_lisp(),
-            self.s.to_lisp(),
-            self.v.to_lisp()
-        )
-    }
-
-    fn get_rgba8(&self, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_hsv<S:Simd>(data:&HSVData, w: usize, h: usize, t: f32) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
@@ -320,9 +324,9 @@ impl<S: Simd> Pic<S> for HsvPic {
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
 
-            let h_sm = StackMachine::<S>::build(&self.h);
-            let s_sm = StackMachine::<S>::build(&self.s);
-            let v_sm = StackMachine::<S>::build(&self.v);
+            let h_sm = StackMachine::<S>::build(&data.h);
+            let s_sm = StackMachine::<S>::build(&data.s);
+            let v_sm = StackMachine::<S>::build(&data.v);
             let max_len = *[
                 h_sm.instructions.len(),
                 s_sm.instructions.len(),
@@ -378,6 +382,9 @@ impl<S: Simd> Pic<S> for HsvPic {
         }
     }
 }
+
+
+
 
 #[inline(always)]
 fn wrap_0_1<S: Simd>(v: S::Vf32) -> S::Vf32 {
