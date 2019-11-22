@@ -40,7 +40,7 @@ const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
 
 const TREE_MIN: usize = 2;
-const TREE_MAX: usize = 30;
+const TREE_MAX: usize = 20;
 
 enum GameState {
     Select,
