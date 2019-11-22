@@ -8,8 +8,8 @@ mod ui;
 mod ggez_utility;
 
 use std::thread;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::*;
+use std::sync::RwLock;
+use std::sync::Arc;
 use crate::ui::*;
 use crate::imgui_wrapper::ImGuiWrapper;
 use crate::pic::*;
@@ -63,7 +63,7 @@ struct MainState {
     frame_elapsed: f32,
     rng: StdRng,        
     zoom_image: BackgroundImage,
-    receiver: Option<Receiver<Vec<u8>>>
+    zoom_image_data: Arc<RwLock<Option<Vec<u8>>>>
 }
 
 impl MainState {
@@ -118,7 +118,7 @@ impl MainState {
             rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
             mouse_state: MouseState::Nothing,
             zoom_image: BackgroundImage::NotYet,
-            receiver:None
+            zoom_image_data:Arc::new(RwLock::new(None))
         };
         Ok(s)
     }
@@ -132,13 +132,12 @@ impl MainState {
             }
             if img_button.right_clicked(ctx,&self.mouse_state) {
                 println!("button right clicked");                
-                let pic = self.pics[i].clone();
-                let (send, recv) = channel();
-                self.receiver = Some(recv);
+                let pic = self.pics[i].clone();   
+                let arc = self.zoom_image_data.clone();
                 thread::spawn(move || {
-                    println!("create image");
+                    println!("create image");                    
                     let img_data = pic.get_rgba8::<Avx2>(1920 as usize, 1080 as usize, 0.0);
-                    send.send(img_data).unwrap();
+                    *arc.write().unwrap() = Some(img_data)
                 });                
                 self.state = GameState::Zoom(i);
                 break;
@@ -149,20 +148,18 @@ impl MainState {
     fn update_zoom(&mut self, ctx: &mut Context) {
         match &self.zoom_image {
             BackgroundImage::NotYet => {
-                match &self.receiver {
-                    Some(recv) => match recv.try_recv() {
-                        Ok(data) => {
-                            println!("setting zoom image");
-                            let img = graphics::Image::from_rgba8(
-                                ctx,
-                                1920 as u16,
-                                1080 as u16,
-                                &data[0..],
-                            ).unwrap();
-                            self.zoom_image = BackgroundImage::Complete(img)
-                        },
-                        Err(_) => ()
-                    },
+                match &*self.zoom_image_data.read().unwrap() {
+                    Some(data) => 
+                        {
+                        println!("setting zoom image");
+                        let img = graphics::Image::from_rgba8(
+                            ctx,
+                            1920 as u16,
+                            1080 as u16,
+                            &data[0..],
+                        ).unwrap();
+                        self.zoom_image = BackgroundImage::Complete(img)                                                             
+                        }
                     None => ()
                 }
             },
@@ -175,7 +172,8 @@ impl MainState {
             }
             if img_button.right_clicked(ctx,&self.mouse_state) {
                 println!("button right clicked");
-                self.zoom_image = BackgroundImage::NotYet;                
+                self.zoom_image = BackgroundImage::NotYet;           
+                *self.zoom_image_data.write().unwrap() = None;     
                 self.state = GameState::Select;
             }
         }
