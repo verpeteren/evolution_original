@@ -6,7 +6,6 @@ const SIMPLEX_OFFSET: f32 = 0.028;
 const CELL1_MULTUPLIER: f32 = 1.661291;
 const CELL1_OFFSET: f32 = 1.0;
 
-
 pub enum Instruction<S: Simd> {
     Add,
     Sub,
@@ -167,7 +166,7 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(SIMPLEX_MULTIPLIER)
                             - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                     }
-                    Instruction::Cell1 => {                      
+                    Instruction::Cell1 => {
                         sp -= 2;
                         let freq = stack[sp - 1] * S::set1_ps(4.0);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
@@ -176,11 +175,11 @@ impl<S: Simd> StackMachine<S> {
                             CellDistanceFunction::Euclidean,
                             CellReturnType::Distance,
                             S::set1_ps(0.45),
-                            1
+                            1,
                         ) * S::set1_ps(CELL1_MULTUPLIER)
-                          - S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
+                            - S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
                     }
-                    Instruction::Cell2 => {                      
+                    Instruction::Cell2 => {
                         sp -= 2;
                         let freq = stack[sp - 1] * S::set1_ps(4.0);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
@@ -189,7 +188,7 @@ impl<S: Simd> StackMachine<S> {
                             CellDistanceFunction::Euclidean,
                             CellReturnType::CellValue,
                             S::set1_ps(0.45),
-                            1
+                            1,
                         );
                     }
                     Instruction::Sqrt => {

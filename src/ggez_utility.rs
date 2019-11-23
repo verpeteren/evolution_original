@@ -10,10 +10,9 @@ pub fn lerp_color(a: Color, b: Color, pct: f32) -> Color {
     Color::new(red, green, blue, alpha)
 }
 
-pub fn get_random_color(rng:&mut StdRng) -> Color {
-    let r = rng.gen_range(0.0,1.0);
-    let g = rng.gen_range(0.0,1.0);
-    let b = rng.gen_range(0.0,1.0);
-    Color::new(r,g,b,1.0)
-    
+pub fn get_random_color(rng: &mut StdRng) -> Color {
+    let r = rng.gen_range(0.0, 1.0);
+    let g = rng.gen_range(0.0, 1.0);
+    let b = rng.gen_range(0.0, 1.0);
+    Color::new(r, g, b, 1.0)
 }

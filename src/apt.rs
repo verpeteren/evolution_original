@@ -1,7 +1,7 @@
 use rand::prelude::*;
 use variant_count::*;
 
-#[derive(VariantCount,Clone)]
+#[derive(VariantCount, Clone)]
 pub enum APTNode {
     Add(Vec<APTNode>),
     Sub(Vec<APTNode>),
@@ -25,7 +25,6 @@ pub enum APTNode {
     T,
     Empty,
 }
-
 
 impl APTNode {
     pub fn to_lisp(&self) -> String {
@@ -81,13 +80,40 @@ impl APTNode {
                 children[1].to_lisp()
             ),
             APTNode::Tan(children) => format!("( Tan {} )", children[0].to_lisp()),
-            APTNode::Log(children) => format!("( Log {} )", children[0].to_lisp()),            
+            APTNode::Log(children) => format!("( Log {} )", children[0].to_lisp()),
             APTNode::Abs(children) => format!("( Abs {} )", children[0].to_lisp()),
             APTNode::Constant(v) => format!("{}", v),
             APTNode::X => format!("X"),
             APTNode::Y => format!("Y"),
             APTNode::T => format!("T"),
             APTNode::Empty => format!("EMPTY"),
+        }
+    }
+
+    pub fn str_to_node(s: &str) -> APTNode {
+        match &s.to_lowercase()[..] {
+            "+" => APTNode::Add(vec![APTNode::Empty, APTNode::Empty]),
+            "-" => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
+            "*" => APTNode::Mul(vec![APTNode::Empty, APTNode::Empty]),
+            "/" => APTNode::Div(vec![APTNode::Empty, APTNode::Empty]),
+            "fbm" => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            "ridge" => APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            "turbulence" => {
+                APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty])
+            }
+            "cell1" => APTNode::Cell1(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            "cell2" => APTNode::Cell2(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            "sqrt" => APTNode::Sqrt(vec![APTNode::Empty]),
+            "sin" => APTNode::Sin(vec![APTNode::Empty]),
+            "atan" => APTNode::Atan(vec![APTNode::Empty]),
+            "atan2" => APTNode::Atan2(vec![APTNode::Empty, APTNode::Empty]),
+            "tan" => APTNode::Tan(vec![APTNode::Empty]),
+            "log" => APTNode::Log(vec![APTNode::Empty]),
+            "abs" => APTNode::Abs(vec![APTNode::Empty]),
+            "x" => APTNode::X,
+            "y" => APTNode::Y,
+            "t" => APTNode::T,
+            _ => panic!("malformed str in str_to_node:{}", s),
         }
     }
 
