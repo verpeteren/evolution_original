@@ -12,6 +12,7 @@ use crate::imgui_wrapper::ImGuiWrapper;
 use crate::parser::*;
 use crate::pic::*;
 use crate::ui::*;
+use crossbeam_utils::thread as crossbeam_thread;
 use ggez::conf;
 use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
 use ggez::graphics;
@@ -24,6 +25,7 @@ use simdeez::avx2::*;
 use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
+use std::sync::mpsc::*;
 use std::sync::Arc;
 use std::sync::RwLock;
 use std::thread;
@@ -260,12 +262,20 @@ impl EventHandler for MainState {
 }
 
 pub fn main() -> ggez::GameResult {
-    let code = "(Sin ( + x (lOg \n3.4     ))";
+    let code = "(+ (Sin ( + x (lOg \n3.4     )) (Abs 43))";
     println!("Raw text:{}", code);
-    let mut tokens = Lexer::begin_lexing(code);
-    println!("Tokens:{:?}", tokens);
-    let node = parse(&mut tokens);
-    println!("AST:{:?}", node.to_lisp());
+
+    crossbeam_thread::scope(|s| {
+        let (sender, receiver) = channel();
+        let handle = s.spawn(|_| {
+            Lexer::begin_lexing(code, sender);
+        });
+        let node = parse(&receiver);
+        println!("AST:{:?}", node.to_lisp());
+        let _ = handle.join();
+    })
+    .unwrap();
+
     rayon::ThreadPoolBuilder::new()
         .num_threads(0)
         .build_global()

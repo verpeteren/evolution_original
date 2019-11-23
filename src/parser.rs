@@ -18,21 +18,20 @@ pub struct Lexer<'a> {
     start: usize,
     pos: usize,
     width: usize,
-    tokens: VecDeque<Token<'a>>,
+    token_sender: Sender<Token<'a>>,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn begin_lexing(s: &'a str) -> VecDeque<Token<'a>> {
+    pub fn begin_lexing(s: &'a str, sender: Sender<Token<'a>>) {
         let mut lexer = Lexer::<'a> {
             input: s,
             start: 0,
             pos: 0,
             width: 0,
-            tokens: VecDeque::new(),
+            token_sender: sender,
         };
 
         lexer.run();
-        lexer.tokens
     }
 
     fn run(&mut self) {
@@ -65,7 +64,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn emit(&mut self, token: Token<'a>) {
-        self.tokens.push_back(token);
+        println!("emitting a token");
+        self.token_sender.send(token);
         self.start = self.pos;
     }
 
@@ -102,7 +102,7 @@ fn lex_number(l: &mut Lexer) -> Option<StateFunction> {
     l.accept_run(digits);
     if l.accept(".") {
         l.accept_run(digits);
-    }    
+    }
     if &l.input[l.start..l.pos] == "-" {
         l.emit(Token::Operation(&l.input[l.start..l.pos]));
     } else {
@@ -140,17 +140,18 @@ fn is_white_space(c: char) -> bool {
     c == ' ' || c == '\n' || c == '\t' || c == '\r'
 }
 
-pub fn parse(tokens: &mut VecDeque<Token>) -> APTNode {
+pub fn parse(receiver: &Receiver<Token>) -> APTNode {
     loop {
-        match tokens.pop_front() {
-            Some(token) => {                
+        match receiver.recv() {
+            Ok(token) => {
                 match token {
                     Token::Operation(s) => {
+                        println!("returning a node");
                         let mut node = APTNode::str_to_node(s);
                         match node.get_children_mut() {
                             Some(children) => {
                                 for child in children {
-                                    *child = parse(tokens);
+                                    *child = parse(receiver);
                                 }
                                 return node;
                             }
@@ -159,12 +160,13 @@ pub fn parse(tokens: &mut VecDeque<Token>) -> APTNode {
                     }
                     Token::Constant(vstr) => {
                         let v = vstr.parse::<f32>().unwrap();
+                        println!("returning a node");
                         return APTNode::Constant(v);
                     }
                     _ => (), //parens don't matter
                 }
             }
-            None => panic!("malformed input"),
+            Err(_) => panic!("malformed input"),
         }
     }
 }
