@@ -1,4 +1,6 @@
+use crate::parser::*;
 use rand::prelude::*;
+use std::sync::mpsc::*;
 use variant_count::*;
 
 #[derive(VariantCount, Clone)]
@@ -195,6 +197,64 @@ impl APTNode {
         }
     }
 
+    pub fn constant_eval(&self) -> f32 {
+        unsafe {
+            match self {
+                APTNode::Add(children) => children[0].constant_eval() + children[1].constant_eval(),
+                APTNode::Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
+                APTNode::Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
+                APTNode::Div(children) => children[0].constant_eval() / children[1].constant_eval(),                
+                APTNode::Constant(v) => *v,
+                _ => panic!("invalid node passed to constant_eval")               
+            }
+        }
+    }
+
+    fn set_children(&self, children:Vec<APTNode>) -> Self {
+        match self {
+            APTNode::Add(_) => APTNode::Add(children),
+            APTNode::Sub(_) => APTNode::Sub(children),
+            APTNode::Mul(_) => APTNode::Mul(children),
+            APTNode::Div(_) => APTNode::Div(children),
+            APTNode::FBM(_) => APTNode::FBM(children),
+            APTNode::Ridge(_) => APTNode::Ridge(children),
+            APTNode::Turbulence(_) => APTNode::Turbulence(children),
+            APTNode::Sqrt(_) => APTNode::Sqrt(children),
+            APTNode::Sin(_) => APTNode::Sin(children),
+            APTNode::Atan(_) => APTNode::Atan(children),
+            APTNode::Atan2(_) => APTNode::Atan(children),
+            APTNode::Tan(_) => APTNode::Tan(children),
+            APTNode::Log(_) => APTNode::Log(children),
+            APTNode::Constant(v) => APTNode::Constant(*v),
+            APTNode::X => APTNode::X,
+            APTNode::Y => APTNode::Y,
+            APTNode::T => APTNode::T,
+            APTNode::Empty => panic!("tried to eval an empty node"),
+            _ => panic!("add to set children")
+        }
+    }
+
+    pub fn constant_fold(&self) -> APTNode {
+        match self {
+            APTNode::Constant(v) => APTNode::Constant(*v),
+            APTNode::X => APTNode::X,
+            APTNode::Y => APTNode::Y,
+            APTNode::T => APTNode::T,
+            _ => {
+                let children = self.get_children().unwrap();
+                //foreach child -> constant_fold(child), if you get back all constants -> compute the new constant, and create it                
+                let folded_children : Vec<APTNode> = children.iter().map(|child| child.constant_fold()).collect();                                            
+                if folded_children.iter().all(|child| match child { APTNode::Constant(_) => true, _ => false }) {  
+                    let clone = self.set_children(folded_children);                          
+                    APTNode::Constant(clone.constant_eval())
+                } else {
+                    let clone = self.set_children(folded_children);        
+                    clone
+                }
+            }
+        }
+    }
+
     pub fn generate_tree(count: usize, video: bool, rng: &mut StdRng) -> APTNode {
         let leaf_func = if video {
             APTNode::get_random_leaf_video
@@ -257,6 +317,37 @@ impl APTNode {
         match self {
             APTNode::X | APTNode::Y | APTNode::T | APTNode::Constant(_) | APTNode::Empty => true,
             _ => false,
+        }
+    }
+
+    pub fn parse_apt_node(receiver: &Receiver<Token>) -> APTNode {
+        loop {
+            match receiver.recv() {
+                Ok(token) => {
+                    match token {
+                        Token::Operation(s) => {
+                            println!("returning a node");
+                            let mut node = APTNode::str_to_node(s);
+                            match node.get_children_mut() {
+                                Some(children) => {
+                                    for child in children {
+                                        *child = APTNode::parse_apt_node(receiver);
+                                    }
+                                    return node;
+                                }
+                                None => return node,
+                            }
+                        }
+                        Token::Constant(vstr) => {
+                            let v = vstr.parse::<f32>().unwrap();
+                            println!("returning a node");
+                            return APTNode::Constant(v);
+                        }
+                        _ => (), //parens don't matter
+                    }
+                }
+                Err(_) => panic!("malformed input"),
+            }
         }
     }
 }

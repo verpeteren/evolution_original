@@ -1,3 +1,12 @@
+// todo
+// - handle errors when parsing/lexing, maybe even get line numbers?
+// - fix up gradient to work properly when parsing
+// - cross breeding of picture expressions
+// - expression optimization, constant folding etc
+// - load up thumbnails in a background thread so ui isn't blocked
+
+
+
 extern crate ggez;
 
 mod apt;
@@ -12,7 +21,6 @@ use crate::imgui_wrapper::ImGuiWrapper;
 use crate::parser::*;
 use crate::pic::*;
 use crate::ui::*;
-use crossbeam_utils::thread as crossbeam_thread;
 use ggez::conf;
 use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
 use ggez::graphics;
@@ -21,6 +29,7 @@ use ggez::{Context, GameResult};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rand::*;
+use rayon::*;
 use simdeez::avx2::*;
 use simdeez::scalar::*;
 use simdeez::sse2::*;
@@ -75,16 +84,18 @@ impl MainState {
         let mut y_pct = 0.01;
         for _ in 0..THUMB_ROWS {
             let mut x_pct = 0.01;
-            for _ in 0..THUMB_COLS {
+            for _ in 0..THUMB_COLS {                
                 let pic_type = self.rng.gen_range(0, 4);
                 //let pic_type = 0;
-                let pic = match pic_type {
+               /* let pic = match pic_type {
                     0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     _ => panic!("invalid"),
-                };
+                };*/
+                let pic = lisp_to_pic("(Mono (+ 4 (+ 5 6)))".to_string());
+                println!("folded equation:{}",pic.to_lisp());
                 let img = graphics::Image::from_rgba8(
                     ctx,
                     256 as u16,
@@ -262,24 +273,16 @@ impl EventHandler for MainState {
 }
 
 pub fn main() -> ggez::GameResult {
-    let code = "(+ (Sin ( + x (lOg \n3.4     )) (Abs 43))";
-    println!("Raw text:{}", code);
 
-    crossbeam_thread::scope(|s| {
-        let (sender, receiver) = channel();
-        let handle = s.spawn(|_| {
-            Lexer::begin_lexing(code, sender);
-        });
-        let node = parse(&receiver);
-        println!("AST:{:?}", node.to_lisp());
-        let _ = handle.join();
-    })
-    .unwrap();
-
-    rayon::ThreadPoolBuilder::new()
+    
+    match rayon::ThreadPoolBuilder::new()
         .num_threads(0)
         .build_global()
-        .unwrap();
+    {
+        Ok(_) => (),
+        Err(x) => panic!("{}", x),
+    }
+
     let hidpi_factor: f32;
     {
         // Create a dummy window so we can get monitor scaling information

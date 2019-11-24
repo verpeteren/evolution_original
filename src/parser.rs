@@ -139,34 +139,3 @@ fn is_start_of_number(c: char) -> bool {
 fn is_white_space(c: char) -> bool {
     c == ' ' || c == '\n' || c == '\t' || c == '\r'
 }
-
-pub fn parse(receiver: &Receiver<Token>) -> APTNode {
-    loop {
-        match receiver.recv() {
-            Ok(token) => {
-                match token {
-                    Token::Operation(s) => {
-                        println!("returning a node");
-                        let mut node = APTNode::str_to_node(s);
-                        match node.get_children_mut() {
-                            Some(children) => {
-                                for child in children {
-                                    *child = parse(receiver);
-                                }
-                                return node;
-                            }
-                            None => return node,
-                        }
-                    }
-                    Token::Constant(vstr) => {
-                        let v = vstr.parse::<f32>().unwrap();
-                        println!("returning a node");
-                        return APTNode::Constant(v);
-                    }
-                    _ => (), //parens don't matter
-                }
-            }
-            Err(_) => panic!("malformed input"),
-        }
-    }
-}

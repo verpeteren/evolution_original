@@ -18,4 +18,3 @@ simdeez = { features = ["sleef"], path="c:/code/simdeez" }
 simdnoise = { path="c:/code/rust-simd-noise" }
 variant_count = "*"
 rayon="*"
-crossbeam-utils="*"

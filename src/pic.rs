@@ -1,16 +1,18 @@
 use crate::apt::*;
 use crate::ggez_utility::*;
+use crate::parser::*;
 use crate::stack_machine::*;
 use ggez::graphics::Color;
 use rand::rngs::StdRng;
 use rand::*;
 use rayon::prelude::*;
 use simdeez::*;
+use std::sync::mpsc::*;
 use std::time::Instant;
 
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
-const GRADIENT_SIZE: usize = 512;
+pub const GRADIENT_SIZE: usize = 512;
 
 #[derive(Clone)]
 pub struct GradientData {
@@ -108,16 +110,16 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
-            Pic::Mono(data) => format!("Mono\n {}", data.c.to_lisp()),
-            Pic::Gradient(data) => format!("Gradient\n {}", data.index.to_lisp()),
+            Pic::Mono(data) => format!("( Mono/n {} )", data.c.to_lisp()),
+            Pic::Gradient(data) => format!("( Gradient/n {} )", data.index.to_lisp()),
             Pic::RGB(data) => format!(
-                "RGB\n{} \n{}\n{}",
+                "( RGB/n{} /n{}/n{} )",
                 data.r.to_lisp(),
                 data.g.to_lisp(),
                 data.b.to_lisp()
             ),
             Pic::HSV(data) => format!(
-                "HSV\n{} \n{}\n{}",
+                "( HSV/n{} /n{}/n{} )",
                 data.h.to_lisp(),
                 data.s.to_lisp(),
                 data.v.to_lisp()
@@ -368,6 +370,59 @@ impl Pic {
             //   println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
+    }
+}
+
+pub fn lisp_to_pic(code: String) -> Pic {
+    println!("Raw text:{}", code);
+    let mut pic_opt = None;
+    rayon::scope(|s| {
+        let (sender, receiver) = channel();
+        s.spawn(|_| {
+            Lexer::begin_lexing(&code, sender);
+        });
+        pic_opt = Some(parse_pic(&receiver))
+    });
+    let pic = pic_opt.unwrap();
+    println!("Pic:{:?}", pic.to_lisp());
+    pic
+}
+
+pub fn parse_pic(receiver: &Receiver<Token>) -> Pic {
+    let open_paren = receiver.recv().unwrap();
+    match open_paren {
+        Token::OpenParen => (),
+        _ => panic!("malformed input"),
+    }
+    let pic_type = receiver.recv().unwrap();
+    match pic_type {
+        Token::Operation(s) => match &s.to_lowercase()[..] {
+            "mono" => Pic::Mono(MonoData {
+                c: APTNode::parse_apt_node(receiver),
+            }),
+            "rgb" => Pic::RGB(RGBData {
+                r: APTNode::parse_apt_node(receiver),
+                g: APTNode::parse_apt_node(receiver),
+                b: APTNode::parse_apt_node(receiver),
+            }),
+            "hsv" => Pic::HSV(HSVData {
+                h: APTNode::parse_apt_node(receiver),
+                s: APTNode::parse_apt_node(receiver),
+                v: APTNode::parse_apt_node(receiver),
+            }),
+            "gradient" => {
+                let mut gradient = Vec::new();
+                for i in 0..GRADIENT_SIZE {
+                    gradient.push(Color::new(1.0, 1.0, 1.0, 1.0));
+                }
+                Pic::Gradient(GradientData {
+                    gradient: gradient,
+                    index: APTNode::parse_apt_node(receiver),
+                })
+            }
+            _ => panic!("unknown pic type"),
+        },
+        _ => panic!("malformed"),
     }
 }
 
