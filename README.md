@@ -16,7 +16,7 @@ Generates:![Sample Image](/samples/hsv_noise.png)
     ( FBM ( FBM 0.69943047 X ( Ridge -0.4082718 Y ( Abs ( Atan X ) ) ) ) ( Atan2 ( Log ( Sqrt ( Turbulence Y X X ) ) ) ( FBM ( - ( Ridge Y ( Cell2 Y X Y ) Y ) -0.7674043 ) ( Sqrt -0.81428957 ) -0.43793464 ) ) ( Cell1 ( - 0.4862821 0.66654444 ) ( Ridge Y Y Y ) ( FBM X Y X ) ) ) 
     )`
 
-Generates:[bw_noise]
+Generates:![Sample Image](/samples/bw_noise.png)
 
 ### RGB Images
 `( RGB
@@ -24,4 +24,4 @@ Generates:[bw_noise]
     ( Atan ( Atan2 ( + X ( / ( Ridge Y -0.30377412 Y ) -0.4523425 ) ) ( + ( Turbulence 0.95225644 ( Tan Y ) Y ) -0.46079302 ) ) )
     ( Cell1 ( Ridge ( Ridge Y -0.83537865 -0.50440097 ) ( Atan2 Y X ) ( Sin 0.20003605 ) ) ( Sqrt ( Cell1 ( FBM Y X 0.8879242 ) 0.23509383 -0.4539826 ) ) ( Atan2 ( * X ( Ridge 0.6816149 X Y ) ) ( Cell1 ( Sin ( Turbulence X -0.25605845 Y ) ) -0.30595016 Y ) ) ) )`
 
-Generates:[rgb_noise]
+Generates:![Sample Image](/samples/rgb_noise.png)
