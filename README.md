@@ -4,8 +4,7 @@ A desktop app that lets you generate and evolve your own art in the form of pict
 ## Some Possibilities
 
 ### HSV Images
-`( HSV
-    
+`( HSV    
     ( - ( Cell2 Y X 0.84070134 ) ( - X ( Sqrt Y ) ) ) 
     
     ( Cell2 ( + ( - X -0.52474713 ) ( Abs X ) ) ( + Y ( Atan2 Y ( Log 0.8803401 ) ) ) ( Abs ( Sqrt ( FBM X ( Cell1 0.10496092 Y Y ) -0.10098362 ) ) ) )
