@@ -1,5 +1,6 @@
 use crate::parser::*;
 use rand::prelude::*;
+use simdnoise::*;
 use std::sync::mpsc::*;
 use variant_count::*;
 
@@ -216,14 +217,29 @@ impl APTNode {
     }
 
     pub fn constant_eval(&self) -> f32 {
+        use APTNode::*;
         unsafe {
             match self {
-                APTNode::Add(children) => children[0].constant_eval() + children[1].constant_eval(),
-                APTNode::Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
-                APTNode::Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
-                APTNode::Div(children) => children[0].constant_eval() / children[1].constant_eval(),
-                APTNode::Constant(v) => *v,
-                _ => panic!("invalid node passed to constant_eval"),
+                Add(children) => children[0].constant_eval() + children[1].constant_eval(),
+                Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
+                Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
+                Div(children) => children[0].constant_eval() / children[1].constant_eval(),
+                FBM(_) => 0.0,
+                Ridge(_) => 0.0,
+                Turbulence(_) => 0.0,  // if the noise functions all have constants it isn't worth bothering maybe?
+                Cell1(_) => 0.0,
+                Cell2(_) => 0.0,
+                Sqrt(children) => children[0].constant_eval().sqrt(),
+                Sin(children) => children[0].constant_eval().sin(),
+                Atan(children) => children[0].constant_eval().atan(),
+                Atan2(children) => children[0]
+                    .constant_eval()
+                    .atan2(children[1].constant_eval()),
+                Tan(children) => children[0].constant_eval().tan(),
+                Log(children) => children[0].constant_eval().log2(),
+                Abs(children) => children[0].constant_eval().abs(),
+                Constant(v) => *v,
+                _ => panic!("invalid node passed to constant_esval"),
             }
         }
     }
@@ -293,44 +309,44 @@ impl APTNode {
 
     pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode>> {
         match self {
-            APTNode::Add(children) => Some(children),
-            APTNode::Sub(children) => Some(children),
-            APTNode::Mul(children) => Some(children),
-            APTNode::Div(children) => Some(children),
-            APTNode::FBM(children) => Some(children),
-            APTNode::Ridge(children) => Some(children),
-            APTNode::Turbulence(children) => Some(children),
-            APTNode::Cell1(children) => Some(children),
-            APTNode::Cell2(children) => Some(children),
-            APTNode::Sqrt(children) => Some(children),
-            APTNode::Sin(children) => Some(children),
-            APTNode::Atan(children) => Some(children),
-            APTNode::Atan2(children) => Some(children),
-            APTNode::Tan(children) => Some(children),
-            APTNode::Log(children) => Some(children),
-            APTNode::Abs(children) => Some(children),
+            APTNode::Add(children)
+            | APTNode::Sub(children)
+            | APTNode::Mul(children)
+            | APTNode::Div(children)
+            | APTNode::FBM(children)
+            | APTNode::Ridge(children)
+            | APTNode::Turbulence(children)
+            | APTNode::Cell1(children)
+            | APTNode::Cell2(children)
+            | APTNode::Sqrt(children)
+            | APTNode::Sin(children)
+            | APTNode::Atan(children)
+            | APTNode::Atan2(children)
+            | APTNode::Tan(children)
+            | APTNode::Log(children)
+            | APTNode::Abs(children) => Some(children),
             _ => None,
         }
     }
 
     pub fn get_children(&self) -> Option<&Vec<APTNode>> {
         match self {
-            APTNode::Add(children) => Some(children),
-            APTNode::Sub(children) => Some(children),
-            APTNode::Mul(children) => Some(children),
-            APTNode::Div(children) => Some(children),
-            APTNode::FBM(children) => Some(children),
-            APTNode::Ridge(children) => Some(children),
-            APTNode::Turbulence(children) => Some(children),
-            APTNode::Cell1(children) => Some(children),
-            APTNode::Cell2(children) => Some(children),
-            APTNode::Sqrt(children) => Some(children),
-            APTNode::Sin(children) => Some(children),
-            APTNode::Atan(children) => Some(children),
-            APTNode::Atan2(children) => Some(children),
-            APTNode::Tan(children) => Some(children),
-            APTNode::Log(children) => Some(children),
-            APTNode::Abs(children) => Some(children),
+            APTNode::Add(children)
+            | APTNode::Sub(children)
+            | APTNode::Mul(children)
+            | APTNode::Div(children)
+            | APTNode::FBM(children)
+            | APTNode::Ridge(children)
+            | APTNode::Turbulence(children)
+            | APTNode::Cell1(children)
+            | APTNode::Cell2(children)
+            | APTNode::Sqrt(children)
+            | APTNode::Sin(children)
+            | APTNode::Atan(children)
+            | APTNode::Atan2(children)
+            | APTNode::Tan(children)
+            | APTNode::Log(children)
+            | APTNode::Abs(children) => Some(children),
             _ => None,
         }
     }

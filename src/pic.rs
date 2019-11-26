@@ -7,9 +7,9 @@ use rand::rngs::StdRng;
 use rand::*;
 use rayon::prelude::*;
 use simdeez::*;
+use std::mem::discriminant;
 use std::sync::mpsc::*;
 use std::time::Instant;
-use std::mem::discriminant;
 
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
@@ -372,60 +372,85 @@ pub fn lisp_to_pic(code: String) -> Result<Pic, String> {
     pic_opt.unwrap()
 }
 
-pub fn extract_line_number(token:&Token) -> usize {
+pub fn extract_line_number(token: &Token) -> usize {
     match token {
-        Token::OpenParen(ln)
-        | Token::CloseParen(ln) => *ln,
-        Token::Constant(_,ln) 
-        | Token::Operation(_,ln) => *ln,        
+        Token::OpenParen(ln) | Token::CloseParen(ln) => *ln,
+        Token::Constant(_, ln) | Token::Operation(_, ln) => *ln,
     }
 }
 
 #[must_use]
-pub fn expect_open_paren(receiver: &Receiver<Token>) -> Result<(),String> {
+pub fn expect_open_paren(receiver: &Receiver<Token>) -> Result<(), String> {
     let open_paren = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match open_paren {
         Token::OpenParen(_) => Ok(()),
-        _ => return Err(format!("Expected '(' on line {}",extract_line_number(&open_paren))),
+        _ => {
+            return Err(format!(
+                "Expected '(' on line {}",
+                extract_line_number(&open_paren)
+            ))
+        }
     }
 }
 
 #[must_use]
-pub fn expect_close_paren(receiver: &Receiver<Token>) -> Result<(),String> {
+pub fn expect_close_paren(receiver: &Receiver<Token>) -> Result<(), String> {
     let close_paren = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match close_paren {
         Token::CloseParen(_) => Ok(()),
-        _ => return Err(format!("Expected '(' on line {}",extract_line_number(&close_paren))),
+        _ => {
+            return Err(format!(
+                "Expected '(' on line {}",
+                extract_line_number(&close_paren)
+            ))
+        }
     }
 }
 
 #[must_use]
-pub fn expect_operation(s:&str,receiver: &Receiver<Token>) -> Result<(),String> {
+pub fn expect_operation(s: &str, receiver: &Receiver<Token>) -> Result<(), String> {
     let op = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match op {
-        Token::Operation(op_str,_) => {
+        Token::Operation(op_str, _) => {
             if op_str.to_lowercase() == s {
                 Ok(())
-            } 
-            else {
-                Err(format!("Expected '{}' on line {}, found {}",s,extract_line_number(&op),op_str))
+            } else {
+                Err(format!(
+                    "Expected '{}' on line {}, found {}",
+                    s,
+                    extract_line_number(&op),
+                    op_str
+                ))
             }
         }
-        _ => return Err(format!("Expected '{}' on line {}, found {:?}",s,extract_line_number(&op),op))
+        _ => {
+            return Err(format!(
+                "Expected '{}' on line {}, found {:?}",
+                s,
+                extract_line_number(&op),
+                op
+            ))
+        }
     }
 }
 
 #[must_use]
-pub fn expect_constant(receiver: &Receiver<Token>) -> Result<f32,String> {
+pub fn expect_constant(receiver: &Receiver<Token>) -> Result<f32, String> {
     let op = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match op {
-        Token::Constant(vstr,line_number) => {
-            let v = vstr.parse::<f32>().map_err(|_| {
-                format!("Unable to parse number {} on line {}", vstr, line_number)
-            })?;
+        Token::Constant(vstr, line_number) => {
+            let v = vstr
+                .parse::<f32>()
+                .map_err(|_| format!("Unable to parse number {} on line {}", vstr, line_number))?;
             Ok(v)
         }
-        _ => return Err(format!("Expected constant on line {}, found {:?}",extract_line_number(&op),op))
+        _ => {
+            return Err(format!(
+                "Expected constant on line {}, found {:?}",
+                extract_line_number(&op),
+                op
+            ))
+        }
     }
 }
 
@@ -450,16 +475,18 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
             "gradient" => {
                 let mut colors = Vec::new();
                 expect_open_paren(receiver)?;
-                expect_operation("colors",receiver)?;
+                expect_operation("colors", receiver)?;
 
                 loop {
                     let token = receiver.recv().map_err(|_| "Unexpected end of file")?;
-                    if discriminant(&token) == discriminant(&Token::CloseParen(0)) { break;}
+                    if discriminant(&token) == discriminant(&Token::CloseParen(0)) {
+                        break;
+                    }
                     expect_open_paren(receiver)?;
                     let r = expect_constant(receiver)?;
                     let g = expect_constant(receiver)?;
                     let b = expect_constant(receiver)?;
-                    colors.push(Color::new(r,g,b,1.0));
+                    colors.push(Color::new(r, g, b, 1.0));
                     expect_close_paren(receiver)?;
                 }
 

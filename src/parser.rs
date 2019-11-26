@@ -1,6 +1,6 @@
 use std::sync::mpsc::*;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Token<'a> {
     OpenParen(usize),
     CloseParen(usize),
@@ -55,7 +55,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn backup(&mut self) {        
+    fn backup(&mut self) {
         self.pos -= 1;
     }
 
@@ -82,8 +82,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn accept_run(&mut self, valid: &str) {
-        loop {      
-            let n = self.next();      
+        loop {
+            let n = self.next();
             if !(n.is_some() && valid.contains(n.unwrap())) {
                 break;
             }
@@ -104,7 +104,8 @@ impl<'a> Lexer<'a> {
         if l.accept(".") {
             l.accept_run(digits);
         }
-        if &l.input[l.start..l.pos] == "-" {  // special case - could indicate start of number, or subtract operation
+        if &l.input[l.start..l.pos] == "-" {
+            // special case - could indicate start of number, or subtract operation
             l.emit(Token::Operation(&l.input[l.start..l.pos], l.current_line));
         } else {
             l.emit(Token::Constant(&l.input[l.start..l.pos], l.current_line));
@@ -136,20 +137,12 @@ impl<'a> Lexer<'a> {
     fn is_start_of_number(c: char) -> bool {
         (c >= '0' && c <= '9') || c == '-' || c == '.'
     }
-    
+
     fn is_white_space(c: char) -> bool {
         c == ' ' || c == '\n' || c == '\t' || c == '\r'
     }
-    
+
     fn is_linebreak(c: char) -> bool {
         c == '\n'
     }
 }
-
-
-
-
-
-
-
-
