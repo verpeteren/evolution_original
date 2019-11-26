@@ -92,30 +92,48 @@ impl APTNode {
         }
     }
 
-    pub fn str_to_node(s: &str) -> APTNode {
+    pub fn str_to_node(s: &str) -> Result<APTNode, String> {
         match &s.to_lowercase()[..] {
-            "+" => APTNode::Add(vec![APTNode::Empty, APTNode::Empty]),
-            "-" => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
-            "*" => APTNode::Mul(vec![APTNode::Empty, APTNode::Empty]),
-            "/" => APTNode::Div(vec![APTNode::Empty, APTNode::Empty]),
-            "fbm" => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
-            "ridge" => APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
-            "turbulence" => {
-                APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty])
-            }
-            "cell1" => APTNode::Cell1(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
-            "cell2" => APTNode::Cell2(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty]),
-            "sqrt" => APTNode::Sqrt(vec![APTNode::Empty]),
-            "sin" => APTNode::Sin(vec![APTNode::Empty]),
-            "atan" => APTNode::Atan(vec![APTNode::Empty]),
-            "atan2" => APTNode::Atan2(vec![APTNode::Empty, APTNode::Empty]),
-            "tan" => APTNode::Tan(vec![APTNode::Empty]),
-            "log" => APTNode::Log(vec![APTNode::Empty]),
-            "abs" => APTNode::Abs(vec![APTNode::Empty]),
-            "x" => APTNode::X,
-            "y" => APTNode::Y,
-            "t" => APTNode::T,
-            _ => panic!("malformed str in str_to_node:{}", s),
+            "+" => Ok(APTNode::Add(vec![APTNode::Empty, APTNode::Empty])),
+            "-" => Ok(APTNode::Sub(vec![APTNode::Empty, APTNode::Empty])),
+            "*" => Ok(APTNode::Mul(vec![APTNode::Empty, APTNode::Empty])),
+            "/" => Ok(APTNode::Div(vec![APTNode::Empty, APTNode::Empty])),
+            "fbm" => Ok(APTNode::FBM(vec![
+                APTNode::Empty,
+                APTNode::Empty,
+                APTNode::Empty,
+            ])),
+            "ridge" => Ok(APTNode::Ridge(vec![
+                APTNode::Empty,
+                APTNode::Empty,
+                APTNode::Empty,
+            ])),
+            "turbulence" => Ok(APTNode::Turbulence(vec![
+                APTNode::Empty,
+                APTNode::Empty,
+                APTNode::Empty,
+            ])),
+            "cell1" => Ok(APTNode::Cell1(vec![
+                APTNode::Empty,
+                APTNode::Empty,
+                APTNode::Empty,
+            ])),
+            "cell2" => Ok(APTNode::Cell2(vec![
+                APTNode::Empty,
+                APTNode::Empty,
+                APTNode::Empty,
+            ])),
+            "sqrt" => Ok(APTNode::Sqrt(vec![APTNode::Empty])),
+            "sin" => Ok(APTNode::Sin(vec![APTNode::Empty])),
+            "atan" => Ok(APTNode::Atan(vec![APTNode::Empty])),
+            "atan2" => Ok(APTNode::Atan2(vec![APTNode::Empty, APTNode::Empty])),
+            "tan" => Ok(APTNode::Tan(vec![APTNode::Empty])),
+            "log" => Ok(APTNode::Log(vec![APTNode::Empty])),
+            "abs" => Ok(APTNode::Abs(vec![APTNode::Empty])),
+            "x" => Ok(APTNode::X),
+            "y" => Ok(APTNode::Y),
+            "t" => Ok(APTNode::T),
+            _ => Err(format!("Unknown operation '{}' ", s.to_string())),
         }
     }
 
@@ -203,14 +221,14 @@ impl APTNode {
                 APTNode::Add(children) => children[0].constant_eval() + children[1].constant_eval(),
                 APTNode::Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
                 APTNode::Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
-                APTNode::Div(children) => children[0].constant_eval() / children[1].constant_eval(),                
+                APTNode::Div(children) => children[0].constant_eval() / children[1].constant_eval(),
                 APTNode::Constant(v) => *v,
-                _ => panic!("invalid node passed to constant_eval")               
+                _ => panic!("invalid node passed to constant_eval"),
             }
         }
     }
 
-    fn set_children(&self, children:Vec<APTNode>) -> Self {
+    fn set_children(&self, children: Vec<APTNode>) -> Self {
         match self {
             APTNode::Add(_) => APTNode::Add(children),
             APTNode::Sub(_) => APTNode::Sub(children),
@@ -230,7 +248,7 @@ impl APTNode {
             APTNode::Y => APTNode::Y,
             APTNode::T => APTNode::T,
             APTNode::Empty => panic!("tried to eval an empty node"),
-            _ => panic!("add to set children")
+            _ => panic!("add to set children"),
         }
     }
 
@@ -242,13 +260,17 @@ impl APTNode {
             APTNode::T => APTNode::T,
             _ => {
                 let children = self.get_children().unwrap();
-                //foreach child -> constant_fold(child), if you get back all constants -> compute the new constant, and create it                
-                let folded_children : Vec<APTNode> = children.iter().map(|child| child.constant_fold()).collect();                                            
-                if folded_children.iter().all(|child| match child { APTNode::Constant(_) => true, _ => false }) {  
-                    let clone = self.set_children(folded_children);                          
+                //foreach child -> constant_fold(child), if you get back all constants -> compute the new constant, and create it
+                let folded_children: Vec<APTNode> =
+                    children.iter().map(|child| child.constant_fold()).collect();
+                if folded_children.iter().all(|child| match child {
+                    APTNode::Constant(_) => true,
+                    _ => false,
+                }) {
+                    let clone = self.set_children(folded_children);
                     APTNode::Constant(clone.constant_eval())
                 } else {
-                    let clone = self.set_children(folded_children);        
+                    let clone = self.set_children(folded_children);
                     clone
                 }
             }
@@ -320,33 +342,36 @@ impl APTNode {
         }
     }
 
-    pub fn parse_apt_node(receiver: &Receiver<Token>) -> APTNode {
+    pub fn parse_apt_node(receiver: &Receiver<Token>) -> Result<APTNode, String> {
         loop {
             match receiver.recv() {
                 Ok(token) => {
                     match token {
-                        Token::Operation(s) => {
-                            println!("returning a node");
-                            let mut node = APTNode::str_to_node(s);
+                        Token::Operation(s, line_num) => {
+                            let mut node = APTNode::str_to_node(s)
+                                .map_err(|msg| msg + &format!(" on line {}", line_num))?;
                             match node.get_children_mut() {
                                 Some(children) => {
                                     for child in children {
-                                        *child = APTNode::parse_apt_node(receiver);
+                                        *child = APTNode::parse_apt_node(receiver)?;
                                     }
-                                    return node;
+                                    return Ok(node);
                                 }
-                                None => return node,
+                                None => return Ok(node),
                             }
                         }
-                        Token::Constant(vstr) => {
-                            let v = vstr.parse::<f32>().unwrap();
-                            println!("returning a node");
-                            return APTNode::Constant(v);
+                        Token::Constant(vstr, line_num) => {
+                            let v = vstr.parse::<f32>().map_err(|_| {
+                                format!("Unable to parse number {} on line {}", vstr, line_num)
+                            })?;
+                            return Ok(APTNode::Constant(v));
                         }
                         _ => (), //parens don't matter
                     }
                 }
-                Err(_) => panic!("malformed input"),
+                Err(_) => {
+                    return Err("Unexpected end of file".to_string());
+                }
             }
         }
     }

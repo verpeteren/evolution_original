@@ -9,6 +9,7 @@ use rayon::prelude::*;
 use simdeez::*;
 use std::sync::mpsc::*;
 use std::time::Instant;
+use std::mem::discriminant;
 
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
@@ -16,7 +17,7 @@ pub const GRADIENT_SIZE: usize = 512;
 
 #[derive(Clone)]
 pub struct GradientData {
-    gradient: Vec<Color>,
+    colors: Vec<Color>,
     index: APTNode,
 }
 
@@ -58,37 +59,14 @@ impl Pic {
         //todo cleanup
         //color theory?
         let num_colors = rng.gen_range(MIN_GRADIENT_COUNT, MAX_GRADIENT_COUNT);
-        let mut gradient = Vec::with_capacity(GRADIENT_SIZE);
-        let mut pos = Vec::with_capacity(num_colors);
         let mut colors = Vec::with_capacity(num_colors);
-        pos.push(0.0);
-        for _ in 1..num_colors - 1 {
-            pos.push(rng.gen_range(0.0, 1.0))
-        }
-        pos.push(1.0);
-        pos.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
         for _ in 0..num_colors {
             colors.push(get_random_color(rng));
         }
-        println!("colorlen:{} poslen:{}", colors.len(), pos.len());
 
-        for i in 0..GRADIENT_SIZE {
-            let pct = i as f32 / GRADIENT_SIZE as f32;
-            let color2pos = pos.iter().position(|n| *n >= pct).unwrap();
-            if color2pos == 0 {
-                gradient.push(colors[0]);
-            } else {
-                let color1 = colors[color2pos - 1];
-                let color2 = colors[color2pos];
-                let pct2 = pos[color2pos];
-                let pct1 = pos[color2pos - 1];
-                let range = pct2 - pct1;
-                let pct = (pct - pct1) / range;
-                gradient.push(lerp_color(color1, color2, pct));
-            }
-        }
         Pic::Gradient(GradientData {
-            gradient: gradient,
+            colors: colors,
             index: APTNode::generate_tree(rng.gen_range(min, max), video, rng),
         })
     }
@@ -111,7 +89,13 @@ impl Pic {
     pub fn to_lisp(&self) -> String {
         match self {
             Pic::Mono(data) => format!("( Mono/n {} )", data.c.to_lisp()),
-            Pic::Gradient(data) => format!("( Gradient/n {} )", data.index.to_lisp()),
+            Pic::Gradient(data) => {
+                let mut colors = "( Colors ".to_string();
+                for color in &data.colors {
+                    colors += &format!(" ( {} {} {} )", color.r, color.g, color.b);
+                }
+                format!("( Gradient/n {} {} )", colors, data.index.to_lisp())
+            }
             Pic::RGB(data) => format!(
                 "( RGB/n{} /n{}/n{} )",
                 data.r.to_lisp(),
@@ -162,6 +146,9 @@ impl Pic {
             let sm = StackMachine::<S>::build(&data.index);
             let mut min = 999999.0;
             let mut max = -99999.0;
+
+            let gradient = Vec::<Color>::new(); //todo actually compute this
+
             result
                 .par_chunks_mut(4 * w)
                 .enumerate()
@@ -183,7 +170,7 @@ impl Pic {
                         let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
 
                         for j in 0..S::VF32_WIDTH {
-                            let c = data.gradient[index[j] as usize % GRADIENT_SIZE];
+                            let c = gradient[index[j] as usize % GRADIENT_SIZE];
                             chunk[i + j * 4] = (c.r * 255.0) as u8;
                             chunk[i + 1 + j * 4] = (c.g * 255.0) as u8;
                             chunk[i + 2 + j * 4] = (c.b * 255.0) as u8;
@@ -373,8 +360,7 @@ impl Pic {
     }
 }
 
-pub fn lisp_to_pic(code: String) -> Pic {
-    println!("Raw text:{}", code);
+pub fn lisp_to_pic(code: String) -> Result<Pic, String> {
     let mut pic_opt = None;
     rayon::scope(|s| {
         let (sender, receiver) = channel();
@@ -383,46 +369,108 @@ pub fn lisp_to_pic(code: String) -> Pic {
         });
         pic_opt = Some(parse_pic(&receiver))
     });
-    let pic = pic_opt.unwrap();
-    println!("Pic:{:?}", pic.to_lisp());
-    pic
+    pic_opt.unwrap()
 }
 
-pub fn parse_pic(receiver: &Receiver<Token>) -> Pic {
-    let open_paren = receiver.recv().unwrap();
-    match open_paren {
-        Token::OpenParen => (),
-        _ => panic!("malformed input"),
+pub fn extract_line_number(token:&Token) -> usize {
+    match token {
+        Token::OpenParen(ln)
+        | Token::CloseParen(ln) => *ln,
+        Token::Constant(_,ln) 
+        | Token::Operation(_,ln) => *ln,        
     }
-    let pic_type = receiver.recv().unwrap();
-    match pic_type {
-        Token::Operation(s) => match &s.to_lowercase()[..] {
-            "mono" => Pic::Mono(MonoData {
-                c: APTNode::parse_apt_node(receiver),
-            }),
-            "rgb" => Pic::RGB(RGBData {
-                r: APTNode::parse_apt_node(receiver),
-                g: APTNode::parse_apt_node(receiver),
-                b: APTNode::parse_apt_node(receiver),
-            }),
-            "hsv" => Pic::HSV(HSVData {
-                h: APTNode::parse_apt_node(receiver),
-                s: APTNode::parse_apt_node(receiver),
-                v: APTNode::parse_apt_node(receiver),
-            }),
-            "gradient" => {
-                let mut gradient = Vec::new();
-                for i in 0..GRADIENT_SIZE {
-                    gradient.push(Color::new(1.0, 1.0, 1.0, 1.0));
-                }
-                Pic::Gradient(GradientData {
-                    gradient: gradient,
-                    index: APTNode::parse_apt_node(receiver),
-                })
+}
+
+#[must_use]
+pub fn expect_open_paren(receiver: &Receiver<Token>) -> Result<(),String> {
+    let open_paren = receiver.recv().map_err(|_| "Unexpected end of file")?;
+    match open_paren {
+        Token::OpenParen(_) => Ok(()),
+        _ => return Err(format!("Expected '(' on line {}",extract_line_number(&open_paren))),
+    }
+}
+
+#[must_use]
+pub fn expect_close_paren(receiver: &Receiver<Token>) -> Result<(),String> {
+    let close_paren = receiver.recv().map_err(|_| "Unexpected end of file")?;
+    match close_paren {
+        Token::CloseParen(_) => Ok(()),
+        _ => return Err(format!("Expected '(' on line {}",extract_line_number(&close_paren))),
+    }
+}
+
+#[must_use]
+pub fn expect_operation(s:&str,receiver: &Receiver<Token>) -> Result<(),String> {
+    let op = receiver.recv().map_err(|_| "Unexpected end of file")?;
+    match op {
+        Token::Operation(op_str,_) => {
+            if op_str.to_lowercase() == s {
+                Ok(())
+            } 
+            else {
+                Err(format!("Expected '{}' on line {}, found {}",s,extract_line_number(&op),op_str))
             }
-            _ => panic!("unknown pic type"),
+        }
+        _ => return Err(format!("Expected '{}' on line {}, found {:?}",s,extract_line_number(&op),op))
+    }
+}
+
+#[must_use]
+pub fn expect_constant(receiver: &Receiver<Token>) -> Result<f32,String> {
+    let op = receiver.recv().map_err(|_| "Unexpected end of file")?;
+    match op {
+        Token::Constant(vstr,line_number) => {
+            let v = vstr.parse::<f32>().map_err(|_| {
+                format!("Unable to parse number {} on line {}", vstr, line_number)
+            })?;
+            Ok(v)
+        }
+        _ => return Err(format!("Expected constant on line {}, found {:?}",extract_line_number(&op),op))
+    }
+}
+
+pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
+    expect_open_paren(receiver)?;
+    let pic_type = receiver.recv().map_err(|_| "Unexpected end of file")?;
+    match pic_type {
+        Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
+            "mono" => Ok(Pic::Mono(MonoData {
+                c: APTNode::parse_apt_node(receiver)?,
+            })),
+            "rgb" => Ok(Pic::RGB(RGBData {
+                r: APTNode::parse_apt_node(receiver)?,
+                g: APTNode::parse_apt_node(receiver)?,
+                b: APTNode::parse_apt_node(receiver)?,
+            })),
+            "hsv" => Ok(Pic::HSV(HSVData {
+                h: APTNode::parse_apt_node(receiver)?,
+                s: APTNode::parse_apt_node(receiver)?,
+                v: APTNode::parse_apt_node(receiver)?,
+            })),
+            "gradient" => {
+                let mut colors = Vec::new();
+                expect_open_paren(receiver)?;
+                expect_operation("colors",receiver)?;
+
+                loop {
+                    let token = receiver.recv().map_err(|_| "Unexpected end of file")?;
+                    if discriminant(&token) == discriminant(&Token::CloseParen(0)) { break;}
+                    expect_open_paren(receiver)?;
+                    let r = expect_constant(receiver)?;
+                    let g = expect_constant(receiver)?;
+                    let b = expect_constant(receiver)?;
+                    colors.push(Color::new(r,g,b,1.0));
+                    expect_close_paren(receiver)?;
+                }
+
+                Ok(Pic::Gradient(GradientData {
+                    colors: colors,
+                    index: APTNode::parse_apt_node(receiver)?,
+                }))
+            }
+            _ => Err(format!("Unknown pic type {} at line {}", s, line_number)),
         },
-        _ => panic!("malformed"),
+        _ => Err(format!("Invalid picture type")), //todo line number etc
     }
 }
 

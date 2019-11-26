@@ -1,11 +1,7 @@
 // todo
-// - handle errors when parsing/lexing, maybe even get line numbers?
 // - fix up gradient to work properly when parsing
 // - cross breeding of picture expressions
-// - expression optimization, constant folding etc
 // - load up thumbnails in a background thread so ui isn't blocked
-
-
 
 extern crate ggez;
 
@@ -84,18 +80,28 @@ impl MainState {
         let mut y_pct = 0.01;
         for _ in 0..THUMB_ROWS {
             let mut x_pct = 0.01;
-            for _ in 0..THUMB_COLS {                
+            for _ in 0..THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
                 //let pic_type = 0;
-               /* let pic = match pic_type {
+                /* let pic = match pic_type {
                     0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     _ => panic!("invalid"),
                 };*/
-                let pic = lisp_to_pic("(Mono (+ 4 (+ 5 6)))".to_string());
-                println!("folded equation:{}",pic.to_lisp());
+                let pic_result = lisp_to_pic(
+                    "(RGB 
+                                              (+ x y) 
+                                              (- x y) 
+                                              ( blarg x y) 
+                                              )"
+                    .to_string(),
+                );
+                let pic = match pic_result {
+                    Ok(pic) => pic,
+                    Err(s) => panic!(s),
+                };
                 let img = graphics::Image::from_rgba8(
                     ctx,
                     256 as u16,
@@ -273,8 +279,6 @@ impl EventHandler for MainState {
 }
 
 pub fn main() -> ggez::GameResult {
-
-    
     match rayon::ThreadPoolBuilder::new()
         .num_threads(0)
         .build_global()
