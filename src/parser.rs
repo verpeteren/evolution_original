@@ -64,6 +64,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn emit(&mut self, token: Token<'a>) {
+        println!("token:{:?}",token);
         self.token_sender.send(token);
         self.start = self.pos;
     }
@@ -73,6 +74,7 @@ impl<'a> Lexer<'a> {
             if valid.contains(n) {
                 true
             } else {
+                self.backup();
                 false
             }
         } else {
