@@ -35,8 +35,10 @@ Generates:![Sample Image](/samples/rgb_noise.png)
 
 
 ### Gradient Images
+```lisp
 ( Gradient
  ( Colors  ( 0.28973937 0.40621173 0.4788941 ) ( 0.88590646 0.9958223 0.6819649 ) ( 0.623574 0.39478934 0.97536874 ) ( 0.5160972 0.011721611 0.055956483 ) ( 0.88893497 0.8329935 0.587783 ) 
  ( Cell1 Y X -0.9553273 ) )
+ ```
 
 Generates:![Sample Image](/samples/gradient.png)
