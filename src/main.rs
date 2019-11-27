@@ -43,7 +43,7 @@ const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
 
-const TREE_MIN: usize = 2;
+const TREE_MIN: usize = 1;
 const TREE_MAX: usize = 20;
 
 enum GameState {
@@ -82,10 +82,10 @@ impl MainState {
             let mut x_pct = 0.01;
             for _ in 0..THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
-                //let pic_type = 2;
+                let pic_type = 1;
                 let pic = match pic_type {
                     0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
-                    1 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),//Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
+                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     _ => panic!("invalid"),

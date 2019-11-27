@@ -147,7 +147,32 @@ impl Pic {
             let mut min = 999999.0;
             let mut max = -99999.0;
 
-            let gradient = Vec::<Color>::new(); //todo actually compute this
+            let mut gradient = Vec::<Color>::new(); //todo actually compute this
+            let step = (GRADIENT_SIZE as f32 / data.colors.len() as f32) / GRADIENT_SIZE as f32;
+            let mut positions = Vec::<f32>::new();            
+            positions.push(0.0);
+            let mut pos = step;
+            for _ in 1 .. data.colors.len() - 1 {
+                positions.push(pos);
+                pos += step;
+            }
+            positions.push(1.0);
+            
+            for i in 0..GRADIENT_SIZE {
+                let pct = i as f32 / GRADIENT_SIZE as f32;
+                let color2pos = positions.iter().position(|n| *n >= pct).unwrap();
+                if color2pos == 0 {
+                    gradient.push(data.colors[0]);
+                } else {
+                    let color1 = data.colors[color2pos - 1];
+                    let color2 = data.colors[color2pos];
+                    let pct2 = positions[color2pos];
+                    let pct1 = positions[color2pos - 1];
+                    let range = pct2 - pct1;
+                    let pct = (pct - pct1) / range;
+                    gradient.push(lerp_color(color1, color2, pct));
+                }
+            }
 
             result
                 .par_chunks_mut(4 * w)
