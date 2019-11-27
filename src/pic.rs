@@ -88,22 +88,22 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
-            Pic::Mono(data) => format!("( Mono/n {} )", data.c.to_lisp()),
+            Pic::Mono(data) => format!("( Mono\n {} )", data.c.to_lisp()),
             Pic::Gradient(data) => {
                 let mut colors = "( Colors ".to_string();
                 for color in &data.colors {
                     colors += &format!(" ( {} {} {} )", color.r, color.g, color.b);
                 }
-                format!("( Gradient/n {} {} )", colors, data.index.to_lisp())
+                format!("( Gradient\n {} {} )", colors, data.index.to_lisp())
             }
             Pic::RGB(data) => format!(
-                "( RGB/n{} /n{}/n{} )",
+                "( RGB\n{} \n{}\n{} )",
                 data.r.to_lisp(),
                 data.g.to_lisp(),
                 data.b.to_lisp()
             ),
             Pic::HSV(data) => format!(
-                "( HSV/n{} /n{}/n{} )",
+                "( HSV\n{} \n{}\n{} )",
                 data.h.to_lisp(),
                 data.s.to_lisp(),
                 data.v.to_lisp()

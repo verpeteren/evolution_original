@@ -64,7 +64,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn emit(&mut self, token: Token<'a>) {
-        println!("token:{:?}",token);
+        println!("token:{:?}", token);
         self.token_sender.send(token);
         self.start = self.pos;
     }

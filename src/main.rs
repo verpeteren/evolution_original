@@ -82,15 +82,15 @@ impl MainState {
             let mut x_pct = 0.01;
             for _ in 0..THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
-                let pic_type = 2;
-                 let pic = match pic_type {
+                //let pic_type = 2;
+                let pic = match pic_type {
                     0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
-                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
+                    1 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),//Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     _ => panic!("invalid"),
                 };
-                              
+
                 let img = graphics::Image::from_rgba8(
                     ctx,
                     256 as u16,

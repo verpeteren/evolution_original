@@ -5,6 +5,7 @@ pub const SIMPLEX_MULTIPLIER: f32 = 7.35;
 pub const SIMPLEX_OFFSET: f32 = 0.028;
 pub const CELL1_MULTUPLIER: f32 = 1.661291;
 pub const CELL1_OFFSET: f32 = 1.0;
+use Instruction::*;
 
 pub enum Instruction<S: Simd> {
     Add,
@@ -23,6 +24,14 @@ pub enum Instruction<S: Simd> {
     Tan,
     Log,
     Abs,
+    Floor,
+    Ceil,
+    Clamp,
+    Wrap,
+    Square,
+    Max,
+    Min,
+    Mod,
     Constant(S::Vf32),
     X,
     Y,
@@ -36,26 +45,34 @@ pub struct StackMachine<S: Simd> {
 impl<S: Simd> StackMachine<S> {
     pub fn get_instruction(node: &APTNode) -> Instruction<S> {
         match node {
-            APTNode::Add(_) => Instruction::Add,
-            APTNode::Sub(_) => Instruction::Sub,
-            APTNode::Mul(_) => Instruction::Mul,
-            APTNode::Div(_) => Instruction::Div,
-            APTNode::FBM(_) => Instruction::FBM,
-            APTNode::Ridge(_) => Instruction::Ridge,
-            APTNode::Turbulence(_) => Instruction::Turbulence,
-            APTNode::Cell1(_) => Instruction::Cell1,
-            APTNode::Cell2(_) => Instruction::Cell2,
-            APTNode::Sqrt(_) => Instruction::Sqrt,
-            APTNode::Sin(_) => Instruction::Sin,
-            APTNode::Atan(_) => Instruction::Atan,
-            APTNode::Atan2(_) => Instruction::Atan2,
-            APTNode::Tan(_) => Instruction::Tan,
-            APTNode::Log(_) => Instruction::Log,
-            APTNode::Abs(_) => Instruction::Abs,
-            APTNode::Constant(v) => Instruction::Constant(unsafe { S::set1_ps(*v) }),
-            APTNode::X => Instruction::X,
-            APTNode::Y => Instruction::Y,
-            APTNode::T => Instruction::T,
+            APTNode::Add(_) => Add,
+            APTNode::Sub(_) => Sub,
+            APTNode::Mul(_) => Mul,
+            APTNode::Div(_) => Div,
+            APTNode::FBM(_) => FBM,
+            APTNode::Ridge(_) => Ridge,
+            APTNode::Turbulence(_) => Turbulence,
+            APTNode::Cell1(_) => Cell1,
+            APTNode::Cell2(_) => Cell2,
+            APTNode::Sqrt(_) => Sqrt,
+            APTNode::Sin(_) => Sin,
+            APTNode::Atan(_) => Atan,
+            APTNode::Atan2(_) => Atan2,
+            APTNode::Tan(_) => Tan,
+            APTNode::Log(_) => Log,
+            APTNode::Abs(_) => Abs,
+            APTNode::Floor(_) => Floor,
+            APTNode::Ceil(_) => Ceil,
+            APTNode::Clamp(_) => Clamp,
+            APTNode::Wrap(_) => Wrap,
+            APTNode::Square(_) => Square,
+            APTNode::Max(_) => Max,
+            APTNode::Min(_) => Min,
+            APTNode::Mod(_) => Mod,
+            APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
+            APTNode::X => X,
+            APTNode::Y => Y,
+            APTNode::T => T,
             APTNode::Empty => panic!("got empty building stack machine"),
         }
     }
@@ -102,23 +119,23 @@ impl<S: Simd> StackMachine<S> {
             let mut sp = 0;
             for ins in &self.instructions {
                 match ins {
-                    Instruction::Add => {
+                    Add => {
                         sp -= 1;
                         stack[sp - 1] = stack[sp] + stack[sp - 1];
                     }
-                    Instruction::Sub => {
+                    Sub => {
                         sp -= 1;
                         stack[sp - 1] = stack[sp] - stack[sp - 1];
                     }
-                    Instruction::Mul => {
+                    Mul => {
                         sp -= 1;
                         stack[sp - 1] = stack[sp] * stack[sp - 1];
                     }
-                    Instruction::Div => {
+                    Div => {
                         sp -= 1;
                         stack[sp - 1] = StackMachine::<S>::deal_with_nan(stack[sp] / stack[sp - 1]);
                     }
-                    Instruction::FBM => {
+                    FBM => {
                         sp -= 2;
                         let freq = stack[sp - 1] * S::set1_ps(25.0);
                         let lacunarity = S::set1_ps(0.5);
@@ -134,7 +151,7 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(SIMPLEX_MULTIPLIER)
                             - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
                     }
-                    Instruction::Ridge => {
+                    Ridge => {
                         sp -= 2;
                         let freq = stack[sp - 1] * S::set1_ps(25.0);
                         let lacunarity = S::set1_ps(0.5);
@@ -150,7 +167,7 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(SIMPLEX_OFFSET)
                             - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
                     }
-                    Instruction::Turbulence => {
+                    Turbulence => {
                         sp -= 2;
                         let freq = stack[sp - 1] * S::set1_ps(25.0);
                         let lacunarity = S::set1_ps(0.5);
@@ -166,7 +183,7 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(SIMPLEX_MULTIPLIER)
                             - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                     }
-                    Instruction::Cell1 => {
+                    Cell1 => {
                         sp -= 2;
                         let freq = stack[sp - 1] * S::set1_ps(4.0);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
@@ -179,7 +196,7 @@ impl<S: Simd> StackMachine<S> {
                         ) * S::set1_ps(CELL1_MULTUPLIER)
                             - S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
                     }
-                    Instruction::Cell2 => {
+                    Cell2 => {
                         sp -= 2;
                         let freq = stack[sp - 1] * S::set1_ps(4.0);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
@@ -191,30 +208,30 @@ impl<S: Simd> StackMachine<S> {
                             1,
                         );
                     }
-                    Instruction::Sqrt => {
+                    Sqrt => {
                         let v = stack[sp - 1];
                         let positive = S::sqrt_ps(v);
                         let negative = S::mul_ps(S::set1_ps(-1.0), S::sqrt_ps(S::abs_ps(v)));
                         let mask = S::cmpge_ps(v, S::setzero_ps());
                         stack[sp - 1] = S::blendv_ps(negative, positive, mask);
                     }
-                    Instruction::Sin => {
+                    Sin => {
                         stack[sp - 1] = S::fast_sin_ps(stack[sp - 1] * S::set1_ps(3.14159));
                     }
-                    Instruction::Atan => {
+                    Atan => {
                         stack[sp - 1] = S::fast_atan_ps(stack[sp - 1] * S::set1_ps(4.0))
                             * S::set1_ps(0.666666666);
                     }
-                    Instruction::Atan2 => {
+                    Atan2 => {
                         sp -= 1;
                         let x = stack[sp - 1];
                         let y = stack[sp] * S::set1_ps(4.0);
                         stack[sp - 1] = S::fast_atan2_ps(y, x) * S::set1_ps(0.318309);
                     }
-                    Instruction::Tan => {
+                    Tan => {
                         stack[sp - 1] = S::fast_tan_ps(stack[sp - 1] * S::set1_ps(1.57079632679));
                     }
-                    Instruction::Log => {
+                    Log => {
                         let v = stack[sp - 1] * S::set1_ps(4.0);
                         let positive = S::fast_log_ps(v);
                         let negative = S::mul_ps(S::set1_ps(-1.0), S::fast_log_ps(S::abs_ps(v)));
@@ -222,22 +239,71 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp - 1] =
                             S::blendv_ps(negative, positive, mask) * S::set1_ps(0.367879);
                     }
-                    Instruction::Abs => {
+                    Abs => {
                         stack[sp - 1] = S::abs_ps(stack[sp - 1]);
                     }
-                    Instruction::Constant(v) => {
+                    Floor => {
+                        stack[sp - 1] = S::fast_floor_ps(stack[sp-1]);
+                    }
+                    Ceil => {
+                        stack[sp - 1] = S::fast_ceil_ps(stack[sp-1]);
+                    }
+                    Clamp => {
+                        let mut v = stack[sp-1];
+                        for i in 0 .. S::VF32_WIDTH {
+                            if v[i] > 1.0 {
+                                v[i] = 1.0
+                            } else if v[i] < -1.0 {
+                                v[i] = -1.0
+                            }                                                
+                        }
+                        stack[sp-1] = v;
+                    }
+                    Wrap => {
+                        let mut v = stack[sp-1];
+                        for i in 0 .. S::VF32_WIDTH {
+                            if v[i] < -1.0 || v[i] > 1.0 {
+                                let t = (v[i] + 1.0) / 2.0;
+                                v[i] = -1.0+2.0*(t - t.floor());
+                            }                            
+                        }
+                        stack[sp-1] = v;
+                    }
+                    Square => {
+                        let v = stack[sp-1];
+                        stack[sp-1] = v*v;
+                    }
+                    Max => {
+                        sp -= 1;                                 
+                        stack[sp-1] = S::max_ps(stack[sp-1],stack[sp]);
+                    }
+                    Min => {
+                        sp -= 1;                                 
+                        stack[sp-1] = S::min_ps(stack[sp-1],stack[sp]);
+                    }
+                    Mod => {
+                        sp -= 1;   
+                        let a = stack[sp-1];
+                        let b = stack[sp];  
+                        let mut r = S::setzero_ps();
+                        for i in 0 .. S::VF32_WIDTH {
+                            r[i] = a[i] % b[i];
+                        }
+                        stack[sp-1] = r;
+                    }
+                    Constant(v) => {
                         stack[sp] = *v;
                         sp += 1;
                     }
-                    Instruction::X => {
+                    X => {
                         stack[sp] = x;
                         sp += 1;
                     }
-                    Instruction::Y => {
+                    Y => {
                         stack[sp] = y;
                         sp += 1;
                     }
-                    Instruction::T => {
+                    T => {
                         stack[sp] = t;
                         sp += 1;
                     }
