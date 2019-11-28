@@ -31,6 +31,7 @@ pub enum APTNode {
     Max(Vec<APTNode>),
     Min(Vec<APTNode>),
     Mod(Vec<APTNode>),
+    Picture(String,Vec<APTNode>),
     Constant(f32),
     X,
     Y,
@@ -94,6 +95,7 @@ impl APTNode {
             Max(children) => format!("( Max {} {})", children[0].to_lisp(), children[1].to_lisp()),
             Min(children) => format!("( Min {} {})", children[0].to_lisp(), children[1].to_lisp()),
             Mod(children) => format!("( Mod {} {})", children[0].to_lisp(), children[1].to_lisp()),
+            Picture(name,children) => format!("( Pic-{} {} {} )",name,children[0].to_lisp(), children[1].to_lisp()),
             Constant(v) => format!("{}", v),
             X => format!("X"),
             Y => format!("Y"),
@@ -103,7 +105,8 @@ impl APTNode {
     }
 
     pub fn str_to_node(s: &str) -> Result<APTNode, String> {
-        match &s.to_lowercase()[..] {
+        let lower = &s.to_lowercase()[..];
+        match lower {
             "+" => Ok(Add(vec![Empty, Empty])),
             "-" => Ok(Sub(vec![Empty, Empty])),
             "*" => Ok(Mul(vec![Empty, Empty])),
@@ -128,6 +131,7 @@ impl APTNode {
             "max" => Ok(Max(vec![Empty, Empty])),
             "min" => Ok(Min(vec![Empty, Empty])),
             "mod" => Ok(Mod(vec![Empty, Empty])),
+            _ if lower == "pic" => Ok(X), 
             "x" => Ok(X),
             "y" => Ok(Y),
             "t" => Ok(T),
@@ -222,78 +226,79 @@ impl APTNode {
     }
 
     pub fn constant_eval(&self) -> f32 {
-        use APTNode::*;
-        unsafe {
-            match self {
-                Add(children) => children[0].constant_eval() + children[1].constant_eval(),
-                Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
-                Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
-                Div(children) => children[0].constant_eval() / children[1].constant_eval(),
-                FBM(_) => 0.0,
-                Ridge(_) => 0.0,
-                Turbulence(_) => 0.0, // if the noise functions all have constants it isn't worth bothering maybe?
-                Cell1(_) => 0.0,
-                Cell2(_) => 0.0,
-                Sqrt(children) => children[0].constant_eval().sqrt(),
-                Sin(children) => children[0].constant_eval().sin(),
-                Atan(children) => children[0].constant_eval().atan(),
-                Atan2(children) => children[0]
-                    .constant_eval()
-                    .atan2(children[1].constant_eval()),
-                Tan(children) => children[0].constant_eval().tan(),
-                Log(children) => children[0].constant_eval().log2(),
-                Abs(children) => children[0].constant_eval().abs(),
-                Floor(children) => children[0].constant_eval().floor(),
-                Ceil(children) => children[0].constant_eval().ceil(),
-                Clamp(children) => {
-                    let v = children[0].constant_eval();
-                    if v > 1.0 {
-                        1.0
-                    } else if v < -1.0 {
-                        -1.0
-                    } else {
-                        v
-                    }
+        match self {
+            Add(children) => children[0].constant_eval() + children[1].constant_eval(),
+            Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
+            Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
+            Div(children) => children[0].constant_eval() / children[1].constant_eval(),
+            FBM(_) => 0.0,
+            Ridge(_) => 0.0,
+            Turbulence(_) => 0.0, // if the noise functions all have constants it isn't worth bothering maybe?
+            Cell1(_) => 0.0,
+            Cell2(_) => 0.0,
+            Sqrt(children) => children[0].constant_eval().sqrt(),
+            Sin(children) => children[0].constant_eval().sin(),
+            Atan(children) => children[0].constant_eval().atan(),
+            Atan2(children) => children[0]
+                .constant_eval()
+                .atan2(children[1].constant_eval()),
+            Tan(children) => children[0].constant_eval().tan(),
+            Log(children) => children[0].constant_eval().log2(),
+            Abs(children) => children[0].constant_eval().abs(),
+            Floor(children) => children[0].constant_eval().floor(),
+            Ceil(children) => children[0].constant_eval().ceil(),
+            Clamp(children) => {
+                let v = children[0].constant_eval();
+                if v > 1.0 {
+                    1.0
+                } else if v < -1.0 {
+                    -1.0
+                } else {
+                    v
                 }
-                Wrap(children) => {
-                    let v = children[0].constant_eval();
-                    if v >= -1.0 && v <= 1.0 {
-                        v
-                    } else {
-                        let t = (v + 1.0) / 2.0;
-                        -1.0 + 2.0 * (t - t.floor())
-                    }
-                }
-                Square(children) => {
-                    let v = children[0].constant_eval();
-                    v * v
-                }
-                Max(children) => {
-                    let a = children[0].constant_eval();
-                    let b = children[1].constant_eval();
-                    if a >= b {
-                        a
-                    } else {
-                        b
-                    }
-                }
-                Min(children) => {
-                    let a = children[0].constant_eval();
-                    let b = children[1].constant_eval();
-                    if a <= b {
-                        a
-                    } else {
-                        b
-                    }
-                }
-                Mod(children) => {
-                    let a = children[0].constant_eval();
-                    let b = children[1].constant_eval();
-                    a % b
-                }
-                Constant(v) => *v,
-                _ => panic!("invalid node passed to constant_esval"),
             }
+            Wrap(children) => {
+                let v = children[0].constant_eval();
+                if v >= -1.0 && v <= 1.0 {
+                    v
+                } else {
+                    let t = (v + 1.0) / 2.0;
+                    -1.0 + 2.0 * (t - t.floor())
+                }
+            }
+            Square(children) => {
+                let v = children[0].constant_eval();
+                v * v
+            }
+            Max(children) => {
+                let a = children[0].constant_eval();
+                let b = children[1].constant_eval();
+                if a >= b {
+                    a
+                } else {
+                    b
+                }
+            }
+            Min(children) => {
+                let a = children[0].constant_eval();
+                let b = children[1].constant_eval();
+                if a <= b {
+                    a
+                } else {
+                    b
+                }
+            }
+            Mod(children) => {
+                let a = children[0].constant_eval();
+                let b = children[1].constant_eval();
+                a % b
+            }
+            Picture(name,children) => {
+                //todo
+                0.0
+            }
+            Constant(v) => *v,
+            _ => panic!("invalid node passed to constant_esval"),
         }
     }
 
@@ -318,16 +323,17 @@ impl APTNode {
             Floor(_) => Floor(children),
             Ceil(_) => Ceil(children),
             Clamp(_) => Clamp(children),
-            Wrap(_)=> Wrap(children),
-            Square(_)=> Square(children) ,
+            Wrap(_) => Wrap(children),
+            Square(_) => Square(children),
             Max(_) => Max(children),
             Min(_) => Min(children),
             Mod(_) => Mod(children),
+            Picture(name,_) => Picture(name.to_string(),children),
             Constant(v) => Constant(*v),
             X => X,
             Y => Y,
             T => T,
-            Empty => panic!("tried to eval an empty node"),           
+            Empty => panic!("tried to eval an empty node"),
         }
     }
 
@@ -378,6 +384,7 @@ impl APTNode {
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
             | Min(children) | Mod(children) => Some(children),
+            Picture(_,children) => Some(children),
             _ => None,
         }
     }
@@ -390,6 +397,7 @@ impl APTNode {
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
             | Min(children) | Mod(children) => Some(children),
+            Picture(_,children) => Some(children),
             _ => None,
         }
     }

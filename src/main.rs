@@ -5,6 +5,7 @@
 
 extern crate ggez;
 
+mod actual_picture;
 mod apt;
 mod ggez_utility;
 mod imgui_wrapper;
@@ -13,13 +14,14 @@ mod pic;
 mod stack_machine;
 mod ui;
 
+use crate::actual_picture::*;
 use crate::imgui_wrapper::ImGuiWrapper;
 use crate::parser::*;
 use crate::pic::*;
 use crate::ui::*;
 use ggez::conf;
 use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
-use ggez::graphics;
+use ggez::graphics::{self, Image};
 use ggez::timer;
 use ggez::{Context, GameResult};
 use rand::rngs::StdRng;
@@ -30,14 +32,19 @@ use simdeez::avx2::*;
 use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
+use std::collections::HashMap;
+use std::env;
+use std::fs::{self};
+use std::io::*;
+use std::path::{self, Path};
 use std::sync::mpsc::*;
 use std::sync::Arc;
 use std::sync::RwLock;
 use std::thread;
 use std::time::Instant;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1080;
+const WIDTH: usize = 1024;
+const HEIGHT: usize = 768;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 
 const THUMB_ROWS: u16 = 6;
@@ -68,6 +75,7 @@ struct MainState {
     rng: StdRng,
     zoom_image: BackgroundImage,
     zoom_image_data: Arc<RwLock<Option<Vec<u8>>>>,
+    pictures: HashMap<String, ActualPicture>,
 }
 
 impl MainState {
@@ -82,7 +90,7 @@ impl MainState {
             let mut x_pct = 0.01;
             for _ in 0..THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
-                let pic_type = 1;
+                // let pic_type = 1;
                 let pic = match pic_type {
                     0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
@@ -124,6 +132,7 @@ impl MainState {
             mouse_state: MouseState::Nothing,
             zoom_image: BackgroundImage::NotYet,
             zoom_image_data: Arc::new(RwLock::new(None)),
+            pictures: load_pictures(ctx),
         };
         Ok(s)
     }
@@ -141,7 +150,7 @@ impl MainState {
                 let arc = self.zoom_image_data.clone();
                 thread::spawn(move || {
                     println!("create image");
-                    let img_data = pic.get_rgba8::<Avx2>(1920 as usize, 1080 as usize, 0.0);
+                    let img_data = pic.get_rgba8::<Avx2>(1024 as usize, 768 as usize, 0.0);
                     *arc.write().unwrap() = Some(img_data)
                 });
                 self.state = GameState::Zoom(i);
@@ -155,9 +164,8 @@ impl MainState {
             BackgroundImage::NotYet => match &*self.zoom_image_data.read().unwrap() {
                 Some(data) => {
                     println!("setting zoom image");
-                    let img =
-                        graphics::Image::from_rgba8(ctx, 1920 as u16, 1080 as u16, &data[0..])
-                            .unwrap();
+                    let img = graphics::Image::from_rgba8(ctx, 1024 as u16, 768 as u16, &data[0..])
+                        .unwrap();
                     self.zoom_image = BackgroundImage::Complete(img)
                 }
                 None => (),
@@ -266,6 +274,22 @@ impl EventHandler for MainState {
         self.imgui_wrapper.update_keyboard(ch);
     }
 }
+pub fn load_pictures(ctx: &mut Context) -> HashMap<String, ActualPicture> {
+    let pic_path = Path::new("pictures");
+    let mut pictures = HashMap::new();
+    match fs::read_dir(pic_path) {
+        Ok(files) => {
+            for file in files {
+                let file_name = file.unwrap().file_name().into_string().unwrap();
+                let img = graphics::Image::new(ctx, "/".to_string() + &file_name).unwrap();
+                let name = file_name.split(".").nth(0).unwrap().to_string();
+                pictures.insert(name.clone(), ActualPicture::new(ctx, img, name));
+            }
+        }
+        Err(_) => (),
+    }
+    pictures
+}
 
 pub fn main() -> ggez::GameResult {
     match rayon::ThreadPoolBuilder::new()
@@ -275,6 +299,14 @@ pub fn main() -> ggez::GameResult {
         Ok(_) => (),
         Err(x) => panic!("{}", x),
     }
+
+    let pictures_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+        let mut path = path::PathBuf::from(manifest_dir);
+        path.push("pictures");
+        path
+    } else {
+        path::PathBuf::from("./pictures")
+    };
 
     let hidpi_factor: f32;
     {
@@ -286,6 +318,7 @@ pub fn main() -> ggez::GameResult {
     }
 
     let cb = ggez::ContextBuilder::new("super_simple with imgui", "ggez")
+        .add_resource_path(pictures_dir)
         .window_setup(conf::WindowSetup::default().title("super_simple with imgui"))
         .window_mode(
             conf::WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0),

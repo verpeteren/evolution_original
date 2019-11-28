@@ -32,6 +32,7 @@ pub enum Instruction<S: Simd> {
     Max,
     Min,
     Mod,
+    Picture(String),
     Constant(S::Vf32),
     X,
     Y,
@@ -69,6 +70,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Max(_) => Max,
             APTNode::Min(_) => Min,
             APTNode::Mod(_) => Mod,
+            APTNode::Picture(name,_) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => X,
             APTNode::Y => Y,
@@ -243,53 +245,56 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp - 1] = S::abs_ps(stack[sp - 1]);
                     }
                     Floor => {
-                        stack[sp - 1] = S::fast_floor_ps(stack[sp-1]);
+                        stack[sp - 1] = S::fast_floor_ps(stack[sp - 1]);
                     }
                     Ceil => {
-                        stack[sp - 1] = S::fast_ceil_ps(stack[sp-1]);
+                        stack[sp - 1] = S::fast_ceil_ps(stack[sp - 1]);
                     }
                     Clamp => {
-                        let mut v = stack[sp-1];
-                        for i in 0 .. S::VF32_WIDTH {
+                        let mut v = stack[sp - 1];
+                        for i in 0..S::VF32_WIDTH {
                             if v[i] > 1.0 {
                                 v[i] = 1.0
                             } else if v[i] < -1.0 {
                                 v[i] = -1.0
-                            }                                                
+                            }
                         }
-                        stack[sp-1] = v;
+                        stack[sp - 1] = v;
                     }
                     Wrap => {
-                        let mut v = stack[sp-1];
-                        for i in 0 .. S::VF32_WIDTH {
+                        let mut v = stack[sp - 1];
+                        for i in 0..S::VF32_WIDTH {
                             if v[i] < -1.0 || v[i] > 1.0 {
                                 let t = (v[i] + 1.0) / 2.0;
-                                v[i] = -1.0+2.0*(t - t.floor());
-                            }                            
+                                v[i] = -1.0 + 2.0 * (t - t.floor());
+                            }
                         }
-                        stack[sp-1] = v;
+                        stack[sp - 1] = v;
                     }
                     Square => {
-                        let v = stack[sp-1];
-                        stack[sp-1] = v*v;
+                        let v = stack[sp - 1];
+                        stack[sp - 1] = v * v;
                     }
                     Max => {
-                        sp -= 1;                                 
-                        stack[sp-1] = S::max_ps(stack[sp-1],stack[sp]);
+                        sp -= 1;
+                        stack[sp - 1] = S::max_ps(stack[sp - 1], stack[sp]);
                     }
                     Min => {
-                        sp -= 1;                                 
-                        stack[sp-1] = S::min_ps(stack[sp-1],stack[sp]);
+                        sp -= 1;
+                        stack[sp - 1] = S::min_ps(stack[sp - 1], stack[sp]);
                     }
                     Mod => {
-                        sp -= 1;   
-                        let a = stack[sp-1];
-                        let b = stack[sp];  
+                        sp -= 1;
+                        let a = stack[sp - 1];
+                        let b = stack[sp];
                         let mut r = S::setzero_ps();
-                        for i in 0 .. S::VF32_WIDTH {
+                        for i in 0..S::VF32_WIDTH {
                             r[i] = a[i] % b[i];
                         }
-                        stack[sp-1] = r;
+                        stack[sp - 1] = r;
+                    }
+                    Picture(name) => {
+                       //todo 
                     }
                     Constant(v) => {
                         stack[sp] = *v;

@@ -149,15 +149,15 @@ impl Pic {
 
             let mut gradient = Vec::<Color>::new(); //todo actually compute this
             let step = (GRADIENT_SIZE as f32 / data.colors.len() as f32) / GRADIENT_SIZE as f32;
-            let mut positions = Vec::<f32>::new();            
+            let mut positions = Vec::<f32>::new();
             positions.push(0.0);
             let mut pos = step;
-            for _ in 1 .. data.colors.len() - 1 {
+            for _ in 1..data.colors.len() - 1 {
                 positions.push(pos);
                 pos += step;
             }
             positions.push(1.0);
-            
+
             for i in 0..GRADIENT_SIZE {
                 let pct = i as f32 / GRADIENT_SIZE as f32;
                 let color2pos = positions.iter().position(|n| *n >= pct).unwrap();
