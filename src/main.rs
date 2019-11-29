@@ -53,10 +53,9 @@ const THUMB_COLS: u16 = 7;
 const TREE_MIN: usize = 1;
 const TREE_MAX: usize = 10;
 
-
 struct RwArc<T>(Arc<RwLock<T>>);
 impl<T> RwArc<T> {
-    pub fn new(t:T) -> RwArc<T> {
+    pub fn new(t: T) -> RwArc<T> {
         RwArc(Arc::new(RwLock::new(t)))
     }
 
@@ -64,14 +63,13 @@ impl<T> RwArc<T> {
         self.0.read().unwrap()
     }
 
-    pub fn write(&self,t:T)  {
+    pub fn write(&self, t: T) {
         *self.0.write().unwrap() = t;
     }
 
     pub fn clone(&self) -> RwArc<T> {
         RwArc(self.0.clone())
     }
-
 }
 
 enum GameState {
@@ -112,13 +110,13 @@ impl MainState {
             let mut x_pct = 0.01;
             for _ in 0..THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
-            
-               // let pic_type = 0;
+
+                // let pic_type = 0;
                 let pic = match pic_type {
-                    0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
-                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
-                    2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
-                    3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
+                    0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                    2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                    3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
                     _ => panic!("invalid"),
                 };
 
@@ -126,7 +124,7 @@ impl MainState {
                     ctx,
                     256 as u16,
                     256 as u16,
-                    &pic.get_rgba8::<Avx2>(self.pictures.clone(),256, 256, 0.0)[0..],
+                    &pic.get_rgba8::<Avx2>(self.pictures.clone(), 256, 256, 0.0)[0..],
                 )
                 .unwrap();
                 self.pics.push(pic);
@@ -173,7 +171,7 @@ impl MainState {
                 let pics = self.pictures.clone();
                 thread::spawn(move || {
                     println!("create image");
-                    let img_data = pic.get_rgba8::<Avx2>(pics,1024 as usize, 768 as usize, 0.0);
+                    let img_data = pic.get_rgba8::<Avx2>(pics, 1024 as usize, 768 as usize, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom(i);
@@ -183,21 +181,19 @@ impl MainState {
     }
 
     fn update_zoom(&mut self, ctx: &mut Context) {
-        let maybe_img = 
-        match &*self.zoom_image.read() {
-            BackgroundImage::NotYet => None, 
-            BackgroundImage::Almost(data) =>
-                {
-                    println!("setting zoom image");
-                    let img = graphics::Image::from_rgba8(ctx, 1024 as u16, 768 as u16, &data[0..])
-                        .unwrap();
-                    Some(img)
-                }
+        let maybe_img = match &*self.zoom_image.read() {
+            BackgroundImage::NotYet => None,
+            BackgroundImage::Almost(data) => {
+                println!("setting zoom image");
+                let img =
+                    graphics::Image::from_rgba8(ctx, 1024 as u16, 768 as u16, &data[0..]).unwrap();
+                Some(img)
+            }
             BackgroundImage::Complete(img) => None,
         };
         match maybe_img {
             None => (),
-            Some(img) => self.zoom_image.write(BackgroundImage::Complete(img))
+            Some(img) => self.zoom_image.write(BackgroundImage::Complete(img)),
         }
         //todo just check for clicks on the zoom image
         for (i, img_button) in self.img_buttons.iter().enumerate() {

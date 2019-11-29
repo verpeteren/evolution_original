@@ -1,14 +1,14 @@
+use crate::actual_picture::*;
 use crate::apt::*;
 use crate::ggez_utility::*;
 use crate::parser::*;
 use crate::stack_machine::*;
-use crate::actual_picture::*;
-use std::collections::HashMap;
 use ggez::graphics::Color;
 use rand::rngs::StdRng;
 use rand::*;
 use rayon::prelude::*;
 use simdeez::*;
+use std::collections::HashMap;
 use std::mem::discriminant;
 use std::sync::mpsc::*;
 use std::sync::Arc;
@@ -53,14 +53,26 @@ pub enum Pic {
 }
 
 impl Pic {
-    pub fn new_mono(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
-        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+    pub fn new_mono(
+        min: usize,
+        max: usize,
+        video: bool,
+        rng: &mut StdRng,
+        pic_names: &Vec<&String>,
+    ) -> Pic {
+        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         //let tree = APTNode::Picture("barn".to_string(),vec![APTNode::X,APTNode::Y]);
         Pic::Mono(MonoData { c: tree })
     }
 
-    pub fn new_gradient(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
+    pub fn new_gradient(
+        min: usize,
+        max: usize,
+        video: bool,
+        rng: &mut StdRng,
+        pic_names: &Vec<&String>,
+    ) -> Pic {
         //todo cleanup
         //color theory?
         let num_colors = rng.gen_range(MIN_GRADIENT_COUNT, MAX_GRADIENT_COUNT);
@@ -72,22 +84,34 @@ impl Pic {
 
         Pic::Gradient(GradientData {
             colors: colors,
-            index: APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names),
+            index: APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names),
         })
     }
 
-    pub fn new_rgb(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
-        let r = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
-        let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
-        let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+    pub fn new_rgb(
+        min: usize,
+        max: usize,
+        video: bool,
+        rng: &mut StdRng,
+        pic_names: &Vec<&String>,
+    ) -> Pic {
+        let r = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
         Pic::RGB(RGBData { r, g, b })
     }
 
-    pub fn new_hsv(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
-        let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
-        let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
-        let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+    pub fn new_hsv(
+        min: usize,
+        max: usize,
+        video: bool,
+        rng: &mut StdRng,
+        pic_names: &Vec<&String>,
+    ) -> Pic {
+        let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         Pic::HSV(HSVData { h, s, v })
     }
 
@@ -116,7 +140,14 @@ impl Pic {
         }
     }
 
-    pub fn get_video<S: Simd>(&self,pics:Arc<HashMap<String,ActualPicture>>, w: usize, h: usize, fps: u16, d: f32) -> Vec<Vec<u8>> {
+    pub fn get_video<S: Simd>(
+        &self,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        fps: u16,
+        d: f32,
+    ) -> Vec<Vec<u8>> {
         let now = Instant::now();
         let frames = (fps as f32 * (d / 1000.0)) as i32;
         let frame_dt = 2.0 / frames as f32;
@@ -124,7 +155,7 @@ impl Pic {
         let mut t = -1.0;
         let mut result = Vec::new();
         for _ in 0..frames {
-            let frame_buffer = self.get_rgba8::<S>(pics.clone(),w, h, t);
+            let frame_buffer = self.get_rgba8::<S>(pics.clone(), w, h, t);
             result.push(frame_buffer);
             t += frame_dt;
         }
@@ -132,16 +163,29 @@ impl Pic {
         result
     }
 
-    pub fn get_rgba8<S: Simd>(&self,pics:Arc<HashMap<String,ActualPicture>>, w: usize, h: usize, t: f32) -> Vec<u8> {
+    pub fn get_rgba8<S: Simd>(
+        &self,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) -> Vec<u8> {
         match self {
-            Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data,pics, w, h, t),
-            Pic::Gradient(data) => Pic::get_rgba8_gradient::<S>(data,pics, w, h, t),
-            Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data,pics, w, h, t),
-            Pic::HSV(data) => Pic::get_rgba8_hsv::<S>(data,pics, w, h, t),
+            Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data, pics, w, h, t),
+            Pic::Gradient(data) => Pic::get_rgba8_gradient::<S>(data, true, pics, w, h, t),
+            Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data, pics, w, h, t),
+            Pic::HSV(data) => Pic::get_rgba8_hsv::<S>(data, pics, w, h, t),
         }
     }
 
-    fn get_rgba8_gradient<S: Simd>(data: &GradientData,pics:Arc<HashMap<String,ActualPicture>>, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_gradient<S: Simd>(
+        data: &GradientData,
+        threaded: bool,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
@@ -179,43 +223,53 @@ impl Pic {
                 }
             }
 
-            result
-                .par_chunks_mut(4 * w)
-                .enumerate()
-                .for_each(|(y_pixel, chunk)| {
-                    let mut stack = Vec::with_capacity(sm.instructions.len());
-                    stack.set_len(sm.instructions.len());
+            let process = |(y_pixel, chunk): (usize, &mut [u8])| {
+                let mut stack = Vec::with_capacity(sm.instructions.len());
+                stack.set_len(sm.instructions.len());
 
-                    let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
-                    let x_step = 2.0 / (w - 1) as f32;
-                    let mut x = S::setzero_ps();
-                    for i in (0..S::VF32_WIDTH).rev() {
-                        x[i] = -1.0 + (x_step * i as f32);
+                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
+                let x_step = 2.0 / (w - 1) as f32;
+                let mut x = S::setzero_ps();
+                for i in (0..S::VF32_WIDTH).rev() {
+                    x[i] = -1.0 + (x_step * i as f32);
+                }
+                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
+
+                for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                    let v = sm.execute(&mut stack, pics.clone(), x, y, ts);
+                    let scaled_v = (v + S::set1_ps(1.0)) * S::set1_ps(0.5);
+                    let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
+
+                    for j in 0..S::VF32_WIDTH {
+                        let c = gradient[index[j] as usize % GRADIENT_SIZE];
+                        chunk[i + j * 4] = (c.r * 255.0) as u8;
+                        chunk[i + 1 + j * 4] = (c.g * 255.0) as u8;
+                        chunk[i + 2 + j * 4] = (c.b * 255.0) as u8;
+                        chunk[i + 3 + j * 4] = 255 as u8;
                     }
-                    let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
+                    x = x + x_step;
+                }
+            };
 
-                    for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                        let v = sm.execute(&mut stack,pics.clone(), x, y, ts);
-                        let scaled_v = (v + S::set1_ps(1.0)) * S::set1_ps(0.5);
-                        let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
+            if threaded {
+                result.par_chunks_mut(4 * w).enumerate().for_each(process);
+            } else {
+                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
+            }
 
-                        for j in 0..S::VF32_WIDTH {
-                            let c = gradient[index[j] as usize % GRADIENT_SIZE];
-                            chunk[i + j * 4] = (c.r * 255.0) as u8;
-                            chunk[i + 1 + j * 4] = (c.g * 255.0) as u8;
-                            chunk[i + 2 + j * 4] = (c.b * 255.0) as u8;
-                            chunk[i + 3 + j * 4] = 255 as u8;
-                        }
-                        x = x + x_step;
-                    }
-                });
             // println!("min:{} max:{} range:{}",min,max,max-min);
             println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
 
-    fn get_rgba8_mono<S: Simd>(data: &MonoData,pics:Arc<HashMap<String,ActualPicture>>, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_mono<S: Simd>(
+        data: &MonoData,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
@@ -241,7 +295,7 @@ impl Pic {
                     let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                     for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                        let v = sm.execute(&mut stack,pics.clone(), x, y, ts);
+                        let v = sm.execute(&mut stack, pics.clone(), x, y, ts);
 
                         // if v[0] > max { max = v[0]; }
                         // if v[0] < min { min = v[0]; }
@@ -264,7 +318,13 @@ impl Pic {
         }
     }
 
-    fn get_rgba8_rgb<S: Simd>(data: &RGBData,pics:Arc<HashMap<String,ActualPicture>>, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_rgb<S: Simd>(
+        data: &RGBData,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
@@ -300,11 +360,14 @@ impl Pic {
                     let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                     for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                        let rs = (r_sm.execute(&mut stack,pics.clone(), x, y, ts) + S::set1_ps(1.0))
+                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
-                        let gs = (g_sm.execute(&mut stack,pics.clone(), x, y, ts) + S::set1_ps(1.0))
+                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
-                        let bs = (b_sm.execute(&mut stack,pics.clone(), x, y, ts) + S::set1_ps(1.0))
+                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
                         for j in 0..S::VF32_WIDTH {
                             let r = (rs[j] as i32 % 255) as u8;
@@ -323,7 +386,13 @@ impl Pic {
         }
     }
 
-    fn get_rgba8_hsv<S: Simd>(data: &HSVData,pics:Arc<HashMap<String,ActualPicture>>, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_hsv<S: Simd>(
+        data: &HSVData,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
@@ -358,11 +427,14 @@ impl Pic {
                     let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                     for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                        let hs = (h_sm.execute(&mut stack,pics.clone(), x, y, ts) + S::set1_ps(1.0))
+                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
-                        let ss = (s_sm.execute(&mut stack,pics.clone(), x, y, ts) + S::set1_ps(1.0))
+                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
-                        let vs = (v_sm.execute(&mut stack,pics.clone(), x, y, ts) + S::set1_ps(1.0))
+                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
                         let (mut rs, mut gs, mut bs) = hsv_to_rgb::<S>(
                             wrap_0_1::<S>(hs),

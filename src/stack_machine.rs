@@ -1,10 +1,10 @@
-use crate::apt::*;
 use crate::actual_picture::*;
+use crate::apt::*;
+use simdeez::*;
+use simdnoise::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
-use simdeez::*;
-use simdnoise::*;
 pub const SIMPLEX_MULTIPLIER: f32 = 7.35;
 pub const SIMPLEX_OFFSET: f32 = 0.028;
 pub const CELL1_MULTUPLIER: f32 = 1.661291;
@@ -74,7 +74,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Max(_) => Max,
             APTNode::Min(_) => Min,
             APTNode::Mod(_) => Mod,
-            APTNode::Picture(name,_) => Picture(name.to_string()),
+            APTNode::Picture(name, _) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => X,
             APTNode::Y => Y,
@@ -120,7 +120,14 @@ impl<S: Simd> StackMachine<S> {
         a
     }
 
-    pub fn execute(&self, stack: &mut Vec<S::Vf32>,pics:Arc<HashMap<String,ActualPicture>>, x: S::Vf32, y: S::Vf32, t: S::Vf32) -> S::Vf32 {
+    pub fn execute(
+        &self,
+        stack: &mut Vec<S::Vf32>,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        x: S::Vf32,
+        y: S::Vf32,
+        t: S::Vf32,
+    ) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
             for ins in &self.instructions {
@@ -298,30 +305,31 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp - 1] = r;
                     }
                     Picture(name) => {
-                       sp -= 1;
-                    
-                       let y = stack[sp-1];
-                       let x = stack[sp];
-                       
-                       let picture = &pics[name];
-                       let w = S::set1_epi32(picture.w as i32);
-                       let h = S::set1_epi32(picture.h as i32);
-                       let wf = S::cvtepi32_ps(w);
-                       let hf = S::cvtepi32_ps(h);
-                       let mut xpct = (x + S::set1_ps(1.0)) / S::set1_ps(2.0);
-                       let mut ypct = (y + S::set1_ps(1.0)) / S::set1_ps(2.0);
-                       for i in 0 .. S::VF32_WIDTH {
-                           xpct[i] = xpct[i] % 1.0;
-                           ypct[i] = ypct[i] % 1.0;
-                       }
-                       let xi = S::cvtps_epi32(xpct*wf);
-                       let yi = S::cvtps_epi32(ypct*hf);
-                       let index = xi + w*yi;
-                    
-                       //println!("w:{:?} h{:?} xpct:{:?} ypct:{:?} index:{},{}",w[0],h[0],xpct[0],ypct[0],index[0],index[1]);
-                       for i in 0 .. S::VF32_WIDTH {
-                           stack[sp-1][i] = picture.brightness[index[i] as usize % (picture.w as usize *picture.h as usize)];
-                       }
+                        sp -= 1;
+
+                        let y = stack[sp - 1];
+                        let x = stack[sp];
+
+                        let picture = &pics[name];
+                        let w = S::set1_epi32(picture.w as i32);
+                        let h = S::set1_epi32(picture.h as i32);
+                        let wf = S::cvtepi32_ps(w);
+                        let hf = S::cvtepi32_ps(h);
+                        let mut xpct = (x + S::set1_ps(1.0)) / S::set1_ps(2.0);
+                        let mut ypct = (y + S::set1_ps(1.0)) / S::set1_ps(2.0);
+                        for i in 0..S::VF32_WIDTH {
+                            xpct[i] = xpct[i] % 1.0;
+                            ypct[i] = ypct[i] % 1.0;
+                        }
+                        let xi = S::cvtps_epi32(xpct * wf);
+                        let yi = S::cvtps_epi32(ypct * hf);
+                        let index = xi + w * yi;
+
+                        //println!("w:{:?} h{:?} xpct:{:?} ypct:{:?} index:{},{}",w[0],h[0],xpct[0],ypct[0],index[0],index[1]);
+                        for i in 0..S::VF32_WIDTH {
+                            stack[sp - 1][i] = picture.brightness
+                                [index[i] as usize % (picture.w as usize * picture.h as usize)];
+                        }
                     }
                     Constant(v) => {
                         stack[sp] = *v;

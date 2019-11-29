@@ -31,7 +31,7 @@ pub enum APTNode {
     Max(Vec<APTNode>),
     Min(Vec<APTNode>),
     Mod(Vec<APTNode>),
-    Picture(String,Vec<APTNode>),
+    Picture(String, Vec<APTNode>),
     Constant(f32),
     X,
     Y,
@@ -95,7 +95,12 @@ impl APTNode {
             Max(children) => format!("( Max {} {})", children[0].to_lisp(), children[1].to_lisp()),
             Min(children) => format!("( Min {} {})", children[0].to_lisp(), children[1].to_lisp()),
             Mod(children) => format!("( Mod {} {})", children[0].to_lisp(), children[1].to_lisp()),
-            Picture(name,children) => format!("( Pic-{} {} {} )",name,children[0].to_lisp(), children[1].to_lisp()),
+            Picture(name, children) => format!(
+                "( Pic-{} {} {} )",
+                name,
+                children[0].to_lisp(),
+                children[1].to_lisp()
+            ),
             Constant(v) => format!("{}", v),
             X => format!("X"),
             Y => format!("Y"),
@@ -131,7 +136,7 @@ impl APTNode {
             "max" => Ok(Max(vec![Empty, Empty])),
             "min" => Ok(Min(vec![Empty, Empty])),
             "mod" => Ok(Mod(vec![Empty, Empty])),
-            _ if lower == "pic" => Ok(X), 
+            _ if lower == "pic" => Ok(X),
             "x" => Ok(X),
             "y" => Ok(Y),
             "t" => Ok(T),
@@ -139,7 +144,7 @@ impl APTNode {
         }
     }
 
-    pub fn get_random_node(rng: &mut StdRng, pic_names:&Vec<&String>) -> APTNode {
+    pub fn get_random_node(rng: &mut StdRng, pic_names: &Vec<&String>) -> APTNode {
         let r = rng.gen_range(0, APTNode::VARIANT_COUNT - 5);
 
         match r {
@@ -168,8 +173,8 @@ impl APTNode {
             22 => Min(vec![Empty, Empty]),
             23 => Mod(vec![Empty, Empty]),
             24 => {
-                let r = rng.gen_range(0,pic_names.len()) as usize;
-                Picture(pic_names[r].to_string(),vec![Empty,Empty])
+                let r = rng.gen_range(0, pic_names.len()) as usize;
+                Picture(pic_names[r].to_string(), vec![Empty, Empty])
             }
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
@@ -298,7 +303,7 @@ impl APTNode {
                 let b = children[1].constant_eval();
                 a % b
             }
-            Picture(name,children) => {
+            Picture(name, children) => {
                 //todo
                 0.0
             }
@@ -333,7 +338,7 @@ impl APTNode {
             Max(_) => Max(children),
             Min(_) => Min(children),
             Mod(_) => Mod(children),
-            Picture(name,_) => Picture(name.to_string(),children),
+            Picture(name, _) => Picture(name.to_string(), children),
             Constant(v) => Constant(*v),
             X => X,
             Y => Y,
@@ -367,15 +372,20 @@ impl APTNode {
         }
     }
 
-    pub fn generate_tree(count: usize, video: bool, rng: &mut StdRng, pic_names:&Vec<&String>) -> APTNode {
+    pub fn generate_tree(
+        count: usize,
+        video: bool,
+        rng: &mut StdRng,
+        pic_names: &Vec<&String>,
+    ) -> APTNode {
         let leaf_func = if video {
             APTNode::get_random_leaf_video
         } else {
             APTNode::get_random_leaf
         };
-        let mut first = APTNode::get_random_node(rng,pic_names);
+        let mut first = APTNode::get_random_node(rng, pic_names);
         for _ in 1..count {
-            first.add_random(APTNode::get_random_node(rng,pic_names), rng);
+            first.add_random(APTNode::get_random_node(rng, pic_names), rng);
         }
         while first.add_leaf(&leaf_func(rng)) {}
         first
@@ -389,7 +399,7 @@ impl APTNode {
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
             | Min(children) | Mod(children) => Some(children),
-            Picture(_,children) => Some(children),
+            Picture(_, children) => Some(children),
             _ => None,
         }
     }
@@ -402,7 +412,7 @@ impl APTNode {
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
             | Min(children) | Mod(children) => Some(children),
-            Picture(_,children) => Some(children),
+            Picture(_, children) => Some(children),
             _ => None,
         }
     }
