@@ -51,7 +51,7 @@ const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
 
 const TREE_MIN: usize = 1;
-const TREE_MAX: usize = 20;
+const TREE_MAX: usize = 5;
 
 enum GameState {
     Select,
@@ -75,7 +75,7 @@ struct MainState {
     rng: StdRng,
     zoom_image: BackgroundImage,
     zoom_image_data: Arc<RwLock<Option<Vec<u8>>>>,
-    pictures: HashMap<String, ActualPicture>,
+    pictures: Arc<HashMap<String, ActualPicture>>,
 }
 
 impl MainState {
@@ -90,7 +90,7 @@ impl MainState {
             let mut x_pct = 0.01;
             for _ in 0..THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
-                // let pic_type = 1;
+               // let pic_type = 0;
                 let pic = match pic_type {
                     0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
                     1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
@@ -103,7 +103,7 @@ impl MainState {
                     ctx,
                     256 as u16,
                     256 as u16,
-                    &pic.get_rgba8::<Avx2>(256, 256, 0.0)[0..],
+                    &pic.get_rgba8::<Avx2>(self.pictures.clone(),256, 256, 0.0)[0..],
                 )
                 .unwrap();
                 self.pics.push(pic);
@@ -132,7 +132,7 @@ impl MainState {
             mouse_state: MouseState::Nothing,
             zoom_image: BackgroundImage::NotYet,
             zoom_image_data: Arc::new(RwLock::new(None)),
-            pictures: load_pictures(ctx),
+            pictures: Arc::new(load_pictures(ctx)),
         };
         Ok(s)
     }
@@ -148,9 +148,10 @@ impl MainState {
                 println!("button right clicked");
                 let pic = self.pics[i].clone();
                 let arc = self.zoom_image_data.clone();
+                let pics = self.pictures.clone();
                 thread::spawn(move || {
                     println!("create image");
-                    let img_data = pic.get_rgba8::<Avx2>(1024 as usize, 768 as usize, 0.0);
+                    let img_data = pic.get_rgba8::<Avx2>(pics,1024 as usize, 768 as usize, 0.0);
                     *arc.write().unwrap() = Some(img_data)
                 });
                 self.state = GameState::Zoom(i);

@@ -166,6 +166,7 @@ impl APTNode {
             21 => Max(vec![Empty, Empty]),
             22 => Min(vec![Empty, Empty]),
             23 => Mod(vec![Empty, Empty]),
+            24 => Picture("barn".to_string(),vec![Empty,Empty]),
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
     }
