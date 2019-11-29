@@ -155,7 +155,7 @@ impl Pic {
         let mut t = -1.0;
         let mut result = Vec::new();
         for _ in 0..frames {
-            let frame_buffer = self.get_rgba8::<S>(pics.clone(), w, h, t);
+            let frame_buffer = self.get_rgba8::<S>(true,pics.clone(), w, h, t);
             result.push(frame_buffer);
             t += frame_dt;
         }
@@ -165,16 +165,17 @@ impl Pic {
 
     pub fn get_rgba8<S: Simd>(
         &self,
+        threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
         w: usize,
         h: usize,
         t: f32,
     ) -> Vec<u8> {
         match self {
-            Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data, pics, w, h, t),
-            Pic::Gradient(data) => Pic::get_rgba8_gradient::<S>(data, true, pics, w, h, t),
-            Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data, pics, w, h, t),
-            Pic::HSV(data) => Pic::get_rgba8_hsv::<S>(data, pics, w, h, t),
+            Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data,threaded, pics, w, h, t),
+            Pic::Gradient(data) => Pic::get_rgba8_gradient::<S>(data, threaded, pics, w, h, t),
+            Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data,threaded, pics, w, h, t),
+            Pic::HSV(data) => Pic::get_rgba8_hsv::<S>(data,threaded, pics, w, h, t),
         }
     }
 
@@ -265,6 +266,7 @@ impl Pic {
 
     fn get_rgba8_mono<S: Simd>(
         data: &MonoData,
+        threaded:bool,
         pics: Arc<HashMap<String, ActualPicture>>,
         w: usize,
         h: usize,
@@ -279,39 +281,49 @@ impl Pic {
             let sm = StackMachine::<S>::build(&data.c);
             let mut min = 999999.0;
             let mut max = -99999.0;
+
+            let process = |(y_pixel, chunk): (usize,&mut [u8])| {
+                let mut stack = Vec::with_capacity(sm.instructions.len());
+                stack.set_len(sm.instructions.len());
+
+                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
+                let x_step = 2.0 / (w - 1) as f32;
+                let mut x = S::setzero_ps();
+                for i in (0..S::VF32_WIDTH).rev() {
+                    x[i] = -1.0 + (x_step * i as f32);
+                }
+                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
+
+                for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                    let v = sm.execute(&mut stack, pics.clone(), x, y, ts);
+
+                    // if v[0] > max { max = v[0]; }
+                    // if v[0] < min { min = v[0]; }
+
+                    let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);
+
+                    for j in 0..S::VF32_WIDTH {
+                        let c = (cs[j] as i32 % 256) as u8;
+                        chunk[i + j * 4] = c;
+                        chunk[i + 1 + j * 4] = c;
+                        chunk[i + 2 + j * 4] = c;
+                        chunk[i + 3 + j * 4] = 255 as u8;
+                    }
+                    x = x + x_step;
+                }
+            };
+
+            if threaded {
             result
                 .par_chunks_mut(4 * w)
                 .enumerate()
-                .for_each(|(y_pixel, chunk)| {
-                    let mut stack = Vec::with_capacity(sm.instructions.len());
-                    stack.set_len(sm.instructions.len());
-
-                    let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
-                    let x_step = 2.0 / (w - 1) as f32;
-                    let mut x = S::setzero_ps();
-                    for i in (0..S::VF32_WIDTH).rev() {
-                        x[i] = -1.0 + (x_step * i as f32);
-                    }
-                    let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
-
-                    for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                        let v = sm.execute(&mut stack, pics.clone(), x, y, ts);
-
-                        // if v[0] > max { max = v[0]; }
-                        // if v[0] < min { min = v[0]; }
-
-                        let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);
-
-                        for j in 0..S::VF32_WIDTH {
-                            let c = (cs[j] as i32 % 256) as u8;
-                            chunk[i + j * 4] = c;
-                            chunk[i + 1 + j * 4] = c;
-                            chunk[i + 2 + j * 4] = c;
-                            chunk[i + 3 + j * 4] = 255 as u8;
-                        }
-                        x = x + x_step;
-                    }
-                });
+                .for_each(process);
+            } else {
+                result
+                .chunks_exact_mut(4 * w)
+                .enumerate()
+                .for_each(process);
+            }
             // println!("min:{} max:{} range:{}",min,max,max-min);
             println!("img elapsed:{}", now.elapsed().as_millis());
             result
@@ -320,6 +332,7 @@ impl Pic {
 
     fn get_rgba8_rgb<S: Simd>(
         data: &RGBData,
+        threaded:bool,
         pics: Arc<HashMap<String, ActualPicture>>,
         w: usize,
         h: usize,
@@ -345,42 +358,51 @@ impl Pic {
             .max()
             .unwrap();
 
-            result
-                .par_chunks_mut(4 * w)
-                .enumerate()
-                .for_each(|(y_pixel, chunk)| {
-                    let mut stack = Vec::with_capacity(max_len);
-                    stack.set_len(max_len);
-                    let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
-                    let x_step = 2.0 / (w - 1) as f32;
-                    let mut x = S::setzero_ps();
-                    for i in (0..S::VF32_WIDTH).rev() {
-                        x[i] = -1.0 + (x_step * i as f32);
-                    }
-                    let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
+            let process = |(y_pixel, chunk):(usize,&mut [u8])| {
+                let mut stack = Vec::with_capacity(max_len);
+                stack.set_len(max_len);
+                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
+                let x_step = 2.0 / (w - 1) as f32;
+                let mut x = S::setzero_ps();
+                for i in (0..S::VF32_WIDTH).rev() {
+                    x[i] = -1.0 + (x_step * i as f32);
+                }
+                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
-                    for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                            + S::set1_ps(1.0))
-                            * S::set1_ps(128.0);
-                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                            + S::set1_ps(1.0))
-                            * S::set1_ps(128.0);
-                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                            + S::set1_ps(1.0))
-                            * S::set1_ps(128.0);
-                        for j in 0..S::VF32_WIDTH {
-                            let r = (rs[j] as i32 % 255) as u8;
-                            let g = (gs[j] as i32 % 255) as u8;
-                            let b = (bs[j] as i32 % 255) as u8;
-                            chunk[i + j * 4] = r;
-                            chunk[i + 1 + j * 4] = g;
-                            chunk[i + 2 + j * 4] = b;
-                            chunk[i + 3 + j * 4] = 255 as u8;
-                        }
-                        x = x + x_step;
+                for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                    let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                        + S::set1_ps(1.0))
+                        * S::set1_ps(128.0);
+                    let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                        + S::set1_ps(1.0))
+                        * S::set1_ps(128.0);
+                    let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                        + S::set1_ps(1.0))
+                        * S::set1_ps(128.0);
+                    for j in 0..S::VF32_WIDTH {
+                        let r = (rs[j] as i32 % 255) as u8;
+                        let g = (gs[j] as i32 % 255) as u8;
+                        let b = (bs[j] as i32 % 255) as u8;
+                        chunk[i + j * 4] = r;
+                        chunk[i + 1 + j * 4] = g;
+                        chunk[i + 2 + j * 4] = b;
+                        chunk[i + 3 + j * 4] = 255 as u8;
                     }
-                });
+                    x = x + x_step;
+                }
+            };
+            if threaded {
+                result
+                    .par_chunks_mut(4 * w)
+                    .enumerate()
+                    .for_each(process);
+                } else {
+                    result
+                    .chunks_exact_mut(4 * w)
+                    .enumerate()
+                    .for_each(process);
+                }
+            
             println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
@@ -388,6 +410,7 @@ impl Pic {
 
     fn get_rgba8_hsv<S: Simd>(
         data: &HSVData,
+        threaded:bool,
         pics: Arc<HashMap<String, ActualPicture>>,
         w: usize,
         h: usize,
@@ -411,51 +434,61 @@ impl Pic {
             .iter()
             .max()
             .unwrap();
+            
+            let process = |(y_pixel, chunk):(usize,&mut [u8])| {
+                let mut stack = Vec::with_capacity(max_len);
+                stack.set_len(max_len);
+                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
+                let x_step = 2.0 / (w - 1) as f32;
+                let mut x = S::setzero_ps();
+                for i in (0..S::VF32_WIDTH).rev() {
+                    x[i] = -1.0 + (x_step * i as f32);
+                }
+                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
-            result
-                .par_chunks_mut(4 * w)
-                .enumerate()
-                .for_each(|(y_pixel, chunk)| {
-                    let mut stack = Vec::with_capacity(max_len);
-                    stack.set_len(max_len);
-                    let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
-                    let x_step = 2.0 / (w - 1) as f32;
-                    let mut x = S::setzero_ps();
-                    for i in (0..S::VF32_WIDTH).rev() {
-                        x[i] = -1.0 + (x_step * i as f32);
+                for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                    let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                        + S::set1_ps(1.0))
+                        * S::set1_ps(0.5);
+                    let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                        + S::set1_ps(1.0))
+                        * S::set1_ps(0.5);
+                    let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                        + S::set1_ps(1.0))
+                        * S::set1_ps(0.5);
+                    let (mut rs, mut gs, mut bs) = hsv_to_rgb::<S>(
+                        wrap_0_1::<S>(hs),
+                        wrap_0_1::<S>(ss),
+                        wrap_0_1::<S>(vs),
+                    );
+                    rs = rs * S::set1_ps(255.0);
+                    gs = gs * S::set1_ps(255.0);
+                    bs = bs * S::set1_ps(255.0);
+                    for j in 0..S::VF32_WIDTH {
+                        let r = (rs[j] as i32 % 255) as u8;
+                        let g = (gs[j] as i32 % 255) as u8;
+                        let b = (bs[j] as i32 % 255) as u8;
+                        chunk[i + j * 4] = r;
+                        chunk[i + 1 + j * 4] = g;
+                        chunk[i + 2 + j * 4] = b;
+                        chunk[i + 3 + j * 4] = 255 as u8;
                     }
-                    let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
-
-                    for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                            + S::set1_ps(1.0))
-                            * S::set1_ps(0.5);
-                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                            + S::set1_ps(1.0))
-                            * S::set1_ps(0.5);
-                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                            + S::set1_ps(1.0))
-                            * S::set1_ps(0.5);
-                        let (mut rs, mut gs, mut bs) = hsv_to_rgb::<S>(
-                            wrap_0_1::<S>(hs),
-                            wrap_0_1::<S>(ss),
-                            wrap_0_1::<S>(vs),
-                        );
-                        rs = rs * S::set1_ps(255.0);
-                        gs = gs * S::set1_ps(255.0);
-                        bs = bs * S::set1_ps(255.0);
-                        for j in 0..S::VF32_WIDTH {
-                            let r = (rs[j] as i32 % 255) as u8;
-                            let g = (gs[j] as i32 % 255) as u8;
-                            let b = (bs[j] as i32 % 255) as u8;
-                            chunk[i + j * 4] = r;
-                            chunk[i + 1 + j * 4] = g;
-                            chunk[i + 2 + j * 4] = b;
-                            chunk[i + 3 + j * 4] = 255 as u8;
-                        }
-                        x = x + x_step;
-                    }
-                });
+                    x = x + x_step;
+                }
+            };
+            if threaded {
+                result
+                    .par_chunks_mut(4 * w)
+                    .enumerate()
+                    .for_each(process);
+                } else {
+                    result
+                    .chunks_exact_mut(4 * w)
+                    .enumerate()
+                    .for_each(process);
+                }
+            
+            
             //   println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
