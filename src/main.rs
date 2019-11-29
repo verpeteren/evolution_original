@@ -51,7 +51,28 @@ const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
 
 const TREE_MIN: usize = 1;
-const TREE_MAX: usize = 5;
+const TREE_MAX: usize = 10;
+
+
+struct RwArc<T>(Arc<RwLock<T>>);
+impl<T> RwArc<T> {
+    pub fn new(t:T) -> RwArc<T> {
+        RwArc(Arc::new(RwLock::new(t)))
+    }
+
+    pub fn read(&self) -> std::sync::RwLockReadGuard<T> {
+        self.0.read().unwrap()
+    }
+
+    pub fn write(&self,t:T)  {
+        *self.0.write().unwrap() = t;
+    }
+
+    pub fn clone(&self) -> RwArc<T> {
+        RwArc(self.0.clone())
+    }
+
+}
 
 enum GameState {
     Select,
@@ -60,6 +81,7 @@ enum GameState {
 
 enum BackgroundImage {
     NotYet,
+    Almost(Vec<u8>),
     Complete(graphics::Image),
 }
 
@@ -73,8 +95,7 @@ struct MainState {
     dt: std::time::Duration,
     frame_elapsed: f32,
     rng: StdRng,
-    zoom_image: BackgroundImage,
-    zoom_image_data: Arc<RwLock<Option<Vec<u8>>>>,
+    zoom_image: RwArc<BackgroundImage>,
     pictures: Arc<HashMap<String, ActualPicture>>,
 }
 
@@ -86,16 +107,18 @@ impl MainState {
         let width = 1.0 / (THUMB_COLS as f32 * 1.01);
         let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
         let mut y_pct = 0.01;
+        let pic_names = &self.pictures.keys().collect();
         for _ in 0..THUMB_ROWS {
             let mut x_pct = 0.01;
             for _ in 0..THUMB_COLS {
                 let pic_type = self.rng.gen_range(0, 4);
+            
                // let pic_type = 0;
                 let pic = match pic_type {
-                    0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng),
-                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng),
-                    2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng),
-                    3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng),
+                    0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
+                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
+                    2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
+                    3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng,pic_names),
                     _ => panic!("invalid"),
                 };
 
@@ -130,8 +153,7 @@ impl MainState {
             frame_elapsed: 0.0,
             rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
             mouse_state: MouseState::Nothing,
-            zoom_image: BackgroundImage::NotYet,
-            zoom_image_data: Arc::new(RwLock::new(None)),
+            zoom_image: RwArc::new(BackgroundImage::NotYet),
             pictures: Arc::new(load_pictures(ctx)),
         };
         Ok(s)
@@ -147,12 +169,12 @@ impl MainState {
             if img_button.right_clicked(ctx, &self.mouse_state) {
                 println!("button right clicked");
                 let pic = self.pics[i].clone();
-                let arc = self.zoom_image_data.clone();
+                let arc = self.zoom_image.clone();
                 let pics = self.pictures.clone();
                 thread::spawn(move || {
                     println!("create image");
                     let img_data = pic.get_rgba8::<Avx2>(pics,1024 as usize, 768 as usize, 0.0);
-                    *arc.write().unwrap() = Some(img_data)
+                    arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom(i);
                 break;
@@ -161,18 +183,23 @@ impl MainState {
     }
 
     fn update_zoom(&mut self, ctx: &mut Context) {
-        match &self.zoom_image {
-            BackgroundImage::NotYet => match &*self.zoom_image_data.read().unwrap() {
-                Some(data) => {
+        let maybe_img = 
+        match &*self.zoom_image.read() {
+            BackgroundImage::NotYet => None, 
+            BackgroundImage::Almost(data) =>
+                {
                     println!("setting zoom image");
                     let img = graphics::Image::from_rgba8(ctx, 1024 as u16, 768 as u16, &data[0..])
                         .unwrap();
-                    self.zoom_image = BackgroundImage::Complete(img)
+                    Some(img)
                 }
-                None => (),
-            },
-            BackgroundImage::Complete(img) => (),
+            BackgroundImage::Complete(img) => None,
+        };
+        match maybe_img {
+            None => (),
+            Some(img) => self.zoom_image.write(BackgroundImage::Complete(img))
         }
+        //todo just check for clicks on the zoom image
         for (i, img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx, &self.mouse_state) {
                 println!("{}", self.pics[i].to_lisp());
@@ -180,8 +207,7 @@ impl MainState {
             }
             if img_button.right_clicked(ctx, &self.mouse_state) {
                 println!("button right clicked");
-                self.zoom_image = BackgroundImage::NotYet;
-                *self.zoom_image_data.write().unwrap() = None;
+                self.zoom_image.write(BackgroundImage::NotYet);
                 self.state = GameState::Select;
             }
         }
@@ -198,8 +224,9 @@ impl MainState {
     }
 
     fn draw_zoom(&self, ctx: &mut Context, index: usize) {
-        match &self.zoom_image {
+        match &*self.zoom_image.read() {
             BackgroundImage::NotYet => (),
+            BackgroundImage::Almost(_) => (),
             BackgroundImage::Complete(img) => {
                 let _ = graphics::draw(ctx, img, graphics::DrawParam::new());
             }

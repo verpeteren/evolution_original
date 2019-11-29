@@ -53,14 +53,14 @@ pub enum Pic {
 }
 
 impl Pic {
-    pub fn new_mono(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
-        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+    pub fn new_mono(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
+        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         //let tree = APTNode::Picture("barn".to_string(),vec![APTNode::X,APTNode::Y]);
         Pic::Mono(MonoData { c: tree })
     }
 
-    pub fn new_gradient(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
+    pub fn new_gradient(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
         //todo cleanup
         //color theory?
         let num_colors = rng.gen_range(MIN_GRADIENT_COUNT, MAX_GRADIENT_COUNT);
@@ -72,22 +72,22 @@ impl Pic {
 
         Pic::Gradient(GradientData {
             colors: colors,
-            index: APTNode::generate_tree(rng.gen_range(min, max), video, rng),
+            index: APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names),
         })
     }
 
-    pub fn new_rgb(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
-        let r = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+    pub fn new_rgb(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
+        let r = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+        let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+        let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
         Pic::RGB(RGBData { r, g, b })
     }
 
-    pub fn new_hsv(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
-        let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
-        let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+    pub fn new_hsv(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names:&Vec<&String>) -> Pic {
+        let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+        let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+        let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
         Pic::HSV(HSVData { h, s, v })
     }
 

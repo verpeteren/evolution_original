@@ -139,8 +139,9 @@ impl APTNode {
         }
     }
 
-    pub fn get_random_node(rng: &mut StdRng) -> APTNode {
+    pub fn get_random_node(rng: &mut StdRng, pic_names:&Vec<&String>) -> APTNode {
         let r = rng.gen_range(0, APTNode::VARIANT_COUNT - 5);
+
         match r {
             0 => Add(vec![Empty, Empty]),
             1 => Sub(vec![Empty, Empty]),
@@ -166,7 +167,10 @@ impl APTNode {
             21 => Max(vec![Empty, Empty]),
             22 => Min(vec![Empty, Empty]),
             23 => Mod(vec![Empty, Empty]),
-            24 => Picture("barn".to_string(),vec![Empty,Empty]),
+            24 => {
+                let r = rng.gen_range(0,pic_names.len()) as usize;
+                Picture(pic_names[r].to_string(),vec![Empty,Empty])
+            }
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
     }
@@ -363,15 +367,15 @@ impl APTNode {
         }
     }
 
-    pub fn generate_tree(count: usize, video: bool, rng: &mut StdRng) -> APTNode {
+    pub fn generate_tree(count: usize, video: bool, rng: &mut StdRng, pic_names:&Vec<&String>) -> APTNode {
         let leaf_func = if video {
             APTNode::get_random_leaf_video
         } else {
             APTNode::get_random_leaf
         };
-        let mut first = APTNode::get_random_node(rng);
+        let mut first = APTNode::get_random_node(rng,pic_names);
         for _ in 1..count {
-            first.add_random(APTNode::get_random_node(rng), rng);
+            first.add_random(APTNode::get_random_node(rng,pic_names), rng);
         }
         while first.add_leaf(&leaf_func(rng)) {}
         first
