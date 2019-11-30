@@ -155,7 +155,7 @@ impl Pic {
         let mut t = -1.0;
         let mut result = Vec::new();
         for _ in 0..frames {
-            let frame_buffer = self.get_rgba8::<S>(true,pics.clone(), w, h, t);
+            let frame_buffer = self.get_rgba8::<S>(true, pics.clone(), w, h, t);
             result.push(frame_buffer);
             t += frame_dt;
         }
@@ -172,10 +172,10 @@ impl Pic {
         t: f32,
     ) -> Vec<u8> {
         match self {
-            Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data,threaded, pics, w, h, t),
+            Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data, threaded, pics, w, h, t),
             Pic::Gradient(data) => Pic::get_rgba8_gradient::<S>(data, threaded, pics, w, h, t),
-            Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data,threaded, pics, w, h, t),
-            Pic::HSV(data) => Pic::get_rgba8_hsv::<S>(data,threaded, pics, w, h, t),
+            Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data, threaded, pics, w, h, t),
+            Pic::HSV(data) => Pic::get_rgba8_hsv::<S>(data, threaded, pics, w, h, t),
         }
     }
 
@@ -266,7 +266,7 @@ impl Pic {
 
     fn get_rgba8_mono<S: Simd>(
         data: &MonoData,
-        threaded:bool,
+        threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
         w: usize,
         h: usize,
@@ -282,7 +282,7 @@ impl Pic {
             let mut min = 999999.0;
             let mut max = -99999.0;
 
-            let process = |(y_pixel, chunk): (usize,&mut [u8])| {
+            let process = |(y_pixel, chunk): (usize, &mut [u8])| {
                 let mut stack = Vec::with_capacity(sm.instructions.len());
                 stack.set_len(sm.instructions.len());
 
@@ -314,15 +314,9 @@ impl Pic {
             };
 
             if threaded {
-            result
-                .par_chunks_mut(4 * w)
-                .enumerate()
-                .for_each(process);
+                result.par_chunks_mut(4 * w).enumerate().for_each(process);
             } else {
-                result
-                .chunks_exact_mut(4 * w)
-                .enumerate()
-                .for_each(process);
+                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
             }
             // println!("min:{} max:{} range:{}",min,max,max-min);
             println!("img elapsed:{}", now.elapsed().as_millis());
@@ -332,7 +326,7 @@ impl Pic {
 
     fn get_rgba8_rgb<S: Simd>(
         data: &RGBData,
-        threaded:bool,
+        threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
         w: usize,
         h: usize,
@@ -358,7 +352,7 @@ impl Pic {
             .max()
             .unwrap();
 
-            let process = |(y_pixel, chunk):(usize,&mut [u8])| {
+            let process = |(y_pixel, chunk): (usize, &mut [u8])| {
                 let mut stack = Vec::with_capacity(max_len);
                 stack.set_len(max_len);
                 let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
@@ -370,14 +364,11 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                        + S::set1_ps(1.0))
+                    let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
-                    let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                        + S::set1_ps(1.0))
+                    let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
-                    let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                        + S::set1_ps(1.0))
+                    let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
                     for j in 0..S::VF32_WIDTH {
                         let r = (rs[j] as i32 % 255) as u8;
@@ -392,17 +383,11 @@ impl Pic {
                 }
             };
             if threaded {
-                result
-                    .par_chunks_mut(4 * w)
-                    .enumerate()
-                    .for_each(process);
-                } else {
-                    result
-                    .chunks_exact_mut(4 * w)
-                    .enumerate()
-                    .for_each(process);
-                }
-            
+                result.par_chunks_mut(4 * w).enumerate().for_each(process);
+            } else {
+                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
+            }
+
             println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
@@ -410,7 +395,7 @@ impl Pic {
 
     fn get_rgba8_hsv<S: Simd>(
         data: &HSVData,
-        threaded:bool,
+        threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
         w: usize,
         h: usize,
@@ -434,8 +419,8 @@ impl Pic {
             .iter()
             .max()
             .unwrap();
-            
-            let process = |(y_pixel, chunk):(usize,&mut [u8])| {
+
+            let process = |(y_pixel, chunk): (usize, &mut [u8])| {
                 let mut stack = Vec::with_capacity(max_len);
                 stack.set_len(max_len);
                 let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
@@ -447,20 +432,14 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                        + S::set1_ps(1.0))
+                    let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(0.5);
-                    let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                        + S::set1_ps(1.0))
+                    let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(0.5);
-                    let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts)
-                        + S::set1_ps(1.0))
+                    let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(0.5);
-                    let (mut rs, mut gs, mut bs) = hsv_to_rgb::<S>(
-                        wrap_0_1::<S>(hs),
-                        wrap_0_1::<S>(ss),
-                        wrap_0_1::<S>(vs),
-                    );
+                    let (mut rs, mut gs, mut bs) =
+                        hsv_to_rgb::<S>(wrap_0_1::<S>(hs), wrap_0_1::<S>(ss), wrap_0_1::<S>(vs));
                     rs = rs * S::set1_ps(255.0);
                     gs = gs * S::set1_ps(255.0);
                     bs = bs * S::set1_ps(255.0);
@@ -477,18 +456,11 @@ impl Pic {
                 }
             };
             if threaded {
-                result
-                    .par_chunks_mut(4 * w)
-                    .enumerate()
-                    .for_each(process);
-                } else {
-                    result
-                    .chunks_exact_mut(4 * w)
-                    .enumerate()
-                    .for_each(process);
-                }
-            
-            
+                result.par_chunks_mut(4 * w).enumerate().for_each(process);
+            } else {
+                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
+            }
+
             //   println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }

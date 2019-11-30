@@ -124,7 +124,7 @@ impl MainState {
                     ctx,
                     256 as u16,
                     256 as u16,
-                    &pic.get_rgba8::<Avx2>(false,self.pictures.clone(), 256, 256, 0.0)[0..],
+                    &pic.get_rgba8::<Avx2>(false, self.pictures.clone(), 256, 256, 0.0)[0..],
                 )
                 .unwrap();
                 self.pics.push(pic);
@@ -171,7 +171,8 @@ impl MainState {
                 let pics = self.pictures.clone();
                 thread::spawn(move || {
                     println!("create image");
-                    let img_data = pic.get_rgba8::<Avx2>(true,pics, 1024 as usize, 768 as usize, 0.0);
+                    let img_data =
+                        pic.get_rgba8::<Avx2>(true, pics, 1024 as usize, 768 as usize, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom(i);

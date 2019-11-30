@@ -151,9 +151,9 @@ impl<S: Simd> StackMachine<S> {
                     FBM => {
                         sp -= 5;
                         let xfreq = stack[sp - 1] * S::set1_ps(15.0);
-                        let yfreq = stack[sp+4] * S::set1_ps(15.0);
-                        let lacunarity = stack[sp+2] * S::set1_ps(5.0);
-                        let gain = stack[sp+3] * S::set1_ps(0.5);
+                        let yfreq = stack[sp + 4] * S::set1_ps(15.0);
+                        let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
+                        let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
                         stack[sp - 1] = simdnoise::simplex::fbm_2d::<S>(
                             stack[sp + 1] * xfreq,
@@ -163,14 +163,14 @@ impl<S: Simd> StackMachine<S> {
                             octaves,
                             3,
                         ); //* S::set1_ps(SIMPLEX_MULTIPLIER)
-                            //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
+                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
                     }
                     Ridge => {
                         sp -= 5;
                         let xfreq = stack[sp - 1] * S::set1_ps(15.0);
-                        let yfreq = stack[sp+4] * S::set1_ps(15.0);
-                        let lacunarity = stack[sp+2] * S::set1_ps(5.0);
-                        let gain = stack[sp+3] * S::set1_ps(0.5);
+                        let yfreq = stack[sp + 4] * S::set1_ps(15.0);
+                        let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
+                        let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
                         stack[sp - 1] = simdnoise::simplex::ridge_2d::<S>(
                             stack[sp + 1] * xfreq,
@@ -179,15 +179,15 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        );// S::set1_ps(SIMPLEX_OFFSET)
-                            //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
+                        ); // S::set1_ps(SIMPLEX_OFFSET)
+                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
                     }
                     Turbulence => {
                         sp -= 5;
                         let xfreq = stack[sp - 1] * S::set1_ps(15.0);
-                        let yfreq = stack[sp+4] * S::set1_ps(15.0);
-                        let lacunarity = stack[sp+2] * S::set1_ps(5.0);
-                        let gain = stack[sp+3] * S::set1_ps(0.5);
+                        let yfreq = stack[sp + 4] * S::set1_ps(15.0);
+                        let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
+                        let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
                         stack[sp - 1] = simdnoise::simplex::turbulence_2d::<S>(
                             stack[sp + 1] * xfreq,
@@ -196,14 +196,14 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        );// * S::set1_ps(SIMPLEX_MULTIPLIER)
-                            //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
+                        ); // * S::set1_ps(SIMPLEX_MULTIPLIER)
+                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                     }
                     Cell1 => {
                         sp -= 4;
                         let xfreq = stack[sp - 1] * S::set1_ps(4.0);
-                        let yfreq = stack[sp+3] * S::set1_ps(4.0);
-                        let jitter = stack[sp+2] * S::set1_ps(0.5);
+                        let yfreq = stack[sp + 3] * S::set1_ps(4.0);
+                        let jitter = stack[sp + 2] * S::set1_ps(0.5);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
                             stack[sp + 1] * xfreq,
                             stack[sp] * yfreq,
@@ -211,14 +211,14 @@ impl<S: Simd> StackMachine<S> {
                             CellReturnType::Distance,
                             jitter,
                             1,
-                        );//* S::set1_ps(CELL1_MULTUPLIER)
-                            //- S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
+                        ); //* S::set1_ps(CELL1_MULTUPLIER)
+                           //- S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
                     }
                     Cell2 => {
                         sp -= 4;
                         let xfreq = stack[sp - 1] * S::set1_ps(4.0);
-                        let yfreq = stack[sp+3] * S::set1_ps(4.0);
-                        let jitter = stack[sp+2] * S::set1_ps(0.5);
+                        let yfreq = stack[sp + 3] * S::set1_ps(4.0);
+                        let jitter = stack[sp + 2] * S::set1_ps(0.5);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
                             stack[sp + 1] * xfreq,
                             stack[sp] * yfreq,
