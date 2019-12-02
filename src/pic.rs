@@ -11,14 +11,20 @@ use std::mem::discriminant;
 use std::sync::mpsc::*;
 use std::time::Instant;
 
+const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
 
 #[derive(Clone)]
 pub struct GradientData {
-    colors: Vec<Color>,
+    colors: Vec<(Color,bool)>,
     index: APTNode,
+}
+
+#[derive(Clone)]
+pub struct GrayscaleData {
+    c: APTNode,
 }
 
 #[derive(Clone)]
@@ -42,17 +48,26 @@ pub struct HSVData {
 
 #[derive(Clone)]
 pub enum Pic {
-    Mono(MonoData),
+    Grayscale(GrayscaleData),
     RGB(RGBData),
     HSV(HSVData),
     Gradient(GradientData),
+    Mono(MonoData),
 }
 
 impl Pic {
+
+    
     pub fn new_mono(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         Pic::Mono(MonoData { c: tree })
+    }
+
+    pub fn new_grayscale(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
+        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng);
+        //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
+        Pic::Grayscale(GrayscaleData { c: tree })
     }
 
     pub fn new_gradient(min: usize, max: usize, video: bool, rng: &mut StdRng) -> Pic {
@@ -60,9 +75,15 @@ impl Pic {
         //color theory?
         let num_colors = rng.gen_range(MIN_GRADIENT_COUNT, MAX_GRADIENT_COUNT);
         let mut colors = Vec::with_capacity(num_colors);
-
-        for _ in 0..num_colors {
-            colors.push(get_random_color(rng));
+        
+        for _ in 0..num_colors {            
+            let stop = rng.gen_range(0,GRADIENT_STOP_CHANCE);
+            if stop == 0 {
+                colors.push((get_random_color(rng),true));
+            } else {
+                colors.push((get_random_color(rng),false));
+            }
+            
         }
 
         Pic::Gradient(GradientData {
@@ -88,11 +109,17 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
+            Pic::Grayscale(data) => format!("( Grayscale\n {} )", data.c.to_lisp()),
             Pic::Mono(data) => format!("( Mono\n {} )", data.c.to_lisp()),
             Pic::Gradient(data) => {
                 let mut colors = "( Colors ".to_string();
-                for color in &data.colors {
-                    colors += &format!(" ( {} {} {} )", color.r, color.g, color.b);
+                for (color,stop) in &data.colors {
+                    if *stop {
+                        colors += &format!(" ( StopColor {} {} {} )", color.r, color.g, color.b);
+                    } else {
+                        colors += &format!(" ( Color {} {} {} )", color.r, color.g, color.b);
+                    }
+                    
                 }
                 format!("( Gradient\n {} {} )", colors, data.index.to_lisp())
             }
@@ -129,6 +156,7 @@ impl Pic {
 
     pub fn get_rgba8<S: Simd>(&self, w: usize, h: usize, t: f32) -> Vec<u8> {
         match self {
+            Pic::Grayscale(data) => Pic::get_rgba8_grayscale::<S>(data, w, h, t),
             Pic::Mono(data) => Pic::get_rgba8_mono::<S>(data, w, h, t),
             Pic::Gradient(data) => Pic::get_rgba8_gradient::<S>(data, w, h, t),
             Pic::RGB(data) => Pic::get_rgba8_rgb::<S>(data, w, h, t),
@@ -147,14 +175,21 @@ impl Pic {
             let mut min = 999999.0;
             let mut max = -99999.0;
 
+            let color_count = data.colors.iter().filter(|(_,stop)| !stop).count();
             let mut gradient = Vec::<Color>::new(); //todo actually compute this
-            let step = (GRADIENT_SIZE as f32 / data.colors.len() as f32) / GRADIENT_SIZE as f32;
+            let step = (GRADIENT_SIZE as f32 / color_count as f32) / GRADIENT_SIZE as f32;
             let mut positions = Vec::<f32>::new();            
             positions.push(0.0);
             let mut pos = step;
-            for _ in 1 .. data.colors.len() - 1 {
-                positions.push(pos);
-                pos += step;
+            for i in 1 .. data.colors.len() - 1 {
+                let (_,stop) = data.colors[i];
+                if stop {
+                    positions.push(*positions.last().unwrap());
+                } else {
+                    positions.push(pos);
+                    pos += step;
+                }
+                
             }
             positions.push(1.0);
             
@@ -162,10 +197,10 @@ impl Pic {
                 let pct = i as f32 / GRADIENT_SIZE as f32;
                 let color2pos = positions.iter().position(|n| *n >= pct).unwrap();
                 if color2pos == 0 {
-                    gradient.push(data.colors[0]);
+                    gradient.push(data.colors[0].0);
                 } else {
-                    let color1 = data.colors[color2pos - 1];
-                    let color2 = data.colors[color2pos];
+                    let color1 = data.colors[color2pos - 1].0;
+                    let color2 = data.colors[color2pos].0;
                     let pct2 = positions[color2pos];
                     let pct1 = positions[color2pos - 1];
                     let range = pct2 - pct1;
@@ -210,7 +245,7 @@ impl Pic {
         }
     }
 
-    fn get_rgba8_mono<S: Simd>(data: &MonoData, w: usize, h: usize, t: f32) -> Vec<u8> {
+    fn get_rgba8_grayscale<S: Simd>(data: &GrayscaleData, w: usize, h: usize, t: f32) -> Vec<u8> {
         unsafe {
             let now = Instant::now();
             let ts = S::set1_ps(t);
@@ -245,6 +280,53 @@ impl Pic {
 
                         for j in 0..S::VF32_WIDTH {
                             let c = (cs[j] as i32 % 256) as u8;
+                            chunk[i + j * 4] = c;
+                            chunk[i + 1 + j * 4] = c;
+                            chunk[i + 2 + j * 4] = c;
+                            chunk[i + 3 + j * 4] = 255 as u8;
+                        }
+                        x = x + x_step;
+                    }
+                });
+            // println!("min:{} max:{} range:{}",min,max,max-min);
+            println!("img elapsed:{}", now.elapsed().as_millis());
+            result
+        }
+    }
+
+    fn get_rgba8_mono<S: Simd>(data: &MonoData, w: usize, h: usize, t: f32) -> Vec<u8> {
+        unsafe {
+            let now = Instant::now();
+            let ts = S::set1_ps(t);
+            let vec_len = w * h * 4;
+            let mut result = Vec::<u8>::with_capacity(vec_len);
+            result.set_len(vec_len);
+            let sm = StackMachine::<S>::build(&data.c);
+            let mut min = 999999.0;
+            let mut max = -99999.0;
+            result
+                .par_chunks_mut(4 * w)
+                .enumerate()
+                .for_each(|(y_pixel, chunk)| {
+                    let mut stack = Vec::with_capacity(sm.instructions.len());
+                    stack.set_len(sm.instructions.len());
+
+                    let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
+                    let x_step = 2.0 / (w - 1) as f32;
+                    let mut x = S::setzero_ps();
+                    for i in (0..S::VF32_WIDTH).rev() {
+                        x[i] = -1.0 + (x_step * i as f32);
+                    }
+                    let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
+
+                    for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                        let v = sm.execute(&mut stack, x, y, ts);
+
+                        // if v[0] > max { max = v[0]; }
+                        // if v[0] < min { min = v[0]; }
+                        
+                        for j in 0..S::VF32_WIDTH {
+                            let c = if v[j] < 0.0 { 0 } else { 255 };
                             chunk[i + j * 4] = c;
                             chunk[i + 1 + j * 4] = c;
                             chunk[i + 2 + j * 4] = c;
@@ -460,6 +542,25 @@ pub fn expect_operation(s: &str, receiver: &Receiver<Token>) -> Result<(), Strin
 }
 
 #[must_use]
+pub fn expect_operations(ops: Vec<&str>, receiver: &Receiver<Token>) -> Result<String, String> {
+    let op = receiver.recv().map_err(|_| "Unexpected end of file")?;
+    for s in ops {
+        match op {
+            Token::Operation(op_str, _) => {
+                if op_str.to_lowercase() == s {
+                    return Ok(op_str.to_string());
+                } 
+            }
+            _ => ()
+        }
+    }
+    return Err(format!(
+        "Unexpected token on line {}",        
+        extract_line_number(&op),        
+    ))
+}
+
+#[must_use]
 pub fn expect_constant(receiver: &Receiver<Token>) -> Result<f32, String> {
     let op = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match op {
@@ -484,7 +585,7 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
     let pic_type = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
-            "mono" => Ok(Pic::Mono(MonoData {
+            "Grayscale" => Ok(Pic::Grayscale(GrayscaleData {
                 c: APTNode::parse_apt_node(receiver)?,
             })),
             "rgb" => Ok(Pic::RGB(RGBData {
@@ -507,11 +608,16 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
                     if discriminant(&token) == discriminant(&Token::CloseParen(0)) {
                         break;
                     }
-                    expect_open_paren(receiver)?;
+                    expect_open_paren(receiver)?;                    
+                    let color_type = expect_operations(vec!["color","stopcolor"], receiver)?;                    
                     let r = expect_constant(receiver)?;
                     let g = expect_constant(receiver)?;
                     let b = expect_constant(receiver)?;
-                    colors.push(Color::new(r, g, b, 1.0));
+                    if color_type == "color" {
+                        colors.push((Color::new(r, g, b, 1.0),false));
+                    } else {
+                        colors.push((Color::new(r, g, b, 1.0),true));
+                    }
                     expect_close_paren(receiver)?;
                 }
 
