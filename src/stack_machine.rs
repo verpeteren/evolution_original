@@ -1,6 +1,10 @@
+use crate::actual_picture::*;
 use crate::apt::*;
 use simdeez::*;
 use simdnoise::*;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::RwLock;
 pub const SIMPLEX_MULTIPLIER: f32 = 7.35;
 pub const SIMPLEX_OFFSET: f32 = 0.028;
 pub const CELL1_MULTUPLIER: f32 = 1.661291;
@@ -32,6 +36,7 @@ pub enum Instruction<S: Simd> {
     Max,
     Min,
     Mod,
+    Picture(String),
     Constant(S::Vf32),
     X,
     Y,
@@ -69,6 +74,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Max(_) => Max,
             APTNode::Min(_) => Min,
             APTNode::Mod(_) => Mod,
+            APTNode::Picture(name, _) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => X,
             APTNode::Y => Y,
@@ -114,7 +120,14 @@ impl<S: Simd> StackMachine<S> {
         a
     }
 
-    pub fn execute(&self, stack: &mut Vec<S::Vf32>, x: S::Vf32, y: S::Vf32, t: S::Vf32) -> S::Vf32 {
+    pub fn execute(
+        &self,
+        stack: &mut Vec<S::Vf32>,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        x: S::Vf32,
+        y: S::Vf32,
+        t: S::Vf32,
+    ) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
             for ins in &self.instructions {
@@ -136,75 +149,82 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp - 1] = StackMachine::<S>::deal_with_nan(stack[sp] / stack[sp - 1]);
                     }
                     FBM => {
-                        sp -= 2;
-                        let freq = stack[sp - 1] * S::set1_ps(25.0);
-                        let lacunarity = S::set1_ps(0.5);
-                        let gain = S::set1_ps(2.0);
+                        sp -= 5;
+                        let xfreq = stack[sp - 1] * S::set1_ps(15.0);
+                        let yfreq = stack[sp + 4] * S::set1_ps(15.0);
+                        let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
+                        let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
                         stack[sp - 1] = simdnoise::simplex::fbm_2d::<S>(
-                            stack[sp + 1] * freq,
-                            stack[sp] * freq,
+                            stack[sp + 1] * xfreq,
+                            stack[sp] * yfreq,
                             lacunarity,
                             gain,
                             octaves,
                             3,
-                        ) * S::set1_ps(SIMPLEX_MULTIPLIER)
-                            - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
+                        ); //* S::set1_ps(SIMPLEX_MULTIPLIER)
+                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
                     }
                     Ridge => {
-                        sp -= 2;
-                        let freq = stack[sp - 1] * S::set1_ps(25.0);
-                        let lacunarity = S::set1_ps(0.5);
-                        let gain = S::set1_ps(2.0);
+                        sp -= 5;
+                        let xfreq = stack[sp - 1] * S::set1_ps(15.0);
+                        let yfreq = stack[sp + 4] * S::set1_ps(15.0);
+                        let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
+                        let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
                         stack[sp - 1] = simdnoise::simplex::ridge_2d::<S>(
-                            stack[sp + 1] * freq,
-                            stack[sp] * freq,
+                            stack[sp + 1] * xfreq,
+                            stack[sp] * yfreq,
                             lacunarity,
                             gain,
                             octaves,
                             3,
-                        ) * S::set1_ps(SIMPLEX_OFFSET)
-                            - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
+                        ); // S::set1_ps(SIMPLEX_OFFSET)
+                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
                     }
                     Turbulence => {
-                        sp -= 2;
-                        let freq = stack[sp - 1] * S::set1_ps(25.0);
-                        let lacunarity = S::set1_ps(0.5);
-                        let gain = S::set1_ps(2.0);
+                        sp -= 5;
+                        let xfreq = stack[sp - 1] * S::set1_ps(15.0);
+                        let yfreq = stack[sp + 4] * S::set1_ps(15.0);
+                        let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
+                        let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
                         stack[sp - 1] = simdnoise::simplex::turbulence_2d::<S>(
-                            stack[sp + 1] * freq,
-                            stack[sp] * freq,
+                            stack[sp + 1] * xfreq,
+                            stack[sp] * yfreq,
                             lacunarity,
                             gain,
                             octaves,
                             3,
-                        ) * S::set1_ps(SIMPLEX_MULTIPLIER)
-                            - S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
+                        ); // * S::set1_ps(SIMPLEX_MULTIPLIER)
+                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
                     }
                     Cell1 => {
-                        sp -= 2;
-                        let freq = stack[sp - 1] * S::set1_ps(4.0);
+                        sp -= 4;
+                        let xfreq = stack[sp - 1] * S::set1_ps(4.0);
+                        let yfreq = stack[sp + 3] * S::set1_ps(4.0);
+                        let jitter = stack[sp + 2] * S::set1_ps(0.5);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
-                            stack[sp + 1] * freq,
-                            stack[sp] * freq,
+                            stack[sp + 1] * xfreq,
+                            stack[sp] * yfreq,
                             CellDistanceFunction::Euclidean,
                             CellReturnType::Distance,
-                            S::set1_ps(0.45),
+                            jitter,
                             1,
-                        ) * S::set1_ps(CELL1_MULTUPLIER)
-                            - S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
+                        ); //* S::set1_ps(CELL1_MULTUPLIER)
+                           //- S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
                     }
                     Cell2 => {
-                        sp -= 2;
-                        let freq = stack[sp - 1] * S::set1_ps(4.0);
+                        sp -= 4;
+                        let xfreq = stack[sp - 1] * S::set1_ps(4.0);
+                        let yfreq = stack[sp + 3] * S::set1_ps(4.0);
+                        let jitter = stack[sp + 2] * S::set1_ps(0.5);
                         stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
-                            stack[sp + 1] * freq,
-                            stack[sp] * freq,
+                            stack[sp + 1] * xfreq,
+                            stack[sp] * yfreq,
                             CellDistanceFunction::Euclidean,
                             CellReturnType::CellValue,
-                            S::set1_ps(0.45),
+                            jitter,
                             1,
                         );
                     }
@@ -243,53 +263,80 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp - 1] = S::abs_ps(stack[sp - 1]);
                     }
                     Floor => {
-                        stack[sp - 1] = S::fast_floor_ps(stack[sp-1]);
+                        stack[sp - 1] = S::fast_floor_ps(stack[sp - 1]);
                     }
                     Ceil => {
-                        stack[sp - 1] = S::fast_ceil_ps(stack[sp-1]);
+                        stack[sp - 1] = S::fast_ceil_ps(stack[sp - 1]);
                     }
                     Clamp => {
-                        let mut v = stack[sp-1];
-                        for i in 0 .. S::VF32_WIDTH {
+                        let mut v = stack[sp - 1];
+                        for i in 0..S::VF32_WIDTH {
                             if v[i] > 1.0 {
                                 v[i] = 1.0
                             } else if v[i] < -1.0 {
                                 v[i] = -1.0
-                            }                                                
+                            }
                         }
-                        stack[sp-1] = v;
+                        stack[sp - 1] = v;
                     }
                     Wrap => {
-                        let mut v = stack[sp-1];
-                        for i in 0 .. S::VF32_WIDTH {
+                        let mut v = stack[sp - 1];
+                        for i in 0..S::VF32_WIDTH {
                             if v[i] < -1.0 || v[i] > 1.0 {
                                 let t = (v[i] + 1.0) / 2.0;
-                                v[i] = -1.0+2.0*(t - t.floor());
-                            }                            
+                                v[i] = -1.0 + 2.0 * (t - t.floor());
+                            }
                         }
-                        stack[sp-1] = v;
+                        stack[sp - 1] = v;
                     }
                     Square => {
-                        let v = stack[sp-1];
-                        stack[sp-1] = v*v;
+                        let v = stack[sp - 1];
+                        stack[sp - 1] = v * v;
                     }
                     Max => {
-                        sp -= 1;                                 
-                        stack[sp-1] = S::max_ps(stack[sp-1],stack[sp]);
+                        sp -= 1;
+                        stack[sp - 1] = S::max_ps(stack[sp - 1], stack[sp]);
                     }
                     Min => {
-                        sp -= 1;                                 
-                        stack[sp-1] = S::min_ps(stack[sp-1],stack[sp]);
+                        sp -= 1;
+                        stack[sp - 1] = S::min_ps(stack[sp - 1], stack[sp]);
                     }
                     Mod => {
-                        sp -= 1;   
-                        let a = stack[sp-1];
-                        let b = stack[sp];  
+                        sp -= 1;
+                        let a = stack[sp - 1];
+                        let b = stack[sp];
                         let mut r = S::setzero_ps();
-                        for i in 0 .. S::VF32_WIDTH {
+                        for i in 0..S::VF32_WIDTH {
                             r[i] = a[i] % b[i];
                         }
-                        stack[sp-1] = r;
+                        stack[sp - 1] = r;
+                    }
+                    Picture(name) => {
+                        sp -= 1;
+
+                        let y = stack[sp - 1];
+                        let x = stack[sp];
+
+                        let picture = &pics[name];
+                        let w = S::set1_epi32(picture.w as i32);
+                        let h = S::set1_epi32(picture.h as i32);
+                        let wf = S::cvtepi32_ps(w);
+                        let hf = S::cvtepi32_ps(h);
+                        let mut xpct = (x + S::set1_ps(1.0)) / S::set1_ps(2.0);
+                        let mut ypct = (y + S::set1_ps(1.0)) / S::set1_ps(2.0);
+                        for i in 0..S::VF32_WIDTH {
+                            xpct[i] = xpct[i] % 1.0;
+                            ypct[i] = ypct[i] % 1.0;
+                        }
+                        let xi = S::cvtps_epi32(xpct * wf);
+                        let yi = S::cvtps_epi32(ypct * hf);
+                        let index = xi + w * yi;
+
+                        //println!("w:{:?} h{:?} xpct:{:?} ypct:{:?} index:{},{}",w[0],h[0],xpct[0],ypct[0],index[0],index[1]);
+                        for i in 0..S::VF32_WIDTH {
+                            stack[sp - 1][i] = picture.brightness
+                                [index[i] as usize % (picture.w as usize * picture.h as usize)];
+                        }
                     }
                     Constant(v) => {
                         stack[sp] = *v;
