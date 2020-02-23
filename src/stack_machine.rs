@@ -36,6 +36,7 @@ pub enum Instruction<S: Simd> {
     Max,
     Min,
     Mod,
+    Mandlebrot,
     Picture(String),
     Constant(S::Vf32),
     X,
@@ -74,6 +75,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Max(_) => Max,
             APTNode::Min(_) => Min,
             APTNode::Mod(_) => Mod,
+            APTNode::Mandlebrot(_) => Mandlebrot,
             APTNode::Picture(name, _) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => X,
@@ -253,8 +255,8 @@ impl<S: Simd> StackMachine<S> {
                     }
                     Log => {
                         let v = stack[sp - 1] * S::set1_ps(4.0);
-                        let positive = S::fast_log_ps(v);
-                        let negative = S::mul_ps(S::set1_ps(-1.0), S::fast_log_ps(S::abs_ps(v)));
+                        let positive = S::fast_ln_ps(v);
+                        let negative = S::mul_ps(S::set1_ps(-1.0), S::fast_ln_ps(S::abs_ps(v)));
                         let mask = S::cmpge_ps(v, S::setzero_ps());
                         stack[sp - 1] =
                             S::blendv_ps(negative, positive, mask) * S::set1_ps(0.367879);
@@ -310,6 +312,10 @@ impl<S: Simd> StackMachine<S> {
                             r[i] = a[i] % b[i];
                         }
                         stack[sp - 1] = r;
+                    }
+                    Mandlebrot => {
+                        sp -= 1;
+                        //todo do
                     }
                     Picture(name) => {
                         sp -= 1;

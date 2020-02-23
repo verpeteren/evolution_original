@@ -172,8 +172,7 @@ impl MainState {
                 let pics = self.pictures.clone();
                 thread::spawn(move || {
                     println!("create image");
-                    let img_data =
-                        pic.get_rgba8::<Avx2>(true, pics, WIDTH, HEIGHT, 0.0);
+                    let img_data = pic.get_rgba8::<Avx2>(true, pics, WIDTH, HEIGHT, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom(i);
@@ -187,8 +186,8 @@ impl MainState {
             BackgroundImage::NotYet => None,
             BackgroundImage::Almost(data) => {
                 println!("setting zoom image");
-                let img =
-                    graphics::Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..]).unwrap();
+                let img = graphics::Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..])
+                    .unwrap();
                 Some(img)
             }
             BackgroundImage::Complete(img) => None,
@@ -334,7 +333,7 @@ pub fn main() -> ggez::GameResult {
         path::PathBuf::from("./pictures")
     };
 
-  /*  let hidpi_factor: f32;
+    /*  let hidpi_factor: f32;
     {
         // Create a dummy window so we can get monitor scaling information
         let cb = ggez::ContextBuilder::new("", "");

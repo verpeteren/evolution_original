@@ -1076,22 +1076,22 @@ dependencies = [
 
 [[package]]
 name = "imgui"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e70a1b421ac503e94009cc9bcd6ed256f6bf38ced98d841b095da6b94ea67702"
+checksum = "8a2d28cee2982d4dab4dd954c23be339ab1f98be4ff5a13ecd8fbfb47cdfa23a"
 dependencies = [
  "bitflags",
  "gfx",
  "imgui-sys",
  "lazy_static",
- "parking_lot",
+ "parking_lot 0.10.0",
 ]
 
 [[package]]
 name = "imgui-gfx-renderer"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3637284fef18e3ace53d4c57add0e4fa7d3cf58dc8abaa4ca1dab9360a992989"
+checksum = "506eae7244a06bc18273634d1c30e070bdf592f5e7fb1f6871d062ad17a4b2ec"
 dependencies = [
  "gfx",
  "imgui",
@@ -1100,9 +1100,9 @@ dependencies = [
 
 [[package]]
 name = "imgui-sys"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0350b22f0a64eeb852ed3995ddb5d6d24bd3038024d2bd81720a6573baa602dc"
+checksum = "21a8693e0f66ecd2ec10e2f0ed4dc4519071495f350e6d8ddaf3e70351229257"
 dependencies = [
  "cc",
 ]
@@ -1171,7 +1171,7 @@ checksum = "8d542c1a317036c45c2aa1cf10cc9d403ca91eb2d333ef1a4917e5cb10628bd0"
 dependencies = [
  "byteorder",
  "ogg",
- "smallvec",
+ "smallvec 0.6.13",
 ]
 
 [[package]]
@@ -1618,8 +1618,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f842b1982eb6c2fe34036a4fbfb06dd185a3f5c8edfaacdf7d1ea10b07de6252"
 dependencies = [
  "lock_api",
- "parking_lot_core",
+ "parking_lot_core 0.6.2",
  "rustc_version",
+]
+
+[[package]]
+name = "parking_lot"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92e98c49ab0b7ce5b222f2cc9193fc4efe11c6d0bd4f648e374684a6857b1cfc"
+dependencies = [
+ "lock_api",
+ "parking_lot_core 0.7.0",
 ]
 
 [[package]]
@@ -1633,7 +1643,21 @@ dependencies = [
  "libc",
  "redox_syscall",
  "rustc_version",
- "smallvec",
+ "smallvec 0.6.13",
+ "winapi 0.3.8",
+]
+
+[[package]]
+name = "parking_lot_core"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7582838484df45743c8434fbff785e8edf260c28748353d44bc0da32e0ceabf1"
+dependencies = [
+ "cfg-if",
+ "cloudabi",
+ "libc",
+ "redox_syscall",
+ "smallvec 1.2.0",
  "winapi 0.3.8",
 ]
 
@@ -2250,7 +2274,9 @@ dependencies = [
 
 [[package]]
 name = "simdeez"
-version = "0.6.6"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a818d354713feb3fe6db6df2b5232f4a3901c6533c686b4376aaf4b93adb9c5f"
 dependencies = [
  "cfg-if",
  "paste",
@@ -2259,7 +2285,9 @@ dependencies = [
 
 [[package]]
 name = "simdnoise"
-version = "3.1.3"
+version = "3.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d12c11e4f55bf8237d46300c7b616068bff75f061927816f41355e1d0addb02"
 dependencies = [
  "simdeez",
 ]
@@ -2312,6 +2340,12 @@ checksum = "f7b0758c52e15a8b5e3691eae6cc559f08eee9406e548a4477ba4e67770a82b6"
 dependencies = [
  "maybe-uninit",
 ]
+
+[[package]]
+name = "smallvec"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c2fb2ec9bcd216a5b0d0ccf31ab17b5ed1d627960edff65bbe95d3ce221cefc"
 
 [[package]]
 name = "smart-default"
@@ -2802,7 +2836,7 @@ dependencies = [
  "libc",
  "log 0.4.8",
  "objc",
- "parking_lot",
+ "parking_lot 0.9.0",
  "percent-encoding",
  "raw-window-handle",
  "smithay-client-toolkit",

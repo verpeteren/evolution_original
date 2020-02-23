@@ -8,13 +8,13 @@ edition="2018"
 
 [dependencies]
 ggez = "0.5.1"
-gfx_core = "0.9"
-gfx_device_gl = "0.16"
-imgui = "0.2.1"
-imgui-gfx-renderer = "0.2.0"
+gfx_core = "0.9.2"
+gfx_device_gl = "0.16.2"
+imgui = "0.3.0"
+imgui-gfx-renderer = "0.3.0"
 rand = "*"
 nalgebra = "*"
-simdeez = { features = ["sleef"], path="c:/code/simdeez" }
-simdnoise = { path="c:/code/rust-simd-noise" }
+simdeez = { features = ["sleef"],verion="1.0.0" }
+simdnoise = "*"
 variant_count = "*"
 rayon="*"
