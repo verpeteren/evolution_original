@@ -12,28 +12,38 @@ use std::collections::HashMap;
 use std::mem::discriminant;
 use std::sync::mpsc::*;
 use std::sync::Arc;
-use std::sync::RwLock;
 use std::time::Instant;
+
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
 
+use CoordinateSystem::*;
+#[derive(Clone)]
+enum CoordinateSystem {
+    Polar,
+    Cartesian,
+}
+
 #[derive(Clone)]
 pub struct GradientData {
     colors: Vec<(Color,bool)>,
     index: APTNode,
+    coord: CoordinateSystem
 }
 
 #[derive(Clone)]
 pub struct GrayscaleData {
     c: APTNode,
+    coord: CoordinateSystem
 }
 
 #[derive(Clone)]
 pub struct MonoData {
     c: APTNode,
+    coord: CoordinateSystem,
 }
 
 #[derive(Clone)]
@@ -41,6 +51,7 @@ pub struct RGBData {
     r: APTNode,
     g: APTNode,
     b: APTNode,
+    coord: CoordinateSystem
 }
 
 #[derive(Clone)]
@@ -48,6 +59,7 @@ pub struct HSVData {
     h: APTNode,
     s: APTNode,
     v: APTNode,
+    coord:CoordinateSystem
 }
 
 #[derive(Clone)]
@@ -70,13 +82,13 @@ impl Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         //let tree = APTNode::Picture("barn".to_string(),vec![APTNode::X,APTNode::Y]);
-        Pic::Mono(MonoData { c: tree })
+        Pic::Mono(MonoData { c: tree, coord:Cartesian })
     }
 
     pub fn new_grayscale(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names: &Vec<&String>) -> Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
-        Pic::Grayscale(GrayscaleData { c: tree })
+        Pic::Grayscale(GrayscaleData { c: tree, coord:Cartesian })
     }
 
     pub fn new_gradient(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names: &Vec<&String>) -> Pic {
@@ -98,6 +110,7 @@ impl Pic {
         Pic::Gradient(GradientData {
             colors: colors,
             index: APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names),
+            coord:Cartesian
         })
     }
 
@@ -112,7 +125,7 @@ impl Pic {
         let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
-        Pic::RGB(RGBData { r, g, b })
+        Pic::RGB(RGBData { r, g, b,coord:Cartesian })
     }
 
     pub fn new_hsv(
@@ -125,7 +138,7 @@ impl Pic {
         let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
-        Pic::HSV(HSVData { h, s, v })
+        Pic::HSV(HSVData { h, s, v,coord:Cartesian })
     }
 
     pub fn to_lisp(&self) -> String {
@@ -673,17 +686,19 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
             "Grayscale" => Ok(Pic::Grayscale(GrayscaleData {
-                c: APTNode::parse_apt_node(receiver)?,
+                c: APTNode::parse_apt_node(receiver)?,coord:Cartesian
             })),
             "rgb" => Ok(Pic::RGB(RGBData {
                 r: APTNode::parse_apt_node(receiver)?,
                 g: APTNode::parse_apt_node(receiver)?,
                 b: APTNode::parse_apt_node(receiver)?,
+                coord:Cartesian
             })),
             "hsv" => Ok(Pic::HSV(HSVData {
                 h: APTNode::parse_apt_node(receiver)?,
                 s: APTNode::parse_apt_node(receiver)?,
                 v: APTNode::parse_apt_node(receiver)?,
+                coord:Cartesian
             })),
             "gradient" => {
                 let mut colors = Vec::new();
@@ -711,6 +726,7 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
                 Ok(Pic::Gradient(GradientData {
                     colors: colors,
                     index: APTNode::parse_apt_node(receiver)?,
+                    coord:Cartesian
                 }))
             }
             _ => Err(format!("Unknown pic type {} at line {}", s, line_number)),
