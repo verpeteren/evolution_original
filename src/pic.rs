@@ -14,14 +14,13 @@ use std::sync::mpsc::*;
 use std::sync::Arc;
 use std::time::Instant;
 
-
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
 
 use CoordinateSystem::*;
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 enum CoordinateSystem {
     Polar,
     Cartesian,
@@ -29,15 +28,15 @@ enum CoordinateSystem {
 
 #[derive(Clone)]
 pub struct GradientData {
-    colors: Vec<(Color,bool)>,
+    colors: Vec<(Color, bool)>,
     index: APTNode,
-    coord: CoordinateSystem
+    coord: CoordinateSystem,
 }
 
 #[derive(Clone)]
 pub struct GrayscaleData {
     c: APTNode,
-    coord: CoordinateSystem
+    coord: CoordinateSystem,
 }
 
 #[derive(Clone)]
@@ -51,7 +50,7 @@ pub struct RGBData {
     r: APTNode,
     g: APTNode,
     b: APTNode,
-    coord: CoordinateSystem
+    coord: CoordinateSystem,
 }
 
 #[derive(Clone)]
@@ -59,7 +58,7 @@ pub struct HSVData {
     h: APTNode,
     s: APTNode,
     v: APTNode,
-    coord:CoordinateSystem
+    coord: CoordinateSystem,
 }
 
 #[derive(Clone)]
@@ -82,35 +81,52 @@ impl Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         //let tree = APTNode::Picture("barn".to_string(),vec![APTNode::X,APTNode::Y]);
-        Pic::Mono(MonoData { c: tree, coord:Cartesian })
+        Pic::Mono(MonoData {
+            c: tree,
+            coord: Polar,
+        })
     }
 
-    pub fn new_grayscale(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names: &Vec<&String>) -> Pic {
-        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng,pic_names);
+    pub fn new_grayscale(
+        min: usize,
+        max: usize,
+        video: bool,
+        rng: &mut StdRng,
+        pic_names: &Vec<&String>,
+    ) -> Pic {
+        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
-        Pic::Grayscale(GrayscaleData { c: tree, coord:Cartesian })
+        Pic::Grayscale(GrayscaleData {
+            c: tree,
+            coord: Polar,
+        })
     }
 
-    pub fn new_gradient(min: usize, max: usize, video: bool, rng: &mut StdRng,pic_names: &Vec<&String>) -> Pic {
+    pub fn new_gradient(
+        min: usize,
+        max: usize,
+        video: bool,
+        rng: &mut StdRng,
+        pic_names: &Vec<&String>,
+    ) -> Pic {
         //todo cleanup
         //color theory?
         let num_colors = rng.gen_range(MIN_GRADIENT_COUNT, MAX_GRADIENT_COUNT);
         let mut colors = Vec::with_capacity(num_colors);
-        
-        for _ in 0..num_colors {            
-            let stop = rng.gen_range(0,GRADIENT_STOP_CHANCE);
+
+        for _ in 0..num_colors {
+            let stop = rng.gen_range(0, GRADIENT_STOP_CHANCE);
             if stop == 0 {
-                colors.push((get_random_color(rng),true));
+                colors.push((get_random_color(rng), true));
             } else {
-                colors.push((get_random_color(rng),false));
+                colors.push((get_random_color(rng), false));
             }
-            
         }
 
         Pic::Gradient(GradientData {
             colors: colors,
             index: APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names),
-            coord:Cartesian
+            coord: Polar,
         })
     }
 
@@ -125,7 +141,12 @@ impl Pic {
         let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
-        Pic::RGB(RGBData { r, g, b,coord:Cartesian })
+        Pic::RGB(RGBData {
+            r,
+            g,
+            b,
+            coord: Polar,
+        })
     }
 
     pub fn new_hsv(
@@ -138,7 +159,12 @@ impl Pic {
         let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
         let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
-        Pic::HSV(HSVData { h, s, v,coord:Cartesian })
+        Pic::HSV(HSVData {
+            h,
+            s,
+            v,
+            coord: Polar,
+        })
     }
 
     pub fn to_lisp(&self) -> String {
@@ -147,13 +173,12 @@ impl Pic {
             Pic::Mono(data) => format!("( Mono\n {} )", data.c.to_lisp()),
             Pic::Gradient(data) => {
                 let mut colors = "( Colors ".to_string();
-                for (color,stop) in &data.colors {
+                for (color, stop) in &data.colors {
                     if *stop {
                         colors += &format!(" ( StopColor {} {} {} )", color.r, color.g, color.b);
                     } else {
                         colors += &format!(" ( Color {} {} {} )", color.r, color.g, color.b);
                     }
-                    
                 }
                 format!("( Gradient\n {} {} )", colors, data.index.to_lisp())
             }
@@ -230,21 +255,20 @@ impl Pic {
             let mut min = 999999.0;
             let mut max = -99999.0;
 
-            let color_count = data.colors.iter().filter(|(_,stop)| !stop).count();
+            let color_count = data.colors.iter().filter(|(_, stop)| !stop).count();
             let mut gradient = Vec::<Color>::new(); //todo actually compute this
             let step = (GRADIENT_SIZE as f32 / color_count as f32) / GRADIENT_SIZE as f32;
-            let mut positions = Vec::<f32>::new();            
+            let mut positions = Vec::<f32>::new();
             positions.push(0.0);
             let mut pos = step;
-            for i in 1 .. data.colors.len() - 1 {
-                let (_,stop) = data.colors[i];
+            for i in 1..data.colors.len() - 1 {
+                let (_, stop) = data.colors[i];
                 if stop {
                     positions.push(*positions.last().unwrap());
                 } else {
                     positions.push(pos);
                     pos += step;
                 }
-                
             }
             positions.push(1.0);
 
@@ -277,7 +301,12 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let v = sm.execute(&mut stack, pics.clone(), x, y, ts);
+                    let v = if data.coord == Cartesian {
+                        sm.execute(&mut stack, pics.clone(), x, y, ts)
+                    } else {
+                        let (r, theta) = cartesian_to_polar::<S>(x, y);
+                        sm.execute(&mut stack, pics.clone(), r, theta, ts)
+                    };
                     let scaled_v = (v + S::set1_ps(1.0)) * S::set1_ps(0.5);
                     let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
 
@@ -298,66 +327,6 @@ impl Pic {
                 result.chunks_exact_mut(4 * w).enumerate().for_each(process);
             }
 
-            // println!("min:{} max:{} range:{}",min,max,max-min);
-            println!("img elapsed:{}", now.elapsed().as_millis());
-            result
-        }
-    }
-
-    fn get_rgba8_mono<S: Simd>(
-        data: &MonoData,
-        threaded: bool,
-        pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
-        t: f32,
-    ) -> Vec<u8> {
-        unsafe {
-            let now = Instant::now();
-            let ts = S::set1_ps(t);
-            let vec_len = w * h * 4;
-            let mut result = Vec::<u8>::with_capacity(vec_len);
-            result.set_len(vec_len);
-            let sm = StackMachine::<S>::build(&data.c);
-            let mut min = 999999.0;
-            let mut max = -99999.0;
-
-            let process = |(y_pixel, chunk): (usize, &mut [u8])| {
-                let mut stack = Vec::with_capacity(sm.instructions.len());
-                stack.set_len(sm.instructions.len());
-
-                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
-                let x_step = 2.0 / (w - 1) as f32;
-                let mut x = S::setzero_ps();
-                for i in (0..S::VF32_WIDTH).rev() {
-                    x[i] = -1.0 + (x_step * i as f32);
-                }
-                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
-
-                for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let v = sm.execute(&mut stack, pics.clone(), x, y, ts);
-
-                    // if v[0] > max { max = v[0]; }
-                    // if v[0] < min { min = v[0]; }
-
-                    let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);
-
-                    for j in 0..S::VF32_WIDTH {
-                        let c = (cs[j] as i32 % 256) as u8;
-                        chunk[i + j * 4] = c;
-                        chunk[i + 1 + j * 4] = c;
-                        chunk[i + 2 + j * 4] = c;
-                        chunk[i + 3 + j * 4] = 255 as u8;
-                    }
-                    x = x + x_step;
-                }
-            };
-
-            if threaded {
-                result.par_chunks_mut(4 * w).enumerate().for_each(process);
-            } else {
-                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
-            }
             // println!("min:{} max:{} range:{}",min,max,max-min);
             println!("img elapsed:{}", now.elapsed().as_millis());
             result
@@ -395,15 +364,80 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let v = sm.execute(&mut stack, pics.clone(), x, y, ts);
-                    
+                    let v = if data.coord == Cartesian {
+                        sm.execute(&mut stack, pics.clone(), x, y, ts)
+                    } else {
+                        let (r, theta) = cartesian_to_polar::<S>(x, y);
+                        sm.execute(&mut stack, pics.clone(), r, theta, ts)
+                    };
+
+                    // if v[0] > max { max = v[0]; }
+                    // if v[0] < min { min = v[0]; }
+
+                    let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);
+
                     for j in 0..S::VF32_WIDTH {
-                        let c = 
-                            if v[j] >= 0.0 {
-                                255
-                            } else {
-                                0
-                            };                   
+                        let c = (cs[j] as i32 % 256) as u8;
+                        chunk[i + j * 4] = c;
+                        chunk[i + 1 + j * 4] = c;
+                        chunk[i + 2 + j * 4] = c;
+                        chunk[i + 3 + j * 4] = 255 as u8;
+                    }
+                    x = x + x_step;
+                }
+            };
+
+            if threaded {
+                result.par_chunks_mut(4 * w).enumerate().for_each(process);
+            } else {
+                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
+            }
+            // println!("min:{} max:{} range:{}",min,max,max-min);
+            println!("img elapsed:{}", now.elapsed().as_millis());
+            result
+        }
+    }
+
+    fn get_rgba8_mono<S: Simd>(
+        data: &MonoData,
+        threaded: bool,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) -> Vec<u8> {
+        unsafe {
+            let now = Instant::now();
+            let ts = S::set1_ps(t);
+            let vec_len = w * h * 4;
+            let mut result = Vec::<u8>::with_capacity(vec_len);
+            result.set_len(vec_len);
+            let sm = StackMachine::<S>::build(&data.c);
+            let mut min = 999999.0;
+            let mut max = -99999.0;
+
+            let process = |(y_pixel, chunk): (usize, &mut [u8])| {
+                let mut stack = Vec::with_capacity(sm.instructions.len());
+                stack.set_len(sm.instructions.len());
+
+                let y = S::set1_ps((y_pixel as f32 / h as f32) * 2.0 - 1.0);
+                let x_step = 2.0 / (w - 1) as f32;
+                let mut x = S::setzero_ps();
+                for i in (0..S::VF32_WIDTH).rev() {
+                    x[i] = -1.0 + (x_step * i as f32);
+                }
+                let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
+
+                for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                    let v = if data.coord == Cartesian {
+                        sm.execute(&mut stack, pics.clone(), x, y, ts)
+                    } else {
+                        let (r, theta) = cartesian_to_polar::<S>(x, y);
+                        sm.execute(&mut stack, pics.clone(), r, theta, ts)
+                    };
+
+                    for j in 0..S::VF32_WIDTH {
+                        let c = if v[j] >= 0.0 { 255 } else { 0 };
                         chunk[i + j * 4] = c;
                         chunk[i + 1 + j * 4] = c;
                         chunk[i + 2 + j * 4] = c;
@@ -464,6 +498,13 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+
+                    let (mut x,y) =
+                        if data.coord == Cartesian {
+                            (x,y)
+                        } else {
+                            cartesian_to_polar::<S>(x, y)
+                        };
                     let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(128.0);
                     let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
@@ -532,6 +573,12 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                    let (mut x,y) =
+                    if data.coord == Cartesian {
+                        (x,y)
+                    } else {
+                        cartesian_to_polar::<S>(x, y)
+                    };
                     let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
                         * S::set1_ps(0.5);
                     let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
@@ -649,15 +696,15 @@ pub fn expect_operations(ops: Vec<&str>, receiver: &Receiver<Token>) -> Result<S
             Token::Operation(op_str, _) => {
                 if op_str.to_lowercase() == s {
                     return Ok(op_str.to_string());
-                } 
+                }
             }
-            _ => ()
+            _ => (),
         }
     }
     return Err(format!(
-        "Unexpected token on line {}",        
-        extract_line_number(&op),        
-    ))
+        "Unexpected token on line {}",
+        extract_line_number(&op),
+    ));
 }
 
 #[must_use]
@@ -686,19 +733,20 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
             "Grayscale" => Ok(Pic::Grayscale(GrayscaleData {
-                c: APTNode::parse_apt_node(receiver)?,coord:Cartesian
+                c: APTNode::parse_apt_node(receiver)?,
+                coord: Cartesian,
             })),
             "rgb" => Ok(Pic::RGB(RGBData {
                 r: APTNode::parse_apt_node(receiver)?,
                 g: APTNode::parse_apt_node(receiver)?,
                 b: APTNode::parse_apt_node(receiver)?,
-                coord:Cartesian
+                coord: Cartesian,
             })),
             "hsv" => Ok(Pic::HSV(HSVData {
                 h: APTNode::parse_apt_node(receiver)?,
                 s: APTNode::parse_apt_node(receiver)?,
                 v: APTNode::parse_apt_node(receiver)?,
-                coord:Cartesian
+                coord: Cartesian,
             })),
             "gradient" => {
                 let mut colors = Vec::new();
@@ -710,15 +758,15 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
                     if discriminant(&token) == discriminant(&Token::CloseParen(0)) {
                         break;
                     }
-                    expect_open_paren(receiver)?;                    
-                    let color_type = expect_operations(vec!["color","stopcolor"], receiver)?;                    
+                    expect_open_paren(receiver)?;
+                    let color_type = expect_operations(vec!["color", "stopcolor"], receiver)?;
                     let r = expect_constant(receiver)?;
                     let g = expect_constant(receiver)?;
                     let b = expect_constant(receiver)?;
                     if color_type == "color" {
-                        colors.push((Color::new(r, g, b, 1.0),false));
+                        colors.push((Color::new(r, g, b, 1.0), false));
                     } else {
-                        colors.push((Color::new(r, g, b, 1.0),true));
+                        colors.push((Color::new(r, g, b, 1.0), true));
                     }
                     expect_close_paren(receiver)?;
                 }
@@ -726,7 +774,7 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
                 Ok(Pic::Gradient(GradientData {
                     colors: colors,
                     index: APTNode::parse_apt_node(receiver)?,
-                    coord:Cartesian
+                    coord: Cartesian,
                 }))
             }
             _ => Err(format!("Unknown pic type {} at line {}", s, line_number)),
@@ -743,6 +791,15 @@ fn wrap_0_1<S: Simd>(v: S::Vf32) -> S::Vf32 {
             r[i] = v[i] % 1.0001;
         }
         r
+    }
+}
+
+#[inline(always)]
+fn cartesian_to_polar<S: Simd>(x: S::Vf32, y: S::Vf32) -> (S::Vf32, S::Vf32) {
+    unsafe {
+        let r = S::sqrt_ps(x * x + y * y);
+        let theta = S::fast_atan_ps(y / x);
+        (r, theta)
     }
 }
 
