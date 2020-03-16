@@ -498,19 +498,31 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
+                    let (rs, gs, bs) = if data.coord == Cartesian {
+                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(128.0);
+                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(128.0);
+                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(128.0);
+                        (rs, gs, bs)
+                    } else {
+                        let (x, y) = cartesian_to_polar::<S>(x, y);
+                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(128.0);
+                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(128.0);
+                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(128.0);
+                        (rs, gs, bs)
+                    };
 
-                    let (mut x,y) =
-                        if data.coord == Cartesian {
-                            (x,y)
-                        } else {
-                            cartesian_to_polar::<S>(x, y)
-                        };
-                    let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
-                        * S::set1_ps(128.0);
-                    let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
-                        * S::set1_ps(128.0);
-                    let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
-                        * S::set1_ps(128.0);
                     for j in 0..S::VF32_WIDTH {
                         let r = (rs[j] as i32 % 255) as u8;
                         let g = (gs[j] as i32 % 255) as u8;
@@ -573,18 +585,31 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let (mut x,y) =
-                    if data.coord == Cartesian {
-                        (x,y)
+                    let (hs, ss, vs) = if data.coord == Cartesian {
+                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(0.5);
+                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(0.5);
+                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(0.5);
+                        (hs, ss, vs)
                     } else {
-                        cartesian_to_polar::<S>(x, y)
+                        let (x, y) = cartesian_to_polar::<S>(x, y);
+                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(0.5);
+                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(0.5);
+                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts)
+                            + S::set1_ps(1.0))
+                            * S::set1_ps(0.5);
+                        (hs, ss, vs)
                     };
-                    let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
-                        * S::set1_ps(0.5);
-                    let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
-                        * S::set1_ps(0.5);
-                    let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts) + S::set1_ps(1.0))
-                        * S::set1_ps(0.5);
+
                     let (mut rs, mut gs, mut bs) =
                         hsv_to_rgb::<S>(wrap_0_1::<S>(hs), wrap_0_1::<S>(ss), wrap_0_1::<S>(vs));
                     rs = rs * S::set1_ps(255.0);
@@ -797,8 +822,17 @@ fn wrap_0_1<S: Simd>(v: S::Vf32) -> S::Vf32 {
 #[inline(always)]
 fn cartesian_to_polar<S: Simd>(x: S::Vf32, y: S::Vf32) -> (S::Vf32, S::Vf32) {
     unsafe {
+        let zero = S::set1_ps(0.0);
+        let pi = S::set1_ps(3.14159);
+        let pix2 = S::set1_ps(3.14159 * 2.0);
+
+        let mask = S::cmpge_ps(x, zero);
+        let adjust = S::blendv_ps(pi, zero, mask);
+        let mask = S::cmplt_ps(y, zero) & mask;
+        let adjust = S::blendv_ps(adjust, pix2, mask);
+
         let r = S::sqrt_ps(x * x + y * y);
-        let theta = S::fast_atan_ps(y / x);
+        let theta = S::fast_atan_ps(y / x) + adjust;
         (r, theta)
     }
 }

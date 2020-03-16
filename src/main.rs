@@ -50,7 +50,7 @@ const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
 
-const TREE_MIN: usize = 4;
+const TREE_MIN: usize = 1;
 const TREE_MAX: usize = 40;
 
 struct RwArc<T>(Arc<RwLock<T>>);
