@@ -554,8 +554,7 @@ impl Pic {
         h: usize,
         t: f32,
     ) -> Vec<u8> {
-        unsafe {
-            let now = Instant::now();
+        unsafe {            
             let ts = S::set1_ps(t);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);

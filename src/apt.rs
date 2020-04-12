@@ -1,6 +1,5 @@
 use crate::parser::*;
 use rand::prelude::*;
-use simdnoise::*;
 use std::sync::mpsc::*;
 use variant_count::*;
 use APTNode::*;

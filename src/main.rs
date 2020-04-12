@@ -74,7 +74,7 @@ impl<T> RwArc<T> {
 
 enum GameState {
     Select,
-    Zoom(usize),
+    Zoom,
 }
 
 enum BackgroundImage {
@@ -175,7 +175,7 @@ impl MainState {
                     let img_data = pic.get_rgba8::<Avx2>(true, pics, WIDTH, HEIGHT, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
-                self.state = GameState::Zoom(i);
+                self.state = GameState::Zoom;
                 break;
             }
         }
@@ -190,7 +190,7 @@ impl MainState {
                     .unwrap();
                 Some(img)
             }
-            BackgroundImage::Complete(img) => None,
+            BackgroundImage::Complete(_) => None,
         };
         match maybe_img {
             None => (),
@@ -220,7 +220,7 @@ impl MainState {
         }
     }
 
-    fn draw_zoom(&self, ctx: &mut Context, index: usize) {
+    fn draw_zoom(&self, ctx: &mut Context) {
         match &*self.zoom_image.read() {
             BackgroundImage::NotYet => (),
             BackgroundImage::Almost(_) => (),
@@ -236,7 +236,7 @@ impl EventHandler for MainState {
         self.dt = timer::delta(ctx);
         match self.state {
             GameState::Select => self.update_select(ctx),
-            GameState::Zoom(_) => self.update_zoom(ctx),
+            GameState::Zoom => self.update_zoom(ctx),
         }
         self.frame_elapsed = (self.frame_elapsed + self.dt.as_millis() as f32) % VIDEO_DURATION;
         self.mouse_state = MouseState::Nothing;
@@ -248,7 +248,7 @@ impl EventHandler for MainState {
 
         match &self.state {
             GameState::Select => self.draw_select(ctx),
-            GameState::Zoom(index) => self.draw_zoom(ctx, *index),
+            GameState::Zoom => self.draw_zoom(ctx),
         }
 
         graphics::present(ctx)?;

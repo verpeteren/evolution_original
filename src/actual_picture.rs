@@ -1,4 +1,4 @@
-use ggez::graphics::{self, Image};
+use ggez::graphics::{self};
 use ggez::Context;
 pub struct ActualPicture {
     pub brightness: Vec<f32>,
