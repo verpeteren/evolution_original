@@ -86,8 +86,7 @@ enum BackgroundImage {
 struct MainState {
     state: GameState,
     mouse_state: MouseState,
-    imgui_wrapper: ImGuiWrapper,
-    hidpi_factor: f32,
+    imgui_wrapper: ImGuiWrapper,    
     img_buttons: Vec<Button>,
     pics: Vec<Pic>,
     dt: std::time::Duration,
@@ -139,13 +138,12 @@ impl MainState {
         println!("genpop elapsed:{}", now.elapsed().as_millis());
     }
 
-    fn new(mut ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
+    fn new(mut ctx: &mut Context) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
 
         let s = MainState {
             state: GameState::Select,
-            imgui_wrapper,
-            hidpi_factor,
+            imgui_wrapper,            
             pics: Vec::new(),
             img_buttons: Vec::new(),
             dt: std::time::Duration::new(0, 0),
@@ -216,7 +214,9 @@ impl MainState {
         }
         // Render game ui
         {
-            self.imgui_wrapper.render(ctx, self.hidpi_factor);
+            let window = ggez::graphics::window(ctx);
+
+            self.imgui_wrapper.render(ctx,window.get_hidpi_factor() as f32);
         }
     }
 
@@ -350,7 +350,7 @@ pub fn main() -> ggez::GameResult {
         );
     let (ref mut ctx, event_loop) = &mut cb.build()?;
 
-    let state = &mut MainState::new(ctx, 1.0)?;
+    let state = &mut MainState::new(ctx).unwrap();
     state.gen_population(ctx);
     event::run(ctx, event_loop, state)
 }
