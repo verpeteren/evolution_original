@@ -1,6 +1,6 @@
 use ggez::graphics::Color;
 use rand::rngs::StdRng;
-use rand::*;
+use rand::prelude::*;
 
 pub fn lerp_color(a: Color, b: Color, pct: f32) -> Color {
     let red = a.r * (1.0 - pct) + b.r * pct;
