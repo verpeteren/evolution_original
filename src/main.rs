@@ -36,8 +36,10 @@ use ggez::{Context, ContextBuilder, GameResult};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rand::prelude::*;
+use simdeez::scalar::*;
+use simdeez::sse2::*;
+use simdeez::sse41::*;
 use simdeez::avx2::*;
-
 
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
@@ -69,6 +71,12 @@ impl<T> RwArc<T> {
         RwArc(self.0.clone())
     }
 }
+
+simd_runtime_generate!(
+fn pic_get_rgba8(pic: &Pic, threaded: bool, pictures: Arc<HashMap::<String, ActualPicture>>, width: usize, height: usize, t: f32) -> Vec<u8> {
+    pic.get_rgba8::<S>(threaded, pictures, width, height, t)
+}
+);
 
 enum GameState {
     Select,
@@ -122,7 +130,7 @@ impl MainState {
                     ctx,
                     THUMB_WIDTH,
                     THUMB_HEIGHT,
-                    &pic.get_rgba8::<Avx2>(false, self.pictures.clone(), THUMB_WIDTH as usize, THUMB_HEIGHT as usize, 0.0)[0..],
+                    &pic_get_rgba8_runtime_select(&pic, false, self.pictures.clone(), THUMB_WIDTH as usize, THUMB_HEIGHT as usize, 0.0)[0..],
                 )
                 .unwrap();
                 self.pics.push(pic);
@@ -163,7 +171,7 @@ impl MainState {
                 let arc = self.zoom_image.clone();
                 let pics = self.pictures.clone();
                 spawn(move || {
-                    let img_data = pic.get_rgba8::<Avx2>(true, pics, WIDTH, HEIGHT, 0.0);
+                    let img_data = pic_get_rgba8_runtime_select(&pic, true, pics, WIDTH, HEIGHT, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom;
