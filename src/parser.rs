@@ -46,7 +46,7 @@ impl<'a> Lexer<'a> {
             None
         } else {
             self.width = 1; // Assuming one always for now
-            let c = self.input[self.pos..].chars().next().unwrap();
+            let c = self.input[self.pos..].chars().next().expect("unexpected end of input");
             if Lexer::is_linebreak(c) {
                 self.current_line += 1;
             }
@@ -86,7 +86,7 @@ impl<'a> Lexer<'a> {
     fn accept_run(&mut self, valid: &str) {
         loop {
             let n = self.next();
-            if !(n.is_some() && valid.contains(n.unwrap())) {
+            if !(n.is_some() && valid.contains(n.expect("unexpected character in token stream"))) {
                 break;
             }
         }
