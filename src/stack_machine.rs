@@ -366,3 +366,243 @@ impl<S: Simd> StackMachine<S> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::apt::mock;
+
+    use super::*;
+    use simdeez::scalar::*;
+    use simdeez::sse2::*;
+    use simdeez::sse41::*;
+    use simdeez::avx2::*;
+
+    simd_runtime_generate!(
+    fn impl_stackmachine_get_instruction() {
+        match StackMachine::<S>::get_instruction(&APTNode::Add(mock::mock_params_add(true))) {
+            Instruction::Add => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        };
+        match StackMachine::<S>::get_instruction(&APTNode::Sub(mock::mock_params_sub(true))) {
+            Instruction::Sub => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Mul(mock::mock_params_mul(true))) {
+            Instruction::Mul => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Div(mock::mock_params_div(true))) {
+            Instruction::Div => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::FBM(mock::mock_params_fbm(true))) {
+            Instruction::FBM => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Ridge(mock::mock_params_ridge(true))) {
+            Instruction::Ridge => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Cell1(mock::mock_params_cell1(true))) {
+            Instruction::Cell1 => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Cell2(mock::mock_params_cell2(true))) {
+            Instruction::Cell2 => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Turbulence(mock::mock_params_turbulence(true))) {
+            Instruction::Turbulence => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Sqrt(mock::mock_params_sqrt(true))) {
+            Instruction::Sqrt => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Sin(mock::mock_params_sin(true))) {
+            Instruction::Sin => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Atan(mock::mock_params_atan(true))) {
+            Instruction::Atan => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Atan2(mock::mock_params_atan2(true))) {
+            Instruction::Atan2 => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Tan(mock::mock_params_tan(true))) {
+            Instruction::Tan => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Log(mock::mock_params_log(true))) {
+            Instruction::Log => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Abs(mock::mock_params_abs(true))) {
+            Instruction::Abs => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Floor(mock::mock_params_floor(true))) {
+            Instruction::Floor => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Ceil(mock::mock_params_ceil(true))) {
+            Instruction::Ceil => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Clamp(mock::mock_params_clamp(true))) {
+            Instruction::Clamp => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Wrap(mock::mock_params_wrap(true))) {
+            Instruction::Wrap => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Square(mock::mock_params_square(true))) {
+            Instruction::Square => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Max(mock::mock_params_max(true))) {
+            Instruction::Max => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Min(mock::mock_params_min(true))) {
+            Instruction::Min => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Mod(mock::mock_params_mod(true))) {
+            Instruction::Mod => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Mandelbrot(mock::mock_params_mandelbrot(true))) {
+            Instruction::Mandelbrot => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+
+        let name = "eye.jpg".to_string();
+        match StackMachine::<S>::get_instruction(&APTNode::Picture(name.clone(), mock::mock_params_picture(true))) {
+            Instruction::Picture(got) => {
+                assert_eq!(got, name);
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Constant(6.0)) {
+            Instruction::Constant(_)=> {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::X) {
+            Instruction::X=> {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::Y) {
+            Instruction::Y => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+        match StackMachine::<S>::get_instruction(&APTNode::T) {
+            Instruction::T => {
+            },
+            _=> {panic!("Unexpected result");
+            }
+        }
+    }
+    );
+
+    #[test]
+    fn test_stackmachine_get_instruction() {
+        impl_stackmachine_get_instruction_runtime_select();
+    }
+
+    simd_runtime_generate!(
+    fn impl_stackmachine_build() {
+        let sm = StackMachine::<S>::build(&APTNode::Add(mock::mock_params_sub(true)));
+        assert_eq!(sm.instructions.len(), 3);
+    }
+    );
+
+    #[test]
+    fn test_stackmachine_build() {
+       impl_stackmachine_build_runtime_select();
+    }
+
+    simd_runtime_generate!(
+    fn impl_stackmachine_deal_with_nan() {
+        unsafe {
+            let zeros = S::set1_ps(0.0);
+            let ones = S::set1_ps(1.0);
+            let neg_ones = S::set1_ps(-1.0);
+            let neg_infs = S::set1_ps(std::f32::NEG_INFINITY);
+            let infs = S::set1_ps(std::f32::INFINITY);
+            let nans = S::set1_ps(std::f32::NAN);
+
+            assert_eq!(StackMachine::<S>::deal_with_nan(ones)[0], ones[0]);
+            assert_eq!(StackMachine::<S>::deal_with_nan(zeros)[0], zeros[0]);
+            assert_eq!(StackMachine::<S>::deal_with_nan(neg_infs)[0], neg_ones[0]);
+            assert_eq!(StackMachine::<S>::deal_with_nan(infs)[0], ones[0]);
+            assert_eq!(StackMachine::<S>::deal_with_nan(nans)[0], zeros[0]);
+        }
+
+    });
+
+    #[test]
+    fn test_stackmachine_deal_with_nan() {
+        impl_stackmachine_deal_with_nan_runtime_select();
+    }
+}
