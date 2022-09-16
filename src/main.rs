@@ -20,12 +20,13 @@ use std::env::{var};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::thread::{spawn};
-use std::fs::{read_dir};
+use std::fs::{read_dir,File};
 use std::time::Instant;
+use std::io::prelude::*;
 
 use crate::actual_picture::ActualPicture;
 use crate::imgui_wrapper::ImGuiWrapper;
-use crate::pic::{Pic };
+use crate::pic::{Pic, lisp_to_pic};
 use crate::ui::{MouseState, MouseButtonState, Button};
 
 use ggez::conf::{WindowSetup, WindowMode};
@@ -33,6 +34,7 @@ use ggez::event::{run, EventHandler, KeyCode, KeyMods, MouseButton};
 use ggez::graphics::{window, clear, draw, present, Color, DrawParam, Image};
 use ggez::timer::{delta};
 use ggez::{Context, ContextBuilder, GameResult, GameError};
+use image::{ImageFormat, ColorType, save_buffer_with_format};
 use clap::Parser;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -380,8 +382,51 @@ fn main_gui(args: &Args) -> GameResult {
     run(ctx, event_loop, state)
 }
 
-fn main_cli(_args: &Args) {
-    unimplemented!();
+fn main_cli(args: &Args) {
+    let t = 0.0;
+    let (width, height) = (args.width, args.height);
+    let out_filename = args.output.as_ref().unwrap().to_string();
+    let pic_path = get_picture_path(&args);
+
+    let pictures = Arc::new(load_pictures(None, pic_path.as_path()).unwrap());
+
+    let input_file_name = args.input.as_ref().unwrap();
+    let mut contents = String::new();
+    if input_file_name == "-"{
+        let _bytes = std::io::stdin().read_to_string(&mut contents).unwrap();
+    } else {
+        let mut file = File::open(input_file_name).unwrap();
+        file.read_to_string(&mut contents).unwrap();
+    }
+    let pic = lisp_to_pic(contents).unwrap();
+    let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
+    let out_file = Path::new(&out_filename);
+    let format = match out_file.extension() {
+        Some(ext) => {
+            match ext.to_str().unwrap().to_lowercase().as_str() {
+                // support these?
+                "tga" => ImageFormat::Tga,
+                "dds" => ImageFormat::Dds,
+                "hdr" => ImageFormat::Hdr,
+                "farb" => ImageFormat::Farbfeld,
+                // do these imply video? 
+                "gif" => ImageFormat::Gif,
+                "avi" => ImageFormat::Avif,
+                // commodity
+                "bmp" => ImageFormat::Bmp,
+                "ico" => ImageFormat::Ico,
+                "webp" => ImageFormat::WebP,
+                "pnm" => ImageFormat::Pnm,
+                "tif"|"tiff" => ImageFormat::Tiff,
+                "jpg"| "jpeg" => ImageFormat::Jpeg,
+                "png" => ImageFormat::Png,
+                _ => ImageFormat::Png,
+                }
+            }
+        None => ImageFormat::Png,
+    };
+
+    save_buffer_with_format(out_file, &rgba8[0..], width as u32, height as u32, ColorType::Rgba8, format).unwrap();
 }
 
 pub fn main() {
