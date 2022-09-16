@@ -21,7 +21,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::thread::{spawn};
 use std::fs::{read_dir};
-use std::io::prelude::*;
 use std::time::Instant;
 
 use crate::actual_picture::ActualPicture;
@@ -301,10 +300,12 @@ pub fn load_pictures(ctx: &mut Context) -> HashMap<String, ActualPicture> {
     match read_dir(pic_path) {
         Ok(files) => {
             for file in files {
-                let file_name = file.unwrap().file_name().into_string().unwrap();
-                let img = Image::new(ctx, "/".to_string() + &file_name).unwrap();
-                let name = file_name.split(".").nth(0).unwrap().to_string();
-                pictures.insert(name.clone(), ActualPicture::new(ctx, img, name));
+                 let short_file_name = file.as_ref()
+                                           .unwrap()
+                                           .file_name()
+                                           .into_string()
+                                           .expect("Cannot convert file's name ");
+                pictures.insert(short_file_name.clone(), ActualPicture::new_via_ctx(ctx, &short_file_name).expect("Cannot open file"));
             }
         }
         Err(_) => (),
