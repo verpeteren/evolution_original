@@ -14,7 +14,7 @@ imgui = "0.3.0"
 imgui-gfx-renderer = "0.3.0"
 rand = "*"
 nalgebra = "*"
-simdeez = { features = ["sleef"],version="1.0.0" }
-simdnoise = "*"
+simdeez = { features = ["sleef"], path = "../simdeez" }
+simdnoise = { path = "../rust-simd-noise" }
 variant_count = "*"
 rayon="*"
