@@ -1,5 +1,6 @@
-use ggez::graphics::{self};
 use ggez::Context;
+use ggez::graphics::{Image};
+
 pub struct ActualPicture {
     pub brightness: Vec<f32>,
     pub w: u16,
@@ -8,7 +9,7 @@ pub struct ActualPicture {
 }
 
 impl ActualPicture {
-    pub fn new(ctx: &mut Context, img: graphics::Image, name: String) -> ActualPicture {
+    pub fn new(ctx: &mut Context, img: Image, name: String) -> ActualPicture {
         let raw_bytes = img.to_rgba8(ctx).unwrap();
         println!("raw len:{}", raw_bytes.len());
         let brightness: Vec<f32> = raw_bytes
