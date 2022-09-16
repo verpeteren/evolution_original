@@ -4,6 +4,7 @@
 // - load up thumbnails in a background thread so ui isn't blocked
 
 extern crate ggez;
+extern crate image;
 
 mod actual_picture;
 mod apt;
@@ -14,34 +15,29 @@ mod pic;
 mod stack_machine;
 mod ui;
 
-use crate::actual_picture::*;
+use std::collections::HashMap;
+use std::env::{var};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock};
+use std::thread::{spawn};
+use std::fs::{read_dir};
+use std::io::prelude::*;
+use std::time::Instant;
+
+use crate::actual_picture::ActualPicture;
 use crate::imgui_wrapper::ImGuiWrapper;
-use crate::parser::*;
-use crate::pic::*;
-use crate::ui::*;
-use ggez::conf;
-use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
-use ggez::graphics::{self, Image, Color};
-use ggez::timer;
-use ggez::{Context, GameResult};
+use crate::pic::{Pic };
+use crate::ui::{MouseState, MouseButtonState, Button};
+
+use ggez::conf::{WindowSetup, WindowMode};
+use ggez::event::{run, EventHandler, KeyCode, KeyMods, MouseButton};
+use ggez::graphics::{window, clear, draw, present, Color, DrawParam, Image};
+use ggez::timer::{delta};
+use ggez::{Context, ContextBuilder, GameResult};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use rand::*;
-use rayon::*;
+use rand::prelude::*;
 use simdeez::avx2::*;
-use simdeez::scalar::*;
-use simdeez::sse2::*;
-use simdeez::sse41::*;
-use std::collections::HashMap;
-use std::env;
-use std::fs::{self};
-use std::io::*;
-use std::path::{self, Path};
-use std::sync::mpsc::*;
-use std::sync::Arc;
-use std::sync::RwLock;
-use std::thread;
-use std::time::Instant;
 
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
@@ -80,7 +76,7 @@ enum GameState {
 enum BackgroundImage {
     NotYet,
     Almost(Vec<u8>),
-    Complete(graphics::Image),
+    Complete(Image),
 }
 
 struct MainState {
@@ -120,7 +116,7 @@ impl MainState {
                     _ => panic!("invalid"),
                 };
 
-                let img = graphics::Image::from_rgba8(
+                let img = Image::from_rgba8(
                     ctx,
                     256 as u16,
                     256 as u16,
@@ -168,7 +164,7 @@ impl MainState {
                 let pic = self.pics[i].clone();
                 let arc = self.zoom_image.clone();
                 let pics = self.pictures.clone();
-                thread::spawn(move || {
+                spawn(move || {
                     println!("create image");
                     let img_data = pic.get_rgba8::<Avx2>(true, pics, WIDTH, HEIGHT, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
@@ -184,7 +180,7 @@ impl MainState {
             BackgroundImage::NotYet => None,
             BackgroundImage::Almost(data) => {
                 println!("setting zoom image");
-                let img = graphics::Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..])
+                let img = Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..])
                     .unwrap();
                 Some(img)
             }
@@ -214,7 +210,7 @@ impl MainState {
         }
         // Render game ui
         {
-            let window = ggez::graphics::window(ctx);
+            let window = window(ctx);
 
             self.imgui_wrapper.render(ctx, window.scale_factor() as f32);
         }
@@ -225,7 +221,7 @@ impl MainState {
             BackgroundImage::NotYet => (),
             BackgroundImage::Almost(_) => (),
             BackgroundImage::Complete(img) => {
-                let _ = graphics::draw(ctx, img, graphics::DrawParam::new());
+                let _ = draw(ctx, img, DrawParam::new());
             }
         }
     }
@@ -233,7 +229,7 @@ impl MainState {
 
 impl EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        self.dt = timer::delta(ctx);
+        self.dt = delta(ctx);
         match self.state {
             GameState::Select => self.update_select(ctx),
             GameState::Zoom => self.update_zoom(ctx),
@@ -244,14 +240,14 @@ impl EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, Color::BLACK);
+        clear(ctx, Color::BLACK);
 
         match &self.state {
             GameState::Select => self.draw_select(ctx),
             GameState::Zoom => self.draw_zoom(ctx),
         }
 
-        graphics::present(ctx)?;
+        present(ctx)?;
         Ok(())
     }
 
@@ -302,11 +298,11 @@ impl EventHandler for MainState {
 pub fn load_pictures(ctx: &mut Context) -> HashMap<String, ActualPicture> {
     let pic_path = Path::new("pictures");
     let mut pictures = HashMap::new();
-    match fs::read_dir(pic_path) {
+    match read_dir(pic_path) {
         Ok(files) => {
             for file in files {
                 let file_name = file.unwrap().file_name().into_string().unwrap();
-                let img = graphics::Image::new(ctx, "/".to_string() + &file_name).unwrap();
+                let img = Image::new(ctx, "/".to_string() + &file_name).unwrap();
                 let name = file_name.split(".").nth(0).unwrap().to_string();
                 pictures.insert(name.clone(), ActualPicture::new(ctx, img, name));
             }
@@ -316,7 +312,7 @@ pub fn load_pictures(ctx: &mut Context) -> HashMap<String, ActualPicture> {
     pictures
 }
 
-pub fn main() -> ggez::GameResult {
+pub fn main() -> GameResult {
     match rayon::ThreadPoolBuilder::new()
         .num_threads(0)
         .build_global()
@@ -325,32 +321,32 @@ pub fn main() -> ggez::GameResult {
         Err(x) => panic!("{}", x),
     }
 
-    let pictures_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
-        let mut path = path::PathBuf::from(manifest_dir);
+    let pictures_dir = if let Ok(manifest_dir) = var("CARGO_MANIFEST_DIR") {
+        let mut path = PathBuf::from(manifest_dir);
         path.push("pictures");
         path
     } else {
-        path::PathBuf::from("./pictures")
+        PathBuf::from("./pictures")
     };
 
     /*  let hidpi_factor: f32;
     {
         // Create a dummy window so we can get monitor scaling information
-        let cb = ggez::ContextBuilder::new("", "");
+        let cb = ContextBuilder::new("", "");
         let (_ctx, events_loop) = &mut cb.build()?;
         hidpi_factor = events_loop.get_primary_monitor().get_hidpi_factor() as f32;
         println!("main hidpi_factor = {}", hidpi_factor);
     }*/
 
-    let cb = ggez::ContextBuilder::new("super_simple with imgui", "ggez")
+    let cb = ContextBuilder::new("super_simple with imgui", "ggez")
         .add_resource_path(pictures_dir)
-        .window_setup(conf::WindowSetup::default().title("super_simple with imgui"))
+        .window_setup(WindowSetup::default().title("super_simple with imgui"))
         .window_mode(
-            conf::WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0),
+            WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0),
         );
     let (mut ctx, event_loop) = cb.build()?;
 
     let mut state = MainState::new(&mut ctx).unwrap();
     state.gen_population(&mut ctx);
-    event::run(ctx, event_loop, state)
+    run(ctx, event_loop, state)
 }
