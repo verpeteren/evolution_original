@@ -4,7 +4,7 @@ use std::sync::mpsc::*;
 use variant_count::*;
 use APTNode::*;
 
-#[derive(VariantCount, Clone)]
+#[derive(VariantCount, Clone, Debug, PartialEq)]
 pub enum APTNode {
     Add(Vec<APTNode>),
     Sub(Vec<APTNode>),
