@@ -332,21 +332,13 @@ pub fn main() -> GameResult {
     } else {
         PathBuf::from("./pictures")
     };
-
-    /*  let hidpi_factor: f32;
-    {
-        // Create a dummy window so we can get monitor scaling information
-        let cb = ContextBuilder::new("", "");
-        let (_ctx, events_loop) = &mut cb.build()?;
-        hidpi_factor = events_loop.get_primary_monitor().get_hidpi_factor() as f32;
-        println!("main hidpi_factor = {}", hidpi_factor);
-    }*/
+    let scale = 1.0;
 
     let cb = ContextBuilder::new("super_simple with imgui", "ggez")
         .add_resource_path(pictures_dir)
         .window_setup(WindowSetup::default().title("super_simple with imgui"))
         .window_mode(
-            WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0),
+            WindowMode::default().dimensions(WIDTH as f32 * scale, HEIGHT as f32 * scale),
         );
     let (mut ctx, event_loop) = cb.build()?;
 
