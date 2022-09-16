@@ -183,13 +183,13 @@ impl Pic {
                 format!("( Gradient\n {} {} )", colors, data.index.to_lisp())
             }
             Pic::RGB(data) => format!(
-                "( RGB\n{} \n{}\n{} )",
+                "( RGB\n {}\n {}\n {} )",
                 data.r.to_lisp(),
                 data.g.to_lisp(),
                 data.b.to_lisp()
             ),
             Pic::HSV(data) => format!(
-                "( HSV\n{} \n{}\n{} )",
+                "( HSV\n {}\n {}\n {} )",
                 data.h.to_lisp(),
                 data.s.to_lisp(),
                 data.v.to_lisp()
