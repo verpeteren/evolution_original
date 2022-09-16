@@ -359,7 +359,7 @@ pub fn main() -> GameResult {
 
     let args = Args::parse();
     let pic_path = get_picture_path(&args);
-	let scale = 1.0;
+    let scale = 1.0;
 
     let cb = ContextBuilder::new("super_simple with imgui", "ggez")
         .add_resource_path(pic_path.as_path())
