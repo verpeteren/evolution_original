@@ -33,6 +33,7 @@ use ggez::event::{run, EventHandler, KeyCode, KeyMods, MouseButton};
 use ggez::graphics::{window, clear, draw, present, Color, DrawParam, Image};
 use ggez::timer::{delta};
 use ggez::{Context, ContextBuilder, GameResult};
+use clap::Parser;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rand::prelude::*;
@@ -52,6 +53,15 @@ const THUMB_HEIGHT: u16 = 128;
 
 const TREE_MIN: usize = 1;
 const TREE_MAX: usize = 40;
+
+const STD_PATH: &'static str = "pictures";
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+   #[clap(short, long, value_parser, default_value = STD_PATH)]
+   pictures: String,
+}
 
 struct RwArc<T>(Arc<RwLock<T>>);
 impl<T> RwArc<T> {
@@ -316,6 +326,16 @@ pub fn load_pictures(ctx: &mut Context) -> HashMap<String, ActualPicture> {
     pictures
 }
 
+fn get_picture_path(args: &Args) -> PathBuf {
+    let mut path_buf = if let Ok(manifest_dir) = var("CARGO_MANIFEST_DIR") {
+        PathBuf::from(manifest_dir)
+    } else {
+        PathBuf::from("./")
+    };
+    path_buf.push(args.pictures.clone());
+    path_buf
+}
+
 pub fn main() -> GameResult {
     match rayon::ThreadPoolBuilder::new()
         .num_threads(0)
@@ -325,17 +345,12 @@ pub fn main() -> GameResult {
         Err(x) => panic!("{}", x),
     }
 
-    let pictures_dir = if let Ok(manifest_dir) = var("CARGO_MANIFEST_DIR") {
-        let mut path = PathBuf::from(manifest_dir);
-        path.push("pictures");
-        path
-    } else {
-        PathBuf::from("./pictures")
-    };
-    let scale = 1.0;
+    let args = Args::parse();
+    let pic_path = get_picture_path(&args);
+	let scale = 1.0;
 
     let cb = ContextBuilder::new("super_simple with imgui", "ggez")
-        .add_resource_path(pictures_dir)
+        .add_resource_path(pic_path)
         .window_setup(WindowSetup::default().title("super_simple with imgui"))
         .window_mode(
             WindowMode::default().dimensions(WIDTH as f32 * scale, HEIGHT as f32 * scale),
