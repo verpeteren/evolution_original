@@ -1,10 +1,11 @@
-use crate::actual_picture::*;
-use crate::apt::*;
-use simdeez::*;
-use simdnoise::*;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::sync::RwLock;
+
+use crate::actual_picture::ActualPicture;
+use crate::apt::APTNode;
+
+use simdeez::Simd;
+use simdnoise::{simplex::{fbm_2d, ridge_2d, turbulence_2d}, cellular::cellular_2d, CellDistanceFunction, CellReturnType};
 
 /*
 pub const SIMPLEX_MULTIPLIER: f32 = 7.35;
@@ -171,7 +172,7 @@ impl<S: Simd> StackMachine<S> {
                         let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
                         let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
-                        stack[sp - 1] = simdnoise::simplex::fbm_2d::<S>(
+                        stack[sp - 1] = fbm_2d::<S>(
                             stack[sp + 1] * xfreq,
                             stack[sp] * yfreq,
                             lacunarity,
@@ -188,7 +189,7 @@ impl<S: Simd> StackMachine<S> {
                         let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
                         let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
-                        stack[sp - 1] = simdnoise::simplex::ridge_2d::<S>(
+                        stack[sp - 1] = ridge_2d::<S>(
                             stack[sp + 1] * xfreq,
                             stack[sp] * yfreq,
                             lacunarity,
@@ -205,7 +206,7 @@ impl<S: Simd> StackMachine<S> {
                         let lacunarity = stack[sp + 2] * S::set1_ps(5.0);
                         let gain = stack[sp + 3] * S::set1_ps(0.5);
                         let octaves = 3;
-                        stack[sp - 1] = simdnoise::simplex::turbulence_2d::<S>(
+                        stack[sp - 1] = turbulence_2d::<S>(
                             stack[sp + 1] * xfreq,
                             stack[sp] * yfreq,
                             lacunarity,
@@ -220,7 +221,7 @@ impl<S: Simd> StackMachine<S> {
                         let xfreq = stack[sp - 1] * S::set1_ps(4.0);
                         let yfreq = stack[sp + 3] * S::set1_ps(4.0);
                         let jitter = stack[sp + 2] * S::set1_ps(0.5);
-                        stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
+                        stack[sp - 1] = cellular_2d::<S>(
                             stack[sp + 1] * xfreq,
                             stack[sp] * yfreq,
                             CellDistanceFunction::Euclidean,
@@ -235,7 +236,7 @@ impl<S: Simd> StackMachine<S> {
                         let xfreq = stack[sp - 1] * S::set1_ps(4.0);
                         let yfreq = stack[sp + 3] * S::set1_ps(4.0);
                         let jitter = stack[sp + 2] * S::set1_ps(0.5);
-                        stack[sp - 1] = simdnoise::cellular::cellular_2d::<S>(
+                        stack[sp - 1] = cellular_2d::<S>(
                             stack[sp + 1] * xfreq,
                             stack[sp] * yfreq,
                             CellDistanceFunction::Euclidean,
