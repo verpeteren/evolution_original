@@ -55,6 +55,7 @@ const TREE_MIN: usize = 1;
 const TREE_MAX: usize = 40;
 
 const STD_PATH: &'static str = "pictures";
+const STD_FILE_OUT: &'static str = "out.png";
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -67,6 +68,12 @@ struct Args {
 
    #[clap(short, long, value_parser, default_value_t = HEIGHT)]
    height: usize,
+
+   #[clap(short, long, value_parser, help="filename to read sexpr from and disabling the UI; Use '-' to read from stdin.")]
+   input: Option<String>,
+
+   #[clap(short, long, value_parser, requires("input"))]
+   output: Option<String>,
 }
 
 struct RwArc<T>(Arc<RwLock<T>>);
@@ -373,8 +380,25 @@ fn main_gui(args: &Args) -> GameResult {
     run(ctx, event_loop, state)
 }
 
+fn main_cli(_args: &Args) {
+    unimplemented!();
+}
+
 pub fn main() {
-    let args = Args::parse();
-    main_gui(&args).unwrap();
+    let mut args = Args::parse();
+    let run_gui = match &args.input {
+        None => true,
+        Some(_x) => {
+            if args.output.is_none() {
+                args.output = Some(STD_FILE_OUT.to_string());
+            }
+            false
+        }
+    };
+    if run_gui{
+        main_gui(&args).unwrap();
+    } else {
+        main_cli(&args);
+    }
 }
 
