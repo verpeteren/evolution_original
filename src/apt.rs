@@ -108,7 +108,7 @@ impl APTNode {
             Max(children) => format!("( Max {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Min(children) => format!("( Min {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Mod(children) => format!("( % {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Mandelbrot(children) => format!("( Mandelbrot {} {})",children[0].to_lisp(), children[1].to_lisp()),
+            Mandelbrot(children) => format!("( Mandelbrot {} {} )",children[0].to_lisp(), children[1].to_lisp()),
             Picture(name, children) => format!(
                 "( Pic-{} {} {} )",
                 name,
