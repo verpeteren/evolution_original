@@ -1,18 +1,20 @@
-use crate::actual_picture::*;
-use crate::apt::*;
-use crate::ggez_utility::*;
-use crate::parser::*;
-use crate::stack_machine::*;
+use std::collections::HashMap;
+use std::sync::mpsc::{ channel, Receiver };
+use std::sync::Arc;
+use std::mem::discriminant;
+use std::time::Instant;
+
+use crate::actual_picture::ActualPicture;
+use crate::apt::APTNode;
+use crate::ggez_utility::{get_random_color, lerp_color};
+use crate::parser::{Token, Lexer};
+use crate::stack_machine::StackMachine;
+
 use ggez::graphics::Color;
 use rand::rngs::StdRng;
-use rand::*;
+use simdeez::Simd;
+use rand::prelude::*;
 use rayon::prelude::*;
-use simdeez::*;
-use std::collections::HashMap;
-use std::mem::discriminant;
-use std::sync::mpsc::*;
-use std::sync::Arc;
-use std::time::Instant;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
