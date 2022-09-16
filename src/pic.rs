@@ -892,3 +892,141 @@ fn hsv_to_rgb<S: Simd>(h: S::Vf32, s: S::Vf32, v: S::Vf32) -> (S::Vf32, S::Vf32,
         (r, g, b)
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::Token;
+
+    #[test]
+    fn test_pic_new_mono() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match pic {
+            Pic::Mono(MonoData{c, coord}) => {
+                let len = c.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+                assert_eq!(coord, CoordinateSystem::Polar);
+            },
+            _ => {panic!("wrong type");},
+        };
+    }
+
+    #[test]
+    fn test_pic_new_grayscale() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match pic {
+            Pic::Grayscale(GrayscaleData{c, coord}) => {
+                let len = c.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+                assert_eq!(coord, CoordinateSystem::Polar);
+            },
+            _ => {panic!("wrong type");},
+        };
+    }
+
+    #[test]
+    fn test_pic_new_gradient() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match pic {
+            Pic::Gradient(GradientData{colors, index, coord}) => {
+                let len = colors.len();
+                assert!(len > 1 && len < 10);
+                let len = index.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+                assert_eq!(coord, CoordinateSystem::Polar);
+            },
+            _ => {panic!("wrong type");},
+        };
+    }
+
+    #[test]
+    fn test_pic_new_rgb() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match pic {
+            Pic::RGB(RGBData{r, g, b, coord}) => {
+                let len = r.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+
+                let len = g.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+
+                let len = b.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+
+                assert_eq!(coord, CoordinateSystem::Polar);
+            },
+            _ => {panic!("wrong type");},
+        };
+    }
+
+    #[test]
+    fn test_pic_new_hsv() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = Pic::new_hsv(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match pic {
+            Pic::HSV(HSVData{h, s, v, coord}) => {
+                let len = h.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+
+                let len = s.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+
+                let len = v.get_children().unwrap().len();
+                assert!( len > 0 && len < 60);
+
+                assert_eq!(coord, CoordinateSystem::Polar);
+            },
+            _ => {panic!("wrong type");},
+        };
+    }
+
+    #[test]
+    fn test_pic_to_lisp() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+
+        let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let sexpr = pic.to_lisp();
+        assert!(sexpr.starts_with("( Mono\n "));
+        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
+
+        let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let sexpr = pic.to_lisp();
+        assert!(sexpr.starts_with("( Grayscale\n "));
+        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
+
+        let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let sexpr = pic.to_lisp();
+        assert!(sexpr.starts_with("( Gradient\n "));
+        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.contains("( Colors ") || sexpr.contains(" ( StopColor "));
+        assert!(sexpr.contains(" ( Color "));
+        assert!(sexpr.lines().collect::<Vec<_>>().len() > 0);
+
+        let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let sexpr = pic.to_lisp();
+        assert!(sexpr.starts_with("( RGB\n"));
+        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.lines().collect::<Vec<_>>().len() > 3);
+
+        let pic = Pic::new_hsv(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let sexpr = pic.to_lisp();
+        assert!(sexpr.starts_with("( HSV\n"));
+        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
+    }
+
+    // todo: refactor into a separate module e.g. parser::token
+    #[test]
+    fn test_extract_line_number() {
+        assert_eq!(extract_line_number(&Token::OpenParen(6)), 6);
+        assert_eq!(extract_line_number(&Token::CloseParen(6)), 6);
+        assert_eq!(extract_line_number(&Token::Operation("blablabla", 6)), 6);
+        assert_eq!(extract_line_number(&Token::Constant("blablabla", 6)), 6);
+    }
+
+}

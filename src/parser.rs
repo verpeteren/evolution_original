@@ -1,4 +1,4 @@
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::*;
 
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {
@@ -94,7 +94,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_operation(l: &mut Lexer) -> Option<StateFunction> {
-        l.accept_run("+-/*%abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+        l.accept_run("+-/*%abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.");
         l.emit(Token::Operation(&l.input[l.start..l.pos], l.current_line));
         return Some(StateFunction(Lexer::determine_token));
     }
