@@ -20,13 +20,14 @@ const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
 
 use CoordinateSystem::*;
-#[derive(Clone, PartialEq)]
+
+#[derive(Clone, Debug, PartialEq)]
 enum CoordinateSystem {
     Polar,
     Cartesian,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GradientData {
     colors: Vec<(Color, bool)>,
     index: APTNode,
