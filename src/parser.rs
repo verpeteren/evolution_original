@@ -1,4 +1,4 @@
-use std::sync::mpsc::*;
+use std::sync::mpsc::Sender;
 
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {
@@ -94,7 +94,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_operation(l: &mut Lexer) -> Option<StateFunction> {
-        l.accept_run("+-/*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+        l.accept_run("+-/*%abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
         l.emit(Token::Operation(&l.input[l.start..l.pos], l.current_line));
         return Some(StateFunction(Lexer::determine_token));
     }
@@ -146,5 +146,164 @@ impl<'a> Lexer<'a> {
 
     fn is_linebreak(c: char) -> bool {
         c == '\n'
+    }
+}
+
+#[cfg(test)]
+pub mod mock {
+    use super::*;
+
+    pub fn mock_lexer<'a>(code: &'a str, sender: Sender<Token<'a>>) -> Lexer<'a> {
+        Lexer {
+            input: code,
+            start: 0,
+            pos: 0,
+            width: 1,
+            token_sender: sender,
+            current_line: 0
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::mpsc::channel;
+
+    const CODE : &'static str = r#"( RGB
+    ( Sqrt ( Sin ( Abs Y ) ) )
+    ( Atan ( Atan2 ( + X ( / ( Ridge Y -0.30377412 Y ) -0.4523425 ) ) ( + ( Turbulence 0.95225644 ( Tan Y ) Y ) -0.46079302 ) ) )
+    ( Cell1 ( Ridge ( Ridge Y -0.83537865 -0.50440097 ) ( Atan2 Y X ) ( Sin 0.20003605 ) ) ( Sqrt ( Cell1 ( FBM Y X 0.8879242 ) 0.23509383 -0.4539826 ) ) ( Atan2 ( * X ( Ridge 0.6816149 X Y ) ) ( Cell1 ( Sin ( Turbulence X -0.25605845 Y ) ) -0.30595016 Y ) ) ) )
+"#;
+
+    #[test]
+    fn test_lexer_next_linebreak() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        let expected =  vec![
+            (0, 0, 1, 1, 0),
+            (1, 0, 2, 1, 0),
+            (2, 0, 3, 1, 0),
+            (3, 0, 4, 1, 0),
+            (4, 0, 5, 1, 0),
+            (5, 0, 6, 1, 1),
+        ];
+        for (i, exp) in expected.iter().enumerate() {
+            lexer.next();
+            assert_eq!((i, lexer.start), (exp.0, exp.1));
+            assert_eq!((i, lexer.pos), (exp.0, exp.2));
+            assert_eq!((i, lexer.width), (exp.0, exp.3));
+            assert_eq!((i, lexer.current_line), (exp.0, exp.4));
+        }
+    }
+    #[test]
+    fn test_lexer_next_end() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        lexer.pos = CODE.len();
+        assert_eq!(lexer.next(), None);
+    }
+
+    #[test]
+    fn test_lexer_backup() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        lexer.next();
+        lexer.backup();
+        assert_eq!(lexer.pos, 0);
+        assert_eq!(lexer.current_line, 0);
+        assert_eq!(lexer.start, 0);
+        assert_eq!(lexer.width, 1);
+    }
+
+    #[test]
+    fn test_lexer_ignore() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        lexer.next();
+        lexer.ignore();
+        assert_eq!(lexer.pos, 1);
+        assert_eq!(lexer.current_line, 0);
+        assert_eq!(lexer.start, 1);
+        assert_eq!(lexer.width, 1);
+    }
+
+    #[test]
+    fn test_lexer_emit() {
+        let (sender, receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        lexer.next();
+        lexer.emit(Token::OpenParen(66));
+        assert_eq!(lexer.pos, 1);
+        assert_eq!(lexer.current_line, 0);
+        assert_eq!(lexer.start, 1);
+        assert_eq!(lexer.width, 1);
+        let msg = receiver.recv().unwrap();
+        assert_eq!(msg, Token::OpenParen(66));
+    }
+
+    #[test]
+    fn test_lexer_accept_start_ok() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        assert_eq!(lexer.accept("("), true);
+    }
+
+    #[test]
+    fn test_lexer_accept_start_not_ok() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        assert_eq!(lexer.accept(")"), false);
+    }
+
+    #[test]
+    fn test_lexer_accept_spaced_ok() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        lexer.next();
+        assert_eq!(lexer.accept(" \t"), true);
+    }
+
+    #[test]
+    fn test_lexer_accept_spaced_not_ok() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        lexer.next();
+        assert_eq!(lexer.accept("abcdef"), false);
+    }
+
+    #[test]
+    fn test_lexer_accept_end() {
+        let (sender, _receiver) = channel::<Token>();
+        let mut lexer = mock::mock_lexer(CODE, sender);
+        for _i in 0..CODE.len() {
+            lexer.next();
+        }
+        assert_eq!(lexer.accept(")"), false);
+    }
+
+    #[test]
+    fn test_is_start_of_number() {
+        assert_eq!(Lexer::is_start_of_number('a'), false);
+        assert_eq!(Lexer::is_start_of_number('0'), true);
+        assert_eq!(Lexer::is_start_of_number('9'), true);
+    }
+
+    #[test]
+    fn test_is_white_space() {
+        assert_eq!(Lexer::is_white_space('a'), false);
+        assert_eq!(Lexer::is_white_space(' '), true);
+        assert_eq!(Lexer::is_white_space('\t'), true);
+        assert_eq!(Lexer::is_white_space('\n'), true);
+        assert_eq!(Lexer::is_white_space('\r'), true);
+    }
+
+    #[test]
+    fn test_is_linebreak() {
+        assert_eq!(Lexer::is_linebreak('a'), false);
+        assert_eq!(Lexer::is_linebreak(' '), false);
+        assert_eq!(Lexer::is_linebreak('\t'), false);
+        assert_eq!(Lexer::is_linebreak('\n'), true);
+        //assert_eq!(Lexer::is_linebreak('\r'), false); // todo: investigate
     }
 }
