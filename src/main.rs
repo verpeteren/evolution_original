@@ -103,6 +103,24 @@ struct MainState {
 }
 
 impl MainState {
+    fn new(mut ctx: &mut Context) -> GameResult<MainState> {
+        let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
+
+        let s = MainState {
+            state: GameState::Select,
+            imgui_wrapper,            
+            pics: Vec::new(),
+            img_buttons: Vec::new(),
+            dt: std::time::Duration::new(0, 0),
+            frame_elapsed: 0.0,
+            rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
+            mouse_state: MouseState::Nothing,
+            zoom_image: RwArc::new(BackgroundImage::NotYet),
+            pictures: Arc::new(load_pictures(ctx)),
+        };
+        Ok(s)
+    }
+
     fn gen_population(&mut self, ctx: &mut Context) {
         // todo make this layout code less dumb
         let now = Instant::now();
@@ -140,24 +158,6 @@ impl MainState {
             }
             y_pct += height;
         }
-    }
-
-    fn new(mut ctx: &mut Context) -> GameResult<MainState> {
-        let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-
-        let s = MainState {
-            state: GameState::Select,
-            imgui_wrapper,            
-            pics: Vec::new(),
-            img_buttons: Vec::new(),
-            dt: std::time::Duration::new(0, 0),
-            frame_elapsed: 0.0,
-            rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
-            mouse_state: MouseState::Nothing,
-            zoom_image: RwArc::new(BackgroundImage::NotYet),
-            pictures: Arc::new(load_pictures(ctx)),
-        };
-        Ok(s)
     }
 
     fn update_select(&mut self, ctx: &mut Context) {
