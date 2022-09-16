@@ -255,8 +255,10 @@ impl Pic {
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
             let sm = StackMachine::<S>::build(&data.index);
+            /*
             let mut min = 999999.0;
             let mut max = -99999.0;
+            */
 
             let color_count = data.colors.iter().filter(|(_, stop)| !stop).count();
             let mut gradient = Vec::<Color>::new(); //todo actually compute this
@@ -351,8 +353,10 @@ impl Pic {
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
             let sm = StackMachine::<S>::build(&data.c);
+            /*
             let mut min = 999999.0;
             let mut max = -99999.0;
+            */
 
             let process = |(y_pixel, chunk): (usize, &mut [u8])| {
                 let mut stack = Vec::with_capacity(sm.instructions.len());
@@ -416,8 +420,10 @@ impl Pic {
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
             let sm = StackMachine::<S>::build(&data.c);
+            /*
             let mut min = 999999.0;
             let mut max = -99999.0;
+            */
 
             let process = |(y_pixel, chunk): (usize, &mut [u8])| {
                 let mut stack = Vec::with_capacity(sm.instructions.len());

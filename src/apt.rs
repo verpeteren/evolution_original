@@ -328,11 +328,11 @@ impl APTNode {
                     b
                 }
             }
-            Mandelbrot(children) => {
+            Mandelbrot(_children) => {
                 //todo 
                 0.0
             }
-            Picture(name, children) => {
+            Picture(_name, _children) => {
                 //todo
                 0.0
             }
