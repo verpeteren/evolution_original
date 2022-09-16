@@ -16,6 +16,7 @@ pub enum Instruction<S: Simd> {
     Sub,
     Mul,
     Div,
+    Mod,
     FBM,
     Ridge,
     Turbulence,
@@ -35,7 +36,6 @@ pub enum Instruction<S: Simd> {
     Square,
     Max,
     Min,
-    Mod,
     Mandelbrot,
     Picture(String),
     Constant(S::Vf32),
@@ -55,6 +55,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Sub(_) => Sub,
             APTNode::Mul(_) => Mul,
             APTNode::Div(_) => Div,
+            APTNode::Mod(_) => Mod,
             APTNode::FBM(_) => FBM,
             APTNode::Ridge(_) => Ridge,
             APTNode::Turbulence(_) => Turbulence,
@@ -74,7 +75,6 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Square(_) => Square,
             APTNode::Max(_) => Max,
             APTNode::Min(_) => Min,
-            APTNode::Mod(_) => Mod,
             APTNode::Mandelbrot(_) => Mandelbrot,
             APTNode::Picture(name, _) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
@@ -149,6 +149,16 @@ impl<S: Simd> StackMachine<S> {
                     Div => {
                         sp -= 1;
                         stack[sp - 1] = StackMachine::<S>::deal_with_nan(stack[sp] / stack[sp - 1]);
+                    }
+                    Mod => {
+                        sp -= 1;
+                        let a = stack[sp - 1];
+                        let b = stack[sp];
+                        let mut r = S::setzero_ps();
+                        for i in 0..S::VF32_WIDTH {
+                            r[i] = a[i] % b[i];
+                        }
+                        stack[sp - 1] = r;
                     }
                     FBM => {
                         sp -= 5;
@@ -302,16 +312,6 @@ impl<S: Simd> StackMachine<S> {
                     Min => {
                         sp -= 1;
                         stack[sp - 1] = S::min_ps(stack[sp - 1], stack[sp]);
-                    }
-                    Mod => {
-                        sp -= 1;
-                        let a = stack[sp - 1];
-                        let b = stack[sp];
-                        let mut r = S::setzero_ps();
-                        for i in 0..S::VF32_WIDTH {
-                            r[i] = a[i] % b[i];
-                        }
-                        stack[sp - 1] = r;
                     }
                     Mandelbrot => {
                         sp -= 1;

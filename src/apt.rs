@@ -10,6 +10,7 @@ pub enum APTNode {
     Sub(Vec<APTNode>),
     Mul(Vec<APTNode>),
     Div(Vec<APTNode>),
+    Mod(Vec<APTNode>),
     FBM(Vec<APTNode>),
     Ridge(Vec<APTNode>),
     Turbulence(Vec<APTNode>),
@@ -29,7 +30,6 @@ pub enum APTNode {
     Square(Vec<APTNode>),
     Max(Vec<APTNode>),
     Min(Vec<APTNode>),
-    Mod(Vec<APTNode>),
     Mandelbrot(Vec<APTNode>),
     Picture(String, Vec<APTNode>),
     Constant(f32),
@@ -46,6 +46,7 @@ impl APTNode {
             Sub(children) => format!("( - {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Mul(children) => format!("( * {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Div(children) => format!("( / {} {} )", children[0].to_lisp(), children[1].to_lisp()),
+            Mod(children) => format!("( % {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             FBM(children) => format!(
                 "( FBM {} {} {} {} {} {} )",
                 children[0].to_lisp(),
@@ -107,7 +108,6 @@ impl APTNode {
             Square(children) => format!("( Square {} )", children[0].to_lisp()),
             Max(children) => format!("( Max {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Min(children) => format!("( Min {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Mod(children) => format!("( % {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Mandelbrot(children) => format!("( Mandelbrot {} {} )",children[0].to_lisp(), children[1].to_lisp()),
             Picture(name, children) => format!(
                 "( Pic-{} {} {} )",
@@ -130,6 +130,7 @@ impl APTNode {
             "-" => Ok(Sub(vec![Empty, Empty])),
             "*" => Ok(Mul(vec![Empty, Empty])),
             "/" => Ok(Div(vec![Empty, Empty])),
+            "%" => Ok(Mod(vec![Empty, Empty])),
             "fbm" => Ok(FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
             "ridge" => Ok(Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
             "turbulence" => Ok(Turbulence(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
@@ -149,7 +150,6 @@ impl APTNode {
             "square" => Ok(Square(vec![Empty])),
             "max" => Ok(Max(vec![Empty, Empty])),
             "min" => Ok(Min(vec![Empty, Empty])),
-            "%" => Ok(Mod(vec![Empty, Empty])),
             "mandelbrot" => Ok(Mandelbrot(vec![Empty, Empty])),
             "x" => Ok(X),
             "y" => Ok(Y),
@@ -173,26 +173,26 @@ impl APTNode {
             1 => Sub(vec![Empty, Empty]),
             2 => Mul(vec![Empty, Empty]),
             3 => Div(vec![Empty, Empty]),
-            4 => FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
-            5 => Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
-            6 => Turbulence(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
-            7 => Cell1(vec![Empty, Empty, Empty, Empty, Empty]),
-            8 => Cell2(vec![Empty, Empty, Empty, Empty, Empty]),
-            9 => Sqrt(vec![Empty]),
-            10 => Sin(vec![Empty]),
-            11 => Atan(vec![Empty]),
-            12 => Atan2(vec![Empty, Empty]),
-            13 => Tan(vec![Empty]),
-            14 => Log(vec![Empty]),
-            15 => Abs(vec![Empty]),
-            16 => Floor(vec![Empty]),
-            17 => Ceil(vec![Empty]),
-            18 => Clamp(vec![Empty]),
-            19 => Wrap(vec![Empty]),
-            20 => Square(vec![Empty]),
-            21 => Max(vec![Empty, Empty]),
-            22 => Min(vec![Empty, Empty]),
-            23 => Mod(vec![Empty, Empty]),
+            4 => Mod(vec![Empty, Empty]),
+            5 => FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
+            6 => Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
+            7 => Turbulence(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
+            8 => Cell1(vec![Empty, Empty, Empty, Empty, Empty]),
+            9 => Cell2(vec![Empty, Empty, Empty, Empty, Empty]),
+            10 => Sqrt(vec![Empty]),
+            11 => Sin(vec![Empty]),
+            12 => Atan(vec![Empty]),
+            13 => Atan2(vec![Empty, Empty]),
+            14 => Tan(vec![Empty]),
+            15 => Log(vec![Empty]),
+            16 => Abs(vec![Empty]),
+            17 => Floor(vec![Empty]),
+            18 => Ceil(vec![Empty]),
+            19 => Clamp(vec![Empty]),
+            20 => Wrap(vec![Empty]),
+            21 => Square(vec![Empty]),
+            22 => Max(vec![Empty, Empty]),
+            23 => Min(vec![Empty, Empty]),
             24 => Mandelbrot(vec![Empty,Empty]),
             25 => {
                 let r = rng.gen_range(0..pic_names.len()) as usize;
@@ -263,6 +263,11 @@ impl APTNode {
             Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
             Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
             Div(children) => children[0].constant_eval() / children[1].constant_eval(),
+            Mod(children) => {
+                let a = children[0].constant_eval();
+                let b = children[1].constant_eval();
+                a % b
+            }
             FBM(_) => 0.0,
             Ridge(_) => 0.0,
             Turbulence(_) => 0.0, // if the noise functions all have constants it isn't worth bothering maybe?
@@ -320,11 +325,6 @@ impl APTNode {
                     b
                 }
             }
-            Mod(children) => {
-                let a = children[0].constant_eval();
-                let b = children[1].constant_eval();
-                a % b
-            }
             Mandelbrot(children) => {
                 //todo 
                 0.0
@@ -344,6 +344,7 @@ impl APTNode {
             Sub(_) => Sub(children),
             Mul(_) => Mul(children),
             Div(_) => Div(children),
+            Mod(_) => Mod(children),
             FBM(_) => FBM(children),
             Ridge(_) => Ridge(children),
             Turbulence(_) => Turbulence(children),
@@ -363,7 +364,6 @@ impl APTNode {
             Square(_) => Square(children),
             Max(_) => Max(children),
             Min(_) => Min(children),
-            Mod(_) => Mod(children),
             Mandelbrot(_) => Mandelbrot(children),
             Picture(name, _) => Picture(name.to_string(), children[1..].to_vec()),
             Constant(v) => Constant(*v),
@@ -420,12 +420,13 @@ impl APTNode {
 
     pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode>> {
         match self {
-            Add(children) | Sub(children) | Mul(children) | Div(children) | FBM(children)
+            Add(children) | Sub(children) | Mul(children) | Div(children) | Mod(children)
+            | FBM(children)
             | Ridge(children) | Turbulence(children) | Cell1(children) | Cell2(children)
             | Sqrt(children) | Sin(children) | Atan(children) | Atan2(children) | Tan(children)
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
-            | Min(children) | Mod(children) | Mandelbrot(children) => Some(children),         
+            | Min(children) | Mandelbrot(children) => Some(children),         
             Picture(_, children) => Some(children),
             _ => None,
         }
@@ -433,12 +434,13 @@ impl APTNode {
 
     pub fn get_children(&self) -> Option<&Vec<APTNode>> {
         match self {
-            Add(children) | Sub(children) | Mul(children) | Div(children) | FBM(children)
+            Add(children) | Sub(children) | Mul(children) | Div(children) | Mod(children)
+            | FBM(children)
             | Ridge(children) | Turbulence(children) | Cell1(children) | Cell2(children)
             | Sqrt(children) | Sin(children) | Atan(children) | Atan2(children) | Tan(children)
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
-            | Min(children) | Mod(children) | Mandelbrot(children) => Some(children),
+            | Min(children) | Mandelbrot(children) => Some(children),
             Picture(_, children) => Some(children),
             _ => None,
         }
