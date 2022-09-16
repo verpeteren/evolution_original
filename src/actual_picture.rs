@@ -1,5 +1,7 @@
 use ggez::Context;
 use ggez::graphics::{Image};
+use image::io::{Reader as ImageReader};
+use image::GenericImageView;
 
 pub struct ActualPicture {
     pub brightness: Vec<f32>,
@@ -13,6 +15,14 @@ impl ActualPicture {
         let img = Image::new(ctx, "/".to_string() + &relative_file_name).unwrap();
         let raw_bytes = img.to_rgba8(ctx).unwrap();
         Self::new_from_bytes(&raw_bytes[0..], relative_file_name, img.width(), img.height())
+    }
+
+    pub fn new_via_file(file_name: &str) -> Result<Self, String> {
+        let img = ImageReader::open(file_name).expect("Could not open file").decode().expect("Could not decode file");
+
+        let (width, height) = img.dimensions();
+        let raw_bytes = img.to_bytes();
+        Self::new_from_bytes(&raw_bytes[0..], file_name, width as u16, height as u16)
     }
 
     pub fn new_from_bytes(raw_bytes: &[u8], name: &str, w: u16, h: u16) -> Result<Self, String>{

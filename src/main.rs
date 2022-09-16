@@ -32,7 +32,7 @@ use ggez::conf::{WindowSetup, WindowMode};
 use ggez::event::{run, EventHandler, KeyCode, KeyMods, MouseButton};
 use ggez::graphics::{window, clear, draw, present, Color, DrawParam, Image};
 use ggez::timer::{delta};
-use ggez::{Context, ContextBuilder, GameResult};
+use ggez::{Context, ContextBuilder, GameResult, GameError};
 use clap::Parser;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -119,9 +119,9 @@ struct MainState {
 }
 
 impl MainState {
-    fn new(mut ctx: &mut Context) -> GameResult<MainState> {
+    fn new(mut ctx: &mut Context, pic_path: &Path) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pics = load_pictures(ctx);
+        let pics = load_pictures(Some(&mut ctx), pic_path).map_err(|x| GameError::FilesystemError(x))?;
 
         let s = MainState {
             state: GameState::Select,
@@ -314,23 +314,28 @@ impl EventHandler for MainState {
         self.imgui_wrapper.update_keyboard(ch);
     }
 }
-pub fn load_pictures(ctx: &mut Context) -> HashMap<String, ActualPicture> {
-    let pic_path = Path::new("pictures");
+
+pub fn load_pictures(mut o_ctx: Option<&mut Context>, pic_path: &Path) -> Result<HashMap<String, ActualPicture>, String> {
     let mut pictures = HashMap::new();
-    match read_dir(pic_path) {
-        Ok(files) => {
-            for file in files {
-                 let short_file_name = file.as_ref()
-                                           .unwrap()
-                                           .file_name()
-                                           .into_string()
-                                           .expect("Cannot convert file's name ");
-                pictures.insert(short_file_name.clone(), ActualPicture::new_via_ctx(ctx, &short_file_name).expect("Cannot open file"));
+    for file in read_dir(pic_path).expect(&format!("Cannot read path {:?}", pic_path)) {
+        let short_file_name = file.as_ref()
+                                  .unwrap()
+                                  .file_name()
+                                  .into_string()
+                                  .expect("Cannot convert file's name ");
+        let pic = match o_ctx.as_mut()  {
+            Some(ctx) => {
+                ActualPicture::new_via_ctx(ctx, &short_file_name).expect("Cannot open file")
+            },
+            None => {
+                let path = file.as_ref().unwrap().path();
+                let full_file_name = path.to_string_lossy();
+                ActualPicture::new_via_file(&full_file_name.to_owned())?
             }
-        }
-        Err(_) => (),
+        };
+        pictures.insert(short_file_name, pic);
     }
-    pictures
+    Ok(pictures)
 }
 
 fn get_picture_path(args: &Args) -> PathBuf {
@@ -357,14 +362,14 @@ pub fn main() -> GameResult {
 	let scale = 1.0;
 
     let cb = ContextBuilder::new("super_simple with imgui", "ggez")
-        .add_resource_path(pic_path)
+        .add_resource_path(pic_path.as_path())
         .window_setup(WindowSetup::default().title("super_simple with imgui"))
         .window_mode(
             WindowMode::default().dimensions(args.width as f32 * scale, args.height as f32 * scale),
         );
     let (mut ctx, event_loop) = cb.build()?;
 
-    let mut state = MainState::new(&mut ctx).unwrap();
+    let mut state = MainState::new(&mut ctx, pic_path.as_path()).unwrap();
     state.gen_population(&mut ctx);
     run(ctx, event_loop, state)
 }
