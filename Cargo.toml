@@ -14,7 +14,7 @@ imgui = "0.3.0"
 imgui-gfx-renderer = "0.3.0"
 rand = "*"
 nalgebra = "*"
-simdeez = { features = ["sleef"],verion="1.0.0" }
+simdeez = { features = ["sleef"],version="1.0.0" }
 simdnoise = "*"
 variant_count = "*"
 rayon="*"
