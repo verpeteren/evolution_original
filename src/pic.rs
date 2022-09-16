@@ -643,6 +643,10 @@ pub fn lisp_to_pic(code: String) -> Result<Pic, String> {
         s.spawn(|_| {
             Lexer::begin_lexing(&code, sender);
         });
+
+        // TODO: fix race condition that crashes at parser.rs:68. Workaround:
+        std::thread::sleep(std::time::Duration::from_millis(1));
+
         pic_opt = Some(parse_pic(&receiver))
     });
     pic_opt.unwrap()
