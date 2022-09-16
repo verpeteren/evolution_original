@@ -151,6 +151,7 @@ impl APTNode {
             "min" => Ok(Min(vec![Empty, Empty])),
             "%" => Ok(Mod(vec![Empty, Empty])),
             _ if lower == "pic" => Ok(X),
+            "mandelbrot" => Ok(Mandelbrot(vec![Empty, Empty])),
             "x" => Ok(X),
             "y" => Ok(Y),
             "t" => Ok(T),
