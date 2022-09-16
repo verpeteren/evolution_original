@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::mpsc::{ channel, Receiver };
 use std::sync::Arc;
-use std::mem::discriminant;
 
 use crate::actual_picture::ActualPicture;
 use crate::apt::APTNode;

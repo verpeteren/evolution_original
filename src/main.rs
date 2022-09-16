@@ -21,7 +21,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::thread::{spawn};
 use std::fs::{read_dir,File};
-use std::time::Instant;
 use std::io::prelude::*;
 
 use crate::actual_picture::ActualPicture;
@@ -149,7 +148,6 @@ impl MainState {
 
     fn gen_population(&mut self, ctx: &mut Context) {
         // todo make this layout code less dumb
-        let now = Instant::now();
         self.img_buttons.clear();
         let width = 1.0 / (THUMB_COLS as f32 * 1.01);
         let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
