@@ -10,8 +10,8 @@ edition="2018"
 ggez = { version = "0.7.0", features = ["multithread-image-decoding"] }
 gfx_core = "0.9.2"
 gfx_device_gl = "0.16.2"
-imgui = "0.3.0"
-imgui-gfx-renderer = "0.3.0"
+imgui = "0.8.2"
+imgui-gfx-renderer = "0.8.2"
 rand = "*"
 simdeez = { features = ["sleef"], path = "../simdeez" }
 simdnoise = { path = "../rust-simd-noise" }

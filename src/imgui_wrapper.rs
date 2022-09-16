@@ -90,7 +90,8 @@ impl ImGuiWrapper {
                     "Mouse Position: ({:.1},{:.1})",
                     mouse_pos[0], mouse_pos[1]
                 ));
-                ui.input_text_multiline(im_str!("multiline"), t, [300., 100.])
+                let mut s = t.to_str().to_owned();
+                ui.input_text_multiline("multiline", &mut s, [300., 100.])
                     .build();
             });
 
