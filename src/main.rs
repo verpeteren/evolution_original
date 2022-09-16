@@ -246,7 +246,7 @@ impl MainState {
     }
 }
 
-impl EventHandler for MainState {
+impl EventHandler<GameError> for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         self.dt = delta(ctx);
         match self.state {
@@ -348,7 +348,7 @@ fn get_picture_path(args: &Args) -> PathBuf {
     path_buf
 }
 
-pub fn main() -> GameResult {
+fn main_gui(args: &Args) -> GameResult {
     match rayon::ThreadPoolBuilder::new()
         .num_threads(0)
         .build_global()
@@ -357,7 +357,6 @@ pub fn main() -> GameResult {
         Err(x) => panic!("{}", x),
     }
 
-    let args = Args::parse();
     let pic_path = get_picture_path(&args);
     let scale = 1.0;
 
@@ -373,3 +372,9 @@ pub fn main() -> GameResult {
     state.gen_population(&mut ctx);
     run(ctx, event_loop, state)
 }
+
+pub fn main() {
+    let args = Args::parse();
+    main_gui(&args).unwrap();
+}
+
