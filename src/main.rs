@@ -121,6 +121,7 @@ struct MainState {
 impl MainState {
     fn new(mut ctx: &mut Context) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
+        let pics = load_pictures(ctx);
 
         let s = MainState {
             state: GameState::Select,
@@ -132,7 +133,7 @@ impl MainState {
             rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
             mouse_state: MouseState::Nothing,
             zoom_image: RwArc::new(BackgroundImage::NotYet),
-            pictures: Arc::new(load_pictures(ctx)),
+            pictures: Arc::new(pics),
         };
         Ok(s)
     }
