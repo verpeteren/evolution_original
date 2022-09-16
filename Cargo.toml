@@ -16,4 +16,4 @@ rand = "*"
 simdeez = { features = ["sleef"], path = "../simdeez" }
 simdnoise = { path = "../rust-simd-noise" }
 variant_count = "*"
-rayon="*"
+rayon="1.5.3"
