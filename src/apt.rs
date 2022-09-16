@@ -109,9 +109,21 @@ impl APTNode {
             Clamp(children) => format!("( Clamp {} )", children[0].to_lisp()),
             Wrap(children) => format!("( Wrap {} )", children[0].to_lisp()),
             Square(children) => format!("( Square {} )", children[0].to_lisp()),
-            Max(children) => format!("( Max {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Min(children) => format!("( Min {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Mandelbrot(children) => format!("( Mandelbrot {} {} )",children[0].to_lisp(), children[1].to_lisp()),
+            Max(children) => format!(
+                "( Max {} {} )",
+                children[0].to_lisp(),
+                children[1].to_lisp()
+            ),
+            Min(children) => format!(
+                "( Min {} {} )",
+                children[0].to_lisp(),
+                children[1].to_lisp()
+            ),
+            Mandelbrot(children) => format!(
+                "( Mandelbrot {} {} )",
+                children[0].to_lisp(),
+                children[1].to_lisp()
+            ),
             Picture(name, children) => format!(
                 "( Pic-{} {} {} )",
                 name,
@@ -164,7 +176,7 @@ impl APTNode {
                 } else {
                     Err(format!("Unknown operation '{}' ", s.to_string()))
                 }
-            },
+            }
         }
     }
 
@@ -196,7 +208,7 @@ impl APTNode {
             21 => Square(vec![Empty]),
             22 => Max(vec![Empty, Empty]),
             23 => Min(vec![Empty, Empty]),
-            24 => Mandelbrot(vec![Empty,Empty]),
+            24 => Mandelbrot(vec![Empty, Empty]),
             25 => {
                 let r = rng.gen_range(0..pic_names.len()) as usize;
                 Picture(pic_names[r].to_string(), vec![Empty, Empty])
@@ -329,7 +341,7 @@ impl APTNode {
                 }
             }
             Mandelbrot(_children) => {
-                //todo 
+                //todo
                 0.0
             }
             Picture(_name, _children) => {
@@ -424,12 +436,11 @@ impl APTNode {
     pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode>> {
         match self {
             Add(children) | Sub(children) | Mul(children) | Div(children) | Mod(children)
-            | FBM(children)
-            | Ridge(children) | Turbulence(children) | Cell1(children) | Cell2(children)
-            | Sqrt(children) | Sin(children) | Atan(children) | Atan2(children) | Tan(children)
-            | Log(children) | Abs(children) | Floor(children) | Ceil(children)
-            | Clamp(children) | Wrap(children) | Square(children) | Max(children)
-            | Min(children) | Mandelbrot(children) => Some(children),         
+            | FBM(children) | Ridge(children) | Turbulence(children) | Cell1(children)
+            | Cell2(children) | Sqrt(children) | Sin(children) | Atan(children)
+            | Atan2(children) | Tan(children) | Log(children) | Abs(children) | Floor(children)
+            | Ceil(children) | Clamp(children) | Wrap(children) | Square(children)
+            | Max(children) | Min(children) | Mandelbrot(children) => Some(children),
             Picture(_, children) => Some(children),
             _ => None,
         }
@@ -438,12 +449,11 @@ impl APTNode {
     pub fn get_children(&self) -> Option<&Vec<APTNode>> {
         match self {
             Add(children) | Sub(children) | Mul(children) | Div(children) | Mod(children)
-            | FBM(children)
-            | Ridge(children) | Turbulence(children) | Cell1(children) | Cell2(children)
-            | Sqrt(children) | Sin(children) | Atan(children) | Atan2(children) | Tan(children)
-            | Log(children) | Abs(children) | Floor(children) | Ceil(children)
-            | Clamp(children) | Wrap(children) | Square(children) | Max(children)
-            | Min(children) | Mandelbrot(children) => Some(children),
+            | FBM(children) | Ridge(children) | Turbulence(children) | Cell1(children)
+            | Cell2(children) | Sqrt(children) | Sin(children) | Atan(children)
+            | Atan2(children) | Tan(children) | Log(children) | Abs(children) | Floor(children)
+            | Ceil(children) | Clamp(children) | Wrap(children) | Square(children)
+            | Max(children) | Min(children) | Mandelbrot(children) => Some(children),
             Picture(_, children) => Some(children),
             _ => None,
         }
@@ -509,35 +519,87 @@ pub mod mock {
                 params.push(APTNode::Empty);
             }
         }
-        
+
         params
     }
-    pub fn mock_params_add(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_sub(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_mul(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_div(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_fbm(filled: bool) -> Vec<APTNode> { mock_params(6, filled)}
-    pub fn mock_params_ridge(filled: bool) -> Vec<APTNode> { mock_params(6, filled)}
-    pub fn mock_params_turbulence(filled: bool) -> Vec<APTNode> { mock_params(6, filled)}
-    pub fn mock_params_cell1(filled: bool) -> Vec<APTNode> { mock_params(5, filled)}
-    pub fn mock_params_cell2(filled: bool) -> Vec<APTNode> { mock_params(5, filled)}
-    pub fn mock_params_sqrt(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_sin(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_atan(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_atan2(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_tan(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_log(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_abs(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_floor(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_ceil(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_clamp(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_wrap(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_square(filled: bool) -> Vec<APTNode> { mock_params(1, filled)}
-    pub fn mock_params_max(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_min(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_mod(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_mandelbrot(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
-    pub fn mock_params_picture(filled: bool) -> Vec<APTNode> { mock_params(2, filled)}
+    pub fn mock_params_add(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_sub(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_mul(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_div(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_fbm(filled: bool) -> Vec<APTNode> {
+        mock_params(6, filled)
+    }
+    pub fn mock_params_ridge(filled: bool) -> Vec<APTNode> {
+        mock_params(6, filled)
+    }
+    pub fn mock_params_turbulence(filled: bool) -> Vec<APTNode> {
+        mock_params(6, filled)
+    }
+    pub fn mock_params_cell1(filled: bool) -> Vec<APTNode> {
+        mock_params(5, filled)
+    }
+    pub fn mock_params_cell2(filled: bool) -> Vec<APTNode> {
+        mock_params(5, filled)
+    }
+    pub fn mock_params_sqrt(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_sin(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_atan(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_atan2(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_tan(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_log(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_abs(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_floor(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_ceil(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_clamp(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_wrap(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_square(filled: bool) -> Vec<APTNode> {
+        mock_params(1, filled)
+    }
+    pub fn mock_params_max(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_min(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_mod(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_mandelbrot(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
+    pub fn mock_params_picture(filled: bool) -> Vec<APTNode> {
+        mock_params(2, filled)
+    }
 }
 
 #[cfg(test)]
@@ -547,36 +609,130 @@ mod tests {
 
     #[test]
     fn test_aptnode_to_lisp() {
-        assert_eq!(APTNode::Add(mock::mock_params_add(true)).to_lisp(), "( + 1 2.1 )");
-        assert_eq!(APTNode::Sub(mock::mock_params_sub(true)).to_lisp(), "( - 1 2.1 )");
-        assert_eq!(APTNode::Mul(mock::mock_params_mul(true)).to_lisp(), "( * 1 2.1 )");
-        assert_eq!(APTNode::Div(mock::mock_params_div(true)).to_lisp(), "( / 1 2.1 )");
-        assert_eq!(APTNode::Mod(mock::mock_params_mod(true)).to_lisp(), "( % 1 2.1 )");
-        assert_eq!(APTNode::FBM(mock::mock_params_fbm(true)).to_lisp(), "( FBM 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )");
-        assert_eq!(APTNode::Ridge(mock::mock_params_ridge(true)).to_lisp(), "( Ridge 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )");
-        assert_eq!(APTNode::Cell1(mock::mock_params_cell1(true)).to_lisp(), "( Cell1 1 2.1 3.1999998 4.2999997 5.3999996 )");
-        assert_eq!(APTNode::Cell2(mock::mock_params_cell2(true)).to_lisp(), "( Cell2 1 2.1 3.1999998 4.2999997 5.3999996 )");
-        assert_eq!(APTNode::Turbulence(mock::mock_params_turbulence(true)).to_lisp(), "( Turbulence 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )");
-        assert_eq!(APTNode::Sqrt(mock::mock_params_sqrt(true)).to_lisp(), "( Sqrt 1 )");
-        assert_eq!(APTNode::Sin(mock::mock_params_sin(true)).to_lisp(), "( Sin 1 )");
-        assert_eq!(APTNode::Atan(mock::mock_params_atan(true)).to_lisp(), "( Atan 1 )");
-        assert_eq!(APTNode::Atan2(mock::mock_params_atan2(true)).to_lisp(), "( Atan2 1 2.1 )");
-        assert_eq!(APTNode::Tan(mock::mock_params_tan(true)).to_lisp(), "( Tan 1 )");
-        assert_eq!(APTNode::Log(mock::mock_params_log(true)).to_lisp(), "( Log 1 )");
-        assert_eq!(APTNode::Abs(mock::mock_params_abs(true)).to_lisp(), "( Abs 1 )");
-        assert_eq!(APTNode::Abs(vec![APTNode::Constant(-10000.5)]).to_lisp(), "( Abs -10000.5 )");
-        assert_eq!(APTNode::Floor(mock::mock_params_floor(true)).to_lisp(), "( Floor 1 )");
-        assert_eq!(APTNode::Floor(vec![APTNode::Constant(10000.5)]).to_lisp(), "( Floor 10000.5 )");
-        assert_eq!(APTNode::Ceil(mock::mock_params_ceil(true)).to_lisp(), "( Ceil 1 )");
-        assert_eq!(APTNode::Ceil(vec![APTNode::Constant(10000.5)]).to_lisp(), "( Ceil 10000.5 )");
-        assert_eq!(APTNode::Clamp(mock::mock_params_clamp(true)).to_lisp(), "( Clamp 1 )");
-        assert_eq!(APTNode::Wrap(mock::mock_params_wrap(true)).to_lisp(), "( Wrap 1 )");
-        assert_eq!(APTNode::Square(mock::mock_params_square(true)).to_lisp(), "( Square 1 )");
-        assert_eq!(APTNode::Max(mock::mock_params_max(true)).to_lisp(), "( Max 1 2.1 )");
-        assert_eq!(APTNode::Min(mock::mock_params_min(true)).to_lisp(), "( Min 1 2.1 )");
-        assert_eq!(APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).to_lisp(), "( Mandelbrot 1 2.1 )");
-        assert_eq!(APTNode::Picture("eye.jpg".to_string(), vec![APTNode::Constant(800.0), APTNode::Constant(600.0)]).to_lisp(), "( Pic-eye.jpg 800 600 )".to_string());
-        assert_eq!(APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).to_lisp(), "( Pic-eye.jpg 1 2.1 )".to_string());
+        assert_eq!(
+            APTNode::Add(mock::mock_params_add(true)).to_lisp(),
+            "( + 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Sub(mock::mock_params_sub(true)).to_lisp(),
+            "( - 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Mul(mock::mock_params_mul(true)).to_lisp(),
+            "( * 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Div(mock::mock_params_div(true)).to_lisp(),
+            "( / 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Mod(mock::mock_params_mod(true)).to_lisp(),
+            "( % 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::FBM(mock::mock_params_fbm(true)).to_lisp(),
+            "( FBM 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )"
+        );
+        assert_eq!(
+            APTNode::Ridge(mock::mock_params_ridge(true)).to_lisp(),
+            "( Ridge 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )"
+        );
+        assert_eq!(
+            APTNode::Cell1(mock::mock_params_cell1(true)).to_lisp(),
+            "( Cell1 1 2.1 3.1999998 4.2999997 5.3999996 )"
+        );
+        assert_eq!(
+            APTNode::Cell2(mock::mock_params_cell2(true)).to_lisp(),
+            "( Cell2 1 2.1 3.1999998 4.2999997 5.3999996 )"
+        );
+        assert_eq!(
+            APTNode::Turbulence(mock::mock_params_turbulence(true)).to_lisp(),
+            "( Turbulence 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )"
+        );
+        assert_eq!(
+            APTNode::Sqrt(mock::mock_params_sqrt(true)).to_lisp(),
+            "( Sqrt 1 )"
+        );
+        assert_eq!(
+            APTNode::Sin(mock::mock_params_sin(true)).to_lisp(),
+            "( Sin 1 )"
+        );
+        assert_eq!(
+            APTNode::Atan(mock::mock_params_atan(true)).to_lisp(),
+            "( Atan 1 )"
+        );
+        assert_eq!(
+            APTNode::Atan2(mock::mock_params_atan2(true)).to_lisp(),
+            "( Atan2 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Tan(mock::mock_params_tan(true)).to_lisp(),
+            "( Tan 1 )"
+        );
+        assert_eq!(
+            APTNode::Log(mock::mock_params_log(true)).to_lisp(),
+            "( Log 1 )"
+        );
+        assert_eq!(
+            APTNode::Abs(mock::mock_params_abs(true)).to_lisp(),
+            "( Abs 1 )"
+        );
+        assert_eq!(
+            APTNode::Abs(vec![APTNode::Constant(-10000.5)]).to_lisp(),
+            "( Abs -10000.5 )"
+        );
+        assert_eq!(
+            APTNode::Floor(mock::mock_params_floor(true)).to_lisp(),
+            "( Floor 1 )"
+        );
+        assert_eq!(
+            APTNode::Floor(vec![APTNode::Constant(10000.5)]).to_lisp(),
+            "( Floor 10000.5 )"
+        );
+        assert_eq!(
+            APTNode::Ceil(mock::mock_params_ceil(true)).to_lisp(),
+            "( Ceil 1 )"
+        );
+        assert_eq!(
+            APTNode::Ceil(vec![APTNode::Constant(10000.5)]).to_lisp(),
+            "( Ceil 10000.5 )"
+        );
+        assert_eq!(
+            APTNode::Clamp(mock::mock_params_clamp(true)).to_lisp(),
+            "( Clamp 1 )"
+        );
+        assert_eq!(
+            APTNode::Wrap(mock::mock_params_wrap(true)).to_lisp(),
+            "( Wrap 1 )"
+        );
+        assert_eq!(
+            APTNode::Square(mock::mock_params_square(true)).to_lisp(),
+            "( Square 1 )"
+        );
+        assert_eq!(
+            APTNode::Max(mock::mock_params_max(true)).to_lisp(),
+            "( Max 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Min(mock::mock_params_min(true)).to_lisp(),
+            "( Min 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).to_lisp(),
+            "( Mandelbrot 1 2.1 )"
+        );
+        assert_eq!(
+            APTNode::Picture(
+                "eye.jpg".to_string(),
+                vec![APTNode::Constant(800.0), APTNode::Constant(600.0)]
+            )
+            .to_lisp(),
+            "( Pic-eye.jpg 800 600 )".to_string()
+        );
+        assert_eq!(
+            APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).to_lisp(),
+            "( Pic-eye.jpg 1 2.1 )".to_string()
+        );
         assert_eq!(APTNode::Constant(123.456).to_lisp(), "123.456");
         assert_eq!(APTNode::Constant(0.0).to_lisp(), "0");
         assert_eq!(APTNode::Constant(1.0).to_lisp(), "1");
@@ -588,36 +744,108 @@ mod tests {
 
     #[test]
     fn test_aptnode_str_to_node() {
-        assert_eq!(APTNode::str_to_node("+"), Ok(APTNode::Add(mock::mock_params_add(false))));
+        assert_eq!(
+            APTNode::str_to_node("+"),
+            Ok(APTNode::Add(mock::mock_params_add(false)))
+        );
         assert_eq!(APTNode::str_to_node("-"), Ok(Sub(vec![Empty, Empty])));
         assert_eq!(APTNode::str_to_node("*"), Ok(Mul(vec![Empty, Empty])));
         assert_eq!(APTNode::str_to_node("/"), Ok(Div(vec![Empty, Empty])));
-        assert_eq!(APTNode::str_to_node("%"), Ok(Mod(mock::mock_params_mod(false))));
-        assert_eq!(APTNode::str_to_node("fbm"), Ok(FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty])));
-        assert_eq!(APTNode::str_to_node("ridge"), Ok(Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty])));
-        assert_eq!(APTNode::str_to_node("turbulence"), Ok(Turbulence(mock::mock_params_turbulence(false))));
-        assert_eq!(APTNode::str_to_node("cell1"), Ok(Cell1(mock::mock_params_cell1(false))));
-        assert_eq!(APTNode::str_to_node("cell2"), Ok(Cell2(mock::mock_params_cell2(false))));
-        assert_eq!(APTNode::str_to_node("sqrt"), Ok(Sqrt(mock::mock_params_sqrt(false))));
-        assert_eq!(APTNode::str_to_node("sin"), Ok(Sin(mock::mock_params_sin(false))));
-        assert_eq!(APTNode::str_to_node("atan"), Ok(Atan(mock::mock_params_atan(false))));
-        assert_eq!(APTNode::str_to_node("atan2"), Ok(Atan2(mock::mock_params_atan2(false))));
-        assert_eq!(APTNode::str_to_node("tan"), Ok(Tan(mock::mock_params_tan(false))));
-        assert_eq!(APTNode::str_to_node("log"), Ok(Log(mock::mock_params_log(false))));
-        assert_eq!(APTNode::str_to_node("abs"), Ok(Abs(mock::mock_params_abs(false))));
+        assert_eq!(
+            APTNode::str_to_node("%"),
+            Ok(Mod(mock::mock_params_mod(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("fbm"),
+            Ok(FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty]))
+        );
+        assert_eq!(
+            APTNode::str_to_node("ridge"),
+            Ok(Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty]))
+        );
+        assert_eq!(
+            APTNode::str_to_node("turbulence"),
+            Ok(Turbulence(mock::mock_params_turbulence(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("cell1"),
+            Ok(Cell1(mock::mock_params_cell1(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("cell2"),
+            Ok(Cell2(mock::mock_params_cell2(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("sqrt"),
+            Ok(Sqrt(mock::mock_params_sqrt(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("sin"),
+            Ok(Sin(mock::mock_params_sin(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("atan"),
+            Ok(Atan(mock::mock_params_atan(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("atan2"),
+            Ok(Atan2(mock::mock_params_atan2(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("tan"),
+            Ok(Tan(mock::mock_params_tan(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("log"),
+            Ok(Log(mock::mock_params_log(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("abs"),
+            Ok(Abs(mock::mock_params_abs(false)))
+        );
         assert_eq!(APTNode::str_to_node("floor"), Ok(Floor(vec![Empty])));
-        assert_eq!(APTNode::str_to_node("ceil"), Ok(Ceil(mock::mock_params_ceil(false))));
-        assert_eq!(APTNode::str_to_node("clamp"), Ok(Clamp(mock::mock_params_clamp(false))));
-        assert_eq!(APTNode::str_to_node("wrap"), Ok(Wrap(mock::mock_params_wrap(false))));
-        assert_eq!(APTNode::str_to_node("square"), Ok(Square(mock::mock_params_square(false))));
-        assert_eq!(APTNode::str_to_node("max"), Ok(Max(mock::mock_params_max(false))));
-        assert_eq!(APTNode::str_to_node("min"), Ok(Min(mock::mock_params_min(false))));
-        assert_eq!(APTNode::str_to_node("mandelbrot"), Ok(Mandelbrot(mock::mock_params_mandelbrot(false))));
-        assert_eq!(APTNode::str_to_node("Pic-eye.jpg"), Ok(Picture("eye.jpg".to_string(), mock::mock_params_picture(false))));
+        assert_eq!(
+            APTNode::str_to_node("ceil"),
+            Ok(Ceil(mock::mock_params_ceil(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("clamp"),
+            Ok(Clamp(mock::mock_params_clamp(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("wrap"),
+            Ok(Wrap(mock::mock_params_wrap(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("square"),
+            Ok(Square(mock::mock_params_square(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("max"),
+            Ok(Max(mock::mock_params_max(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("min"),
+            Ok(Min(mock::mock_params_min(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("mandelbrot"),
+            Ok(Mandelbrot(mock::mock_params_mandelbrot(false)))
+        );
+        assert_eq!(
+            APTNode::str_to_node("Pic-eye.jpg"),
+            Ok(Picture(
+                "eye.jpg".to_string(),
+                mock::mock_params_picture(false)
+            ))
+        );
         assert_eq!(APTNode::str_to_node("x"), Ok(X));
         assert_eq!(APTNode::str_to_node("y"), Ok(Y));
         assert_eq!(APTNode::str_to_node("t"), Ok(T));
-        assert_eq!(APTNode::str_to_node("pizza 60.0 \""), Err("Unknown operation 'pizza 60.0 \"' ".to_string()));
+        assert_eq!(
+            APTNode::str_to_node("pizza 60.0 \""),
+            Err("Unknown operation 'pizza 60.0 \"' ".to_string())
+        );
     }
 
     #[test]
@@ -625,81 +853,240 @@ mod tests {
         let mut root = Add(vec![Empty, Empty]);
         assert_eq!(root.add_leaf(&APTNode::Constant(1.0)), true);
         assert_eq!(root.add_leaf(&APTNode::Constant(2.1)), true);
-        assert_eq!(root, APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]));
+        assert_eq!(
+            root,
+            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)])
+        );
         assert_eq!(root.add_leaf(&APTNode::Constant(3.1)), false);
-        assert_eq!(root, APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]));
+        assert_eq!(
+            root,
+            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)])
+        );
     }
 
     #[test]
     fn test_aptnode_constant_eval() {
-        assert_eq!(APTNode::Add(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(), 11.02);
-        assert_eq!(APTNode::Sub(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(), 8.98);
-        assert_eq!(APTNode::Mul(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(), 10.2);
-        assert_eq!(APTNode::Div(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(), 9.803922);
+        assert_eq!(
+            APTNode::Add(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            11.02
+        );
+        assert_eq!(
+            APTNode::Sub(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            8.98
+        );
+        assert_eq!(
+            APTNode::Mul(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            10.2
+        );
+        assert_eq!(
+            APTNode::Div(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            9.803922
+        );
         // @todo: should panic
         //APTNode::Div(vec![APTNode::Constant(10.0), APTNode::Constant(0.0)]).constant_eval();
-        assert_eq!(APTNode::FBM(vec![APTNode::Constant(0.0), APTNode::Constant(1.1), APTNode::Constant(2.2), APTNode::Constant(3.3), APTNode::Constant(4.4), APTNode::Constant(5.5)]).constant_eval(), 0.0);
-        assert_eq!(APTNode::Ridge(mock::mock_params_ridge(true)).constant_eval(), 0.0);
-        assert_eq!(APTNode::Cell1(mock::mock_params_cell1(true)).constant_eval(), 0.0);
-        assert_eq!(APTNode::Cell2(mock::mock_params_cell2(true)).constant_eval(), 0.0);
-        assert_eq!(APTNode::Turbulence(mock::mock_params_turbulence(true)).constant_eval(), 0.0);
-        assert_eq!(APTNode::Sqrt(vec![APTNode::Constant(16.0)]).constant_eval(), 4.0);
-        assert_eq!(APTNode::Sin(mock::mock_params_sin(true)).constant_eval(), 0.84147096);
-        assert_eq!(APTNode::Atan(mock::mock_params_atan(true)).constant_eval(), 0.7853982);
-        assert_eq!(APTNode::Atan2(mock::mock_params_atan2(true)).constant_eval(), 0.44441923);
-        assert_eq!(APTNode::Tan(mock::mock_params_tan(true)).constant_eval(), 1.5574077);
-        assert_eq!(APTNode::Log(mock::mock_params_log(true)).constant_eval(), 0.0);
-        assert_eq!(APTNode::Log(vec![APTNode::Constant(10000.5)]).constant_eval(), 13.287785);
-        assert_eq!(APTNode::Abs(mock::mock_params_abs(true)).constant_eval(), 1.0 );
-        assert_eq!(APTNode::Abs(vec![APTNode::Constant(10000.5)]).constant_eval(), 10000.5);
-        assert_eq!(APTNode::Floor(mock::mock_params_floor(true)).constant_eval(), 1.0);
-        assert_eq!(APTNode::Floor(vec![APTNode::Constant(- 10000.5)]).constant_eval(), -10001.0);
-        assert_eq!(APTNode::Floor(vec![APTNode::Constant(10000.5)]).constant_eval(), 10000.0);
-        assert_eq!(APTNode::Ceil(mock::mock_params_ceil(true)).constant_eval(), 1.0 );
-        assert_eq!(APTNode::Ceil(vec![APTNode::Constant(10000.5)]).constant_eval(), 10001.0);
-        assert_eq!(APTNode::Ceil(vec![APTNode::Constant(-10000.5)]).constant_eval(), -10000.0);
-        assert_eq!(APTNode::Clamp(mock::mock_params_clamp(true)).constant_eval(), 1.0);
-        assert_eq!(APTNode::Clamp(vec![APTNode::Constant(10000.5)]).constant_eval(), 1.0);
-        assert_eq!(APTNode::Clamp(vec![APTNode::Constant(1.0)]).constant_eval(), 1.0);
-        assert_eq!(APTNode::Clamp(vec![APTNode::Constant(0.8)]).constant_eval(), 0.8);
-        assert_eq!(APTNode::Clamp(vec![APTNode::Constant(-0.8)]).constant_eval(), -0.8);
-        assert_eq!(APTNode::Clamp(vec![APTNode::Constant(-1.0)]).constant_eval(), -1.0);
-        assert_eq!(APTNode::Clamp(vec![APTNode::Constant(-10000.5)]).constant_eval(), -1.0);
-        assert_eq!(APTNode::Wrap(mock::mock_params_wrap(true)).constant_eval(), 1.0);
-        assert_eq!(APTNode::Wrap(vec![APTNode::Constant(10000.5)]).constant_eval(), 0.5);
-        assert_eq!(APTNode::Wrap(vec![APTNode::Constant(1.0)]).constant_eval(), 1.0);
-        assert_eq!(APTNode::Wrap(vec![APTNode::Constant(0.8)]).constant_eval(), 0.8);
-        assert_eq!(APTNode::Wrap(vec![APTNode::Constant(-0.8)]).constant_eval(), -0.8);
-        assert_eq!(APTNode::Wrap(vec![APTNode::Constant(-1.0)]).constant_eval(), -1.0);
-        assert_eq!(APTNode::Wrap(vec![APTNode::Constant(-10000.5)]).constant_eval(), -0.5);
-        assert_eq!(APTNode::Square(mock::mock_params_square(true)).constant_eval(), 1.0);
-        assert_eq!(APTNode::Square(vec![APTNode::Constant( 4.5)]).constant_eval(), 20.25);
-        assert_eq!(APTNode::Max(mock::mock_params_max(true)).constant_eval(), 2.1);
-        assert_eq!(APTNode::Max(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)]).constant_eval(), 1.0);
-        assert_eq!(APTNode::Min(mock::mock_params_min(true)).constant_eval(), 1.0);
-        assert_eq!(APTNode::Min(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)]).constant_eval(), -2.1);
-        assert_eq!(APTNode::Mod(mock::mock_params_mod(true)).constant_eval(), 1.0);
-        assert_eq!(APTNode::Mod(vec![APTNode::Constant(2.1), APTNode::Constant(1.0)]).constant_eval(), 0.099999905);
-        assert_eq!(APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).constant_eval(), 0.0);
-        assert_eq!(APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).constant_eval(), 0.0);
+        assert_eq!(
+            APTNode::FBM(vec![
+                APTNode::Constant(0.0),
+                APTNode::Constant(1.1),
+                APTNode::Constant(2.2),
+                APTNode::Constant(3.3),
+                APTNode::Constant(4.4),
+                APTNode::Constant(5.5)
+            ])
+            .constant_eval(),
+            0.0
+        );
+        assert_eq!(
+            APTNode::Ridge(mock::mock_params_ridge(true)).constant_eval(),
+            0.0
+        );
+        assert_eq!(
+            APTNode::Cell1(mock::mock_params_cell1(true)).constant_eval(),
+            0.0
+        );
+        assert_eq!(
+            APTNode::Cell2(mock::mock_params_cell2(true)).constant_eval(),
+            0.0
+        );
+        assert_eq!(
+            APTNode::Turbulence(mock::mock_params_turbulence(true)).constant_eval(),
+            0.0
+        );
+        assert_eq!(
+            APTNode::Sqrt(vec![APTNode::Constant(16.0)]).constant_eval(),
+            4.0
+        );
+        assert_eq!(
+            APTNode::Sin(mock::mock_params_sin(true)).constant_eval(),
+            0.84147096
+        );
+        assert_eq!(
+            APTNode::Atan(mock::mock_params_atan(true)).constant_eval(),
+            0.7853982
+        );
+        assert_eq!(
+            APTNode::Atan2(mock::mock_params_atan2(true)).constant_eval(),
+            0.44441923
+        );
+        assert_eq!(
+            APTNode::Tan(mock::mock_params_tan(true)).constant_eval(),
+            1.5574077
+        );
+        assert_eq!(
+            APTNode::Log(mock::mock_params_log(true)).constant_eval(),
+            0.0
+        );
+        assert_eq!(
+            APTNode::Log(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            13.287785
+        );
+        assert_eq!(
+            APTNode::Abs(mock::mock_params_abs(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Abs(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            10000.5
+        );
+        assert_eq!(
+            APTNode::Floor(mock::mock_params_floor(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Floor(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            -10001.0
+        );
+        assert_eq!(
+            APTNode::Floor(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            10000.0
+        );
+        assert_eq!(
+            APTNode::Ceil(mock::mock_params_ceil(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Ceil(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            10001.0
+        );
+        assert_eq!(
+            APTNode::Ceil(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            -10000.0
+        );
+        assert_eq!(
+            APTNode::Clamp(mock::mock_params_clamp(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Clamp(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Clamp(vec![APTNode::Constant(1.0)]).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Clamp(vec![APTNode::Constant(0.8)]).constant_eval(),
+            0.8
+        );
+        assert_eq!(
+            APTNode::Clamp(vec![APTNode::Constant(-0.8)]).constant_eval(),
+            -0.8
+        );
+        assert_eq!(
+            APTNode::Clamp(vec![APTNode::Constant(-1.0)]).constant_eval(),
+            -1.0
+        );
+        assert_eq!(
+            APTNode::Clamp(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            -1.0
+        );
+        assert_eq!(
+            APTNode::Wrap(mock::mock_params_wrap(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Wrap(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            0.5
+        );
+        assert_eq!(
+            APTNode::Wrap(vec![APTNode::Constant(1.0)]).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Wrap(vec![APTNode::Constant(0.8)]).constant_eval(),
+            0.8
+        );
+        assert_eq!(
+            APTNode::Wrap(vec![APTNode::Constant(-0.8)]).constant_eval(),
+            -0.8
+        );
+        assert_eq!(
+            APTNode::Wrap(vec![APTNode::Constant(-1.0)]).constant_eval(),
+            -1.0
+        );
+        assert_eq!(
+            APTNode::Wrap(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            -0.5
+        );
+        assert_eq!(
+            APTNode::Square(mock::mock_params_square(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Square(vec![APTNode::Constant(4.5)]).constant_eval(),
+            20.25
+        );
+        assert_eq!(
+            APTNode::Max(mock::mock_params_max(true)).constant_eval(),
+            2.1
+        );
+        assert_eq!(
+            APTNode::Max(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)]).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Min(mock::mock_params_min(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Min(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)]).constant_eval(),
+            -2.1
+        );
+        assert_eq!(
+            APTNode::Mod(mock::mock_params_mod(true)).constant_eval(),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Mod(vec![APTNode::Constant(2.1), APTNode::Constant(1.0)]).constant_eval(),
+            0.099999905
+        );
+        assert_eq!(
+            APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).constant_eval(),
+            0.0
+        );
+        assert_eq!(
+            APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true))
+                .constant_eval(),
+            0.0
+        );
         assert_eq!(APTNode::Constant(123.456).constant_eval(), 123.456);
         assert_eq!(APTNode::Constant(0.0).constant_eval(), 0.0);
         assert_eq!(APTNode::Constant(1.0).constant_eval(), 1.0);
     }
 
-    #[should_panic(expected="invalid node passed to constant_esval")]
+    #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_x() {
         APTNode::X.constant_eval();
     }
 
-    #[should_panic(expected="invalid node passed to constant_esval")]
+    #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_y() {
         APTNode::Y.constant_eval();
     }
 
-    #[should_panic(expected="invalid node passed to constant_esval")]
+    #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_eval() {
         APTNode::Empty.constant_eval();
@@ -708,163 +1095,223 @@ mod tests {
     #[test]
     fn test_aptnode_constant_set_children() {
         //@todo: check that the vector lengths are correct for each of the enums
-        assert_eq!(APTNode::str_to_node("abs").unwrap().set_children(
-            mock::mock_params_abs(true)),
+        assert_eq!(
+            APTNode::str_to_node("abs")
+                .unwrap()
+                .set_children(mock::mock_params_abs(true)),
             APTNode::Abs(mock::mock_params_abs(true))
         );
 
-        assert_eq!(APTNode::str_to_node("+").unwrap().set_children(
-            vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]),
+        assert_eq!(
+            APTNode::str_to_node("+")
+                .unwrap()
+                .set_children(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]),
             APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)])
         );
 
-        assert_eq!(APTNode::str_to_node("atan").unwrap().set_children(
-            mock::mock_params_atan(true)),
+        assert_eq!(
+            APTNode::str_to_node("atan")
+                .unwrap()
+                .set_children(mock::mock_params_atan(true)),
             APTNode::Atan(mock::mock_params_atan(true))
         );
 
         if false {
-            assert_eq!(APTNode::str_to_node("atan2").unwrap().set_children(
-                mock::mock_params_atan2(true)),
+            assert_eq!(
+                APTNode::str_to_node("atan2")
+                    .unwrap()
+                    .set_children(mock::mock_params_atan2(true)),
                 APTNode::Atan2(mock::mock_params_atan2(true))
             );
         }
 
-        assert_eq!(APTNode::str_to_node("ceil").unwrap().set_children(
-            mock::mock_params_ceil(true)),
+        assert_eq!(
+            APTNode::str_to_node("ceil")
+                .unwrap()
+                .set_children(mock::mock_params_ceil(true)),
             APTNode::Ceil(mock::mock_params_ceil(true))
         );
 
-        assert_eq!(APTNode::str_to_node("cell1").unwrap().set_children(
-            mock::mock_params_cell1(true)),
+        assert_eq!(
+            APTNode::str_to_node("cell1")
+                .unwrap()
+                .set_children(mock::mock_params_cell1(true)),
             APTNode::Cell1(mock::mock_params_cell1(true))
         );
 
-        assert_eq!(APTNode::str_to_node("cell2").unwrap().set_children(
-            mock::mock_params_cell2(true)),
+        assert_eq!(
+            APTNode::str_to_node("cell2")
+                .unwrap()
+                .set_children(mock::mock_params_cell2(true)),
             APTNode::Cell2(mock::mock_params_cell2(true))
         );
 
-        assert_eq!(APTNode::str_to_node("clamp").unwrap().set_children(
-            mock::mock_params_clamp(true)),
+        assert_eq!(
+            APTNode::str_to_node("clamp")
+                .unwrap()
+                .set_children(mock::mock_params_clamp(true)),
             APTNode::Clamp(mock::mock_params_clamp(true))
         );
 
         if false {
-            assert_eq!(APTNode::Constant(0.0).set_children(vec![
-                APTNode::Constant(123.456)]),
+            assert_eq!(
+                APTNode::Constant(0.0).set_children(vec![APTNode::Constant(123.456)]),
                 APTNode::Constant(123.456)
             );
         }
 
-        assert_eq!(APTNode::str_to_node("/").unwrap().set_children(
-            vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)]),
+        assert_eq!(
+            APTNode::str_to_node("/")
+                .unwrap()
+                .set_children(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)]),
             APTNode::Div(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)])
         );
 
-        assert_eq!(APTNode::str_to_node("fbm").unwrap().set_children(
-            vec![APTNode::Constant(0.0), APTNode::Constant(1.1), APTNode::Constant(2.2), APTNode::Constant(3.3), APTNode::Constant(4.4), APTNode::Constant(5.5)]),
-            APTNode::FBM(vec![APTNode::Constant(0.0), APTNode::Constant(1.1), APTNode::Constant(2.2), APTNode::Constant(3.3), APTNode::Constant(4.4), APTNode::Constant(5.5)])
+        assert_eq!(
+            APTNode::str_to_node("fbm").unwrap().set_children(vec![
+                APTNode::Constant(0.0),
+                APTNode::Constant(1.1),
+                APTNode::Constant(2.2),
+                APTNode::Constant(3.3),
+                APTNode::Constant(4.4),
+                APTNode::Constant(5.5)
+            ]),
+            APTNode::FBM(vec![
+                APTNode::Constant(0.0),
+                APTNode::Constant(1.1),
+                APTNode::Constant(2.2),
+                APTNode::Constant(3.3),
+                APTNode::Constant(4.4),
+                APTNode::Constant(5.5)
+            ])
         );
 
-        assert_eq!(APTNode::str_to_node("floor").unwrap().set_children(
-            mock::mock_params_floor(true)),
+        assert_eq!(
+            APTNode::str_to_node("floor")
+                .unwrap()
+                .set_children(mock::mock_params_floor(true)),
             APTNode::Floor(mock::mock_params_floor(true))
         );
 
-        assert_eq!(APTNode::str_to_node("log").unwrap().set_children(
-           mock::mock_params_log(true)),
-           APTNode::Log(mock::mock_params_log(true))
+        assert_eq!(
+            APTNode::str_to_node("log")
+                .unwrap()
+                .set_children(mock::mock_params_log(true)),
+            APTNode::Log(mock::mock_params_log(true))
         );
 
-        assert_eq!(APTNode::Mandelbrot(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]).set_children(
-            mock::mock_params_mandelbrot(true)),
+        assert_eq!(
+            APTNode::Mandelbrot(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)])
+                .set_children(mock::mock_params_mandelbrot(true)),
             APTNode::Mandelbrot(mock::mock_params_mandelbrot(true))
         );
 
-        assert_eq!(APTNode::str_to_node("max").unwrap().set_children(
-            mock::mock_params_max(true)),
+        assert_eq!(
+            APTNode::str_to_node("max")
+                .unwrap()
+                .set_children(mock::mock_params_max(true)),
             APTNode::Max(mock::mock_params_max(true))
         );
 
-        assert_eq!(APTNode::str_to_node("min").unwrap().set_children(
-            mock::mock_params_min(true)),
+        assert_eq!(
+            APTNode::str_to_node("min")
+                .unwrap()
+                .set_children(mock::mock_params_min(true)),
             APTNode::Min(mock::mock_params_min(true))
         );
 
-        assert_eq!(APTNode::str_to_node("*").unwrap().set_children(
-            vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]),
+        assert_eq!(
+            APTNode::str_to_node("*")
+                .unwrap()
+                .set_children(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]),
             APTNode::Mul(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)])
         );
 
-        assert_eq!(APTNode::str_to_node("%").unwrap().set_children(
-            mock::mock_params_mod(true)),
+        assert_eq!(
+            APTNode::str_to_node("%")
+                .unwrap()
+                .set_children(mock::mock_params_mod(true)),
             APTNode::Mod(mock::mock_params_mod(true))
         );
 
-        assert_eq!(APTNode::str_to_node("pic-eye.jpg").unwrap().set_children(
-            vec![APTNode::Picture("cow.jpg".to_string(), mock::mock_params_picture(true)), APTNode::Constant(333.0), APTNode::Constant(444.0)]),
-            APTNode::Picture("eye.jpg".to_string(), vec![APTNode::Constant(333.0), APTNode::Constant(444.0)])
+        assert_eq!(
+            APTNode::str_to_node("pic-eye.jpg")
+                .unwrap()
+                .set_children(vec![
+                    APTNode::Picture("cow.jpg".to_string(), mock::mock_params_picture(true)),
+                    APTNode::Constant(333.0),
+                    APTNode::Constant(444.0)
+                ]),
+            APTNode::Picture(
+                "eye.jpg".to_string(),
+                vec![APTNode::Constant(333.0), APTNode::Constant(444.0)]
+            )
         );
 
-        assert_eq!(APTNode::str_to_node("ridge").unwrap().set_children(
-            mock::mock_params_ridge(true)),
+        assert_eq!(
+            APTNode::str_to_node("ridge")
+                .unwrap()
+                .set_children(mock::mock_params_ridge(true)),
             APTNode::Ridge(mock::mock_params_ridge(true))
         );
 
-        assert_eq!(APTNode::str_to_node("sin").unwrap().set_children(
-            mock::mock_params_sin(true)),
+        assert_eq!(
+            APTNode::str_to_node("sin")
+                .unwrap()
+                .set_children(mock::mock_params_sin(true)),
             APTNode::Sin(mock::mock_params_sin(true))
         );
 
-        assert_eq!(APTNode::str_to_node("sqrt").unwrap().set_children(
-            mock::mock_params_sqrt(true)),
+        assert_eq!(
+            APTNode::str_to_node("sqrt")
+                .unwrap()
+                .set_children(mock::mock_params_sqrt(true)),
             APTNode::Sqrt(mock::mock_params_sqrt(true)),
         );
 
-        assert_eq!(APTNode::str_to_node("square").unwrap().set_children(
-            mock::mock_params_square(true)),
+        assert_eq!(
+            APTNode::str_to_node("square")
+                .unwrap()
+                .set_children(mock::mock_params_square(true)),
             APTNode::Square(mock::mock_params_square(true))
         );
 
-        assert_eq!(APTNode::str_to_node("-").unwrap().set_children(
-            vec![APTNode::Constant(1.1), APTNode::Constant(2.0)]),
+        assert_eq!(
+            APTNode::str_to_node("-")
+                .unwrap()
+                .set_children(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)]),
             APTNode::Sub(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)])
         );
 
-        assert_eq!(APTNode::str_to_node("tan").unwrap().set_children(
-            mock::mock_params_tan(true)),
+        assert_eq!(
+            APTNode::str_to_node("tan")
+                .unwrap()
+                .set_children(mock::mock_params_tan(true)),
             APTNode::Tan(mock::mock_params_tan(true))
         );
 
-        assert_eq!(APTNode::str_to_node("turbulence").unwrap().set_children(
-            mock::mock_params_turbulence(true)),
+        assert_eq!(
+            APTNode::str_to_node("turbulence")
+                .unwrap()
+                .set_children(mock::mock_params_turbulence(true)),
             APTNode::Turbulence(mock::mock_params_turbulence(true))
         );
 
-        assert_eq!(APTNode::str_to_node("wrap").unwrap().set_children(
-            mock::mock_params_wrap(true)),
+        assert_eq!(
+            APTNode::str_to_node("wrap")
+                .unwrap()
+                .set_children(mock::mock_params_wrap(true)),
             APTNode::Wrap(mock::mock_params_wrap(true))
         );
 
-        assert_eq!(APTNode::X.set_children(
-            vec![APTNode::Empty]),
-            APTNode::X
-        );
+        assert_eq!(APTNode::X.set_children(vec![APTNode::Empty]), APTNode::X);
 
-        assert_eq!(APTNode::Y.set_children(
-            vec![APTNode::Empty]),
-            APTNode::Y
-        );
+        assert_eq!(APTNode::Y.set_children(vec![APTNode::Empty]), APTNode::Y);
 
-        assert_eq!(APTNode::T.set_children(
-            vec![APTNode::Empty]),
-            APTNode::T
-        );
-
+        assert_eq!(APTNode::T.set_children(vec![APTNode::Empty]), APTNode::T);
     }
 
-    #[should_panic(expected="tried to eval an empty node")]
+    #[should_panic(expected = "tried to eval an empty node")]
     #[test]
     fn test_aptnode_constant_set_children_empty() {
         APTNode::Empty.set_children(vec![APTNode::Constant(10.0)]);
@@ -875,38 +1322,208 @@ mod tests {
         assert_eq!(APTNode::X.constant_fold(), APTNode::X);
         assert_eq!(APTNode::Y.constant_fold(), APTNode::Y);
         assert_eq!(APTNode::T.constant_fold(), APTNode::T);
-        assert_eq!(APTNode::Add(vec![Constant(1.0), APTNode::Constant(2.0)]).constant_fold(), APTNode::Constant(3.0));
-        assert_eq!(APTNode::Add(vec![Constant(1.0), APTNode::Mul(vec![Constant(6.0), APTNode::Constant(0.5)])]).constant_fold(), APTNode::Constant(4.0));
+        assert_eq!(
+            APTNode::Add(vec![Constant(1.0), APTNode::Constant(2.0)]).constant_fold(),
+            APTNode::Constant(3.0)
+        );
+        assert_eq!(
+            APTNode::Add(vec![
+                Constant(1.0),
+                APTNode::Mul(vec![Constant(6.0), APTNode::Constant(0.5)])
+            ])
+            .constant_fold(),
+            APTNode::Constant(4.0)
+        );
     }
 
     #[test]
     fn test_aptnode_get_children_mut() {
-        assert_eq!(APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Sub(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)]).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Mul(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Div(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)]).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::FBM(vec![APTNode::Constant(0.0), APTNode::Constant(1.1), APTNode::Constant(2.2)]).get_children_mut().unwrap().len(), 3);
-        assert_eq!(APTNode::Ridge(mock::mock_params_ridge(true)).get_children_mut().unwrap().len(), 6);
-        assert_eq!(APTNode::Cell1(mock::mock_params_cell1(true)).get_children_mut().unwrap().len(), 5);
-        assert_eq!(APTNode::Cell2(mock::mock_params_cell2(true)).get_children_mut().unwrap().len(), 5);
-        assert_eq!(APTNode::Turbulence(mock::mock_params_turbulence(true)).get_children_mut().unwrap().len(), 6);
-        assert_eq!(APTNode::Sqrt(mock::mock_params_sqrt(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Sin(mock::mock_params_sin(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Atan(mock::mock_params_atan(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Atan2(mock::mock_params_atan2(true)).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Tan(mock::mock_params_tan(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Log(mock::mock_params_log(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Abs(mock::mock_params_abs(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Floor(mock::mock_params_floor(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Ceil(mock::mock_params_ceil(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Clamp(mock::mock_params_clamp(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Wrap(mock::mock_params_wrap(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Square(mock::mock_params_square(true)).get_children_mut().unwrap().len(), 1);
-        assert_eq!(APTNode::Max(mock::mock_params_max(true)).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Min(mock::mock_params_min(true)).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Mod(mock::mock_params_mod(true)).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).get_children_mut().unwrap().len(), 2);
-        assert_eq!(APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).get_children_mut().unwrap().len(), 2);
+        assert_eq!(
+            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)])
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Sub(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)])
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Mul(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)])
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Div(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)])
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::FBM(vec![
+                APTNode::Constant(0.0),
+                APTNode::Constant(1.1),
+                APTNode::Constant(2.2)
+            ])
+            .get_children_mut()
+            .unwrap()
+            .len(),
+            3
+        );
+        assert_eq!(
+            APTNode::Ridge(mock::mock_params_ridge(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            6
+        );
+        assert_eq!(
+            APTNode::Cell1(mock::mock_params_cell1(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            5
+        );
+        assert_eq!(
+            APTNode::Cell2(mock::mock_params_cell2(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            5
+        );
+        assert_eq!(
+            APTNode::Turbulence(mock::mock_params_turbulence(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            6
+        );
+        assert_eq!(
+            APTNode::Sqrt(mock::mock_params_sqrt(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Sin(mock::mock_params_sin(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Atan(mock::mock_params_atan(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Atan2(mock::mock_params_atan2(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Tan(mock::mock_params_tan(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Log(mock::mock_params_log(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Abs(mock::mock_params_abs(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Floor(mock::mock_params_floor(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Ceil(mock::mock_params_ceil(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Clamp(mock::mock_params_clamp(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Wrap(mock::mock_params_wrap(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Square(mock::mock_params_square(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Max(mock::mock_params_max(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Min(mock::mock_params_min(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Mod(mock::mock_params_mod(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Mandelbrot(mock::mock_params_mandelbrot(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true))
+                .get_children_mut()
+                .unwrap()
+                .len(),
+            2
+        );
         assert_eq!(APTNode::Constant(1.2).get_children_mut(), None);
         assert_eq!(APTNode::X.get_children_mut(), None);
         assert_eq!(APTNode::Y.get_children_mut(), None);
@@ -916,32 +1533,192 @@ mod tests {
 
     #[test]
     fn test_aptnode_get_children() {
-        assert_eq!(APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Sub(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)]).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Mul(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Div(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)]).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::FBM(vec![APTNode::Constant(0.0), APTNode::Constant(1.1), APTNode::Constant(2.2)]).get_children().unwrap().len(), 3);
-        assert_eq!(APTNode::Ridge(mock::mock_params_ridge(true)).get_children().unwrap().len(), 6);
-        assert_eq!(APTNode::Cell1(mock::mock_params_cell1(true)).get_children().unwrap().len(), 5);
-        assert_eq!(APTNode::Cell2(mock::mock_params_cell2(true)).get_children().unwrap().len(), 5);
-        assert_eq!(APTNode::Turbulence(mock::mock_params_turbulence(true)).get_children().unwrap().len(), 6);
-        assert_eq!(APTNode::Sqrt(mock::mock_params_sqrt(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Sin(mock::mock_params_sin(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Atan(mock::mock_params_atan(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Atan2(mock::mock_params_atan2(true)).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Tan(mock::mock_params_tan(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Log(mock::mock_params_log(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Abs(mock::mock_params_abs(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Floor(mock::mock_params_floor(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Ceil(mock::mock_params_ceil(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Clamp(mock::mock_params_clamp(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Wrap(mock::mock_params_wrap(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Square(mock::mock_params_square(true)).get_children().unwrap().len(), 1);
-        assert_eq!(APTNode::Max(mock::mock_params_max(true)).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Min(mock::mock_params_min(true)).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Mod(mock::mock_params_mod(true)).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).get_children().unwrap().len(), 2);
-        assert_eq!(APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).get_children().unwrap().len(), 2);
+        assert_eq!(
+            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)])
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Sub(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)])
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Mul(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)])
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Div(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)])
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::FBM(vec![
+                APTNode::Constant(0.0),
+                APTNode::Constant(1.1),
+                APTNode::Constant(2.2)
+            ])
+            .get_children()
+            .unwrap()
+            .len(),
+            3
+        );
+        assert_eq!(
+            APTNode::Ridge(mock::mock_params_ridge(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            6
+        );
+        assert_eq!(
+            APTNode::Cell1(mock::mock_params_cell1(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            5
+        );
+        assert_eq!(
+            APTNode::Cell2(mock::mock_params_cell2(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            5
+        );
+        assert_eq!(
+            APTNode::Turbulence(mock::mock_params_turbulence(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            6
+        );
+        assert_eq!(
+            APTNode::Sqrt(mock::mock_params_sqrt(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Sin(mock::mock_params_sin(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Atan(mock::mock_params_atan(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Atan2(mock::mock_params_atan2(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Tan(mock::mock_params_tan(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Log(mock::mock_params_log(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Abs(mock::mock_params_abs(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Floor(mock::mock_params_floor(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Ceil(mock::mock_params_ceil(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Clamp(mock::mock_params_clamp(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Wrap(mock::mock_params_wrap(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Square(mock::mock_params_square(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            APTNode::Max(mock::mock_params_max(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Min(mock::mock_params_min(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Mod(mock::mock_params_mod(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Mandelbrot(mock::mock_params_mandelbrot(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true))
+                .get_children()
+                .unwrap()
+                .len(),
+            2
+        );
         assert_eq!(APTNode::Constant(1.2).get_children(), None);
         assert_eq!(APTNode::X.get_children(), None);
         assert_eq!(APTNode::Y.get_children(), None);
@@ -951,32 +1728,82 @@ mod tests {
 
     #[test]
     fn test_aptnode_aptnode_is_leaf() {
-        assert_eq!(APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]).is_leaf(), false);
-        assert_eq!(APTNode::Sub(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)]).is_leaf(), false);
-        assert_eq!(APTNode::Mul(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]).is_leaf(), false);
-        assert_eq!(APTNode::Div(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)]).is_leaf(), false);
-        assert_eq!(APTNode::FBM(vec![APTNode::Constant(0.0), APTNode::Constant(1.1), APTNode::Constant(2.2)]).is_leaf(), false);
-        assert_eq!(APTNode::Ridge(mock::mock_params_ridge(true)).is_leaf(), false);
-        assert_eq!(APTNode::Cell1(mock::mock_params_cell1(true)).is_leaf(), false);
-        assert_eq!(APTNode::Cell2(mock::mock_params_cell2(true)).is_leaf(), false);
-        assert_eq!(APTNode::Turbulence(mock::mock_params_turbulence(true)).is_leaf(), false);
+        assert_eq!(
+            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Sub(vec![APTNode::Constant(1.1), APTNode::Constant(2.0)]).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Mul(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Div(vec![APTNode::Constant(0.0), APTNode::Constant(9992.1111)]).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::FBM(vec![
+                APTNode::Constant(0.0),
+                APTNode::Constant(1.1),
+                APTNode::Constant(2.2)
+            ])
+            .is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Ridge(mock::mock_params_ridge(true)).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Cell1(mock::mock_params_cell1(true)).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Cell2(mock::mock_params_cell2(true)).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Turbulence(mock::mock_params_turbulence(true)).is_leaf(),
+            false
+        );
         assert_eq!(APTNode::Sqrt(mock::mock_params_sqrt(true)).is_leaf(), false);
         assert_eq!(APTNode::Sin(mock::mock_params_sin(true)).is_leaf(), false);
         assert_eq!(APTNode::Atan(mock::mock_params_atan(true)).is_leaf(), false);
-        assert_eq!(APTNode::Atan2(mock::mock_params_atan2(true)).is_leaf(), false);
+        assert_eq!(
+            APTNode::Atan2(mock::mock_params_atan2(true)).is_leaf(),
+            false
+        );
         assert_eq!(APTNode::Tan(mock::mock_params_tan(true)).is_leaf(), false);
         assert_eq!(APTNode::Log(mock::mock_params_log(true)).is_leaf(), false);
         assert_eq!(APTNode::Abs(mock::mock_params_abs(true)).is_leaf(), false);
-        assert_eq!(APTNode::Floor(mock::mock_params_floor(true)).is_leaf(), false);
+        assert_eq!(
+            APTNode::Floor(mock::mock_params_floor(true)).is_leaf(),
+            false
+        );
         assert_eq!(APTNode::Ceil(mock::mock_params_ceil(true)).is_leaf(), false);
-        assert_eq!(APTNode::Clamp(mock::mock_params_clamp(true)).is_leaf(), false);
+        assert_eq!(
+            APTNode::Clamp(mock::mock_params_clamp(true)).is_leaf(),
+            false
+        );
         assert_eq!(APTNode::Wrap(mock::mock_params_wrap(true)).is_leaf(), false);
-        assert_eq!(APTNode::Square(mock::mock_params_square(true)).is_leaf(), false);
+        assert_eq!(
+            APTNode::Square(mock::mock_params_square(true)).is_leaf(),
+            false
+        );
         assert_eq!(APTNode::Max(mock::mock_params_max(true)).is_leaf(), false);
         assert_eq!(APTNode::Min(mock::mock_params_min(true)).is_leaf(), false);
         assert_eq!(APTNode::Mod(mock::mock_params_mod(true)).is_leaf(), false);
-        assert_eq!(APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).is_leaf(), false);
-        assert_eq!(APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).is_leaf(), false);
+        assert_eq!(
+            APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).is_leaf(),
+            false
+        );
+        assert_eq!(
+            APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).is_leaf(),
+            false
+        );
         assert_eq!(APTNode::Constant(1.2).is_leaf(), true);
         assert_eq!(APTNode::X.is_leaf(), true);
         assert_eq!(APTNode::Y.is_leaf(), true);
@@ -986,77 +1813,71 @@ mod tests {
 
     #[test]
     fn test_aptnode_get_random_node() {
-         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-         let name = "eye.jpg".to_string();
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let name = "eye.jpg".to_string();
 
-         let pic_names = vec![&name];
-         for _i in 0..100 {
+        let pic_names = vec![&name];
+        for _i in 0..100 {
             match APTNode::get_random_node(&mut rng, &pic_names) {
                 Constant(_) | X | Y | T | Empty => {
                     panic!("This APTNode was not expected");
                 }
-                _ => {
-                }
-
+                _ => {}
             }
-         }
+        }
     }
 
     #[test]
     fn test_aptnode_get_random_leaf() {
-         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
 
-         for _i in 0..100 {
+        for _i in 0..100 {
             match APTNode::get_random_leaf(&mut rng) {
                 Constant(value) => {
                     assert!(value >= -1.0 && value <= 1.0);
-                },
-                X | Y | Empty => {
                 }
+                X | Y | Empty => {}
                 _ => {
                     panic!("This APTNode was not expected");
                 }
-
             }
-         }
+        }
     }
 
     #[test]
     fn test_aptnode_get_random_leaf_video() {
-         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
 
-         for _i in 0..100 {
+        for _i in 0..100 {
             match APTNode::get_random_leaf(&mut rng) {
                 Constant(value) => {
                     assert!(value >= -1.0 && value <= 1.0);
-                },
-                X | Y | T | Empty => {
                 }
+                X | Y | T | Empty => {}
                 _ => {
                     panic!("This APTNode was not expected");
                 }
-
             }
-         }
+        }
     }
 
     #[test]
-    #[should_panic(expected="tried to add_random to a leaf")]
+    #[should_panic(expected = "tried to add_random to a leaf")]
     fn test_aptnode_add_random_fail() {
-         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-         let mut this_node = APTNode::X;
-         let that_node = APTNode::Y;
-         this_node.add_random(that_node, &mut rng);
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let mut this_node = APTNode::X;
+        let that_node = APTNode::Y;
+        this_node.add_random(that_node, &mut rng);
     }
 
     #[test]
     #[ignore] // findout what is wrong here
     fn test_aptnode_add_random() {
-         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-         let mut this_node = APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]);
-         let that_node = APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]);
-         this_node.add_random(that_node.clone(), &mut rng);
-         let kids = this_node.get_children().unwrap();
-         assert!(kids.get(0).unwrap() == &that_node || kids.get(1).unwrap() == &that_node);
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let mut this_node = APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]);
+        let that_node = APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.1)]);
+        this_node.add_random(that_node.clone(), &mut rng);
+        let kids = this_node.get_children().unwrap();
+        assert!(kids.get(0).unwrap() == &that_node || kids.get(1).unwrap() == &that_node);
     }
 }

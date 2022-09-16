@@ -1,7 +1,7 @@
-use ggez::graphics::{DrawParam, draw, Rect, Image, size};
-use ggez::input::mouse::{MouseButton};
-use ggez::Context;
+use ggez::graphics::{draw, size, DrawParam, Image, Rect};
+use ggez::input::mouse::MouseButton;
 use ggez::mint::{Point2, Vector2};
+use ggez::Context;
 
 pub enum MouseState {
     Up(MouseButtonState),
@@ -46,9 +46,10 @@ impl Button {
         match mouse_state {
             MouseState::Up(button_state) => {
                 button_state.which_button == MouseButton::Left
-                    && self
-                        .pixel_rect(ctx)
-                        .contains(Point2 {x: button_state.x, y: button_state.y })
+                    && self.pixel_rect(ctx).contains(Point2 {
+                        x: button_state.x,
+                        y: button_state.y,
+                    })
             }
             _ => false,
         }
@@ -58,9 +59,10 @@ impl Button {
         match mouse_state {
             MouseState::Up(button_state) => {
                 button_state.which_button == MouseButton::Right
-                    && self
-                        .pixel_rect(ctx)
-                        .contains(Point2 { x: button_state.x, y: button_state.y })
+                    && self.pixel_rect(ctx).contains(Point2 {
+                        x: button_state.x,
+                        y: button_state.y,
+                    })
             }
             _ => false,
         }
@@ -71,8 +73,14 @@ impl Button {
         let x_scale = pixel_rect.w / self.img.width() as f32;
         let y_scale = pixel_rect.h / self.img.height() as f32;
         let params = DrawParam::new()
-            .dest(Point2 { x: pixel_rect.x, y: pixel_rect.y })
-            .scale(Vector2 { x: x_scale, y: y_scale });
+            .dest(Point2 {
+                x: pixel_rect.x,
+                y: pixel_rect.y,
+            })
+            .scale(Vector2 {
+                x: x_scale,
+                y: y_scale,
+            });
         let _ = draw(ctx, &self.img, params);
     }
 }

@@ -46,7 +46,10 @@ impl<'a> Lexer<'a> {
             None
         } else {
             self.width = 1; // Assuming one always for now
-            let c = self.input[self.pos..].chars().next().expect("unexpected end of input");
+            let c = self.input[self.pos..]
+                .chars()
+                .next()
+                .expect("unexpected end of input");
             if Lexer::is_linebreak(c) {
                 self.current_line += 1;
             }
@@ -160,7 +163,7 @@ pub mod mock {
             pos: 0,
             width: 1,
             token_sender: sender,
-            current_line: 0
+            current_line: 0,
         }
     }
 }
@@ -170,7 +173,7 @@ mod tests {
     use super::*;
     use std::sync::mpsc::channel;
 
-    const CODE : &'static str = r#"( RGB
+    const CODE: &'static str = r#"( RGB
     ( Sqrt ( Sin ( Abs Y ) ) )
     ( Atan ( Atan2 ( + X ( / ( Ridge Y -0.30377412 Y ) -0.4523425 ) ) ( + ( Turbulence 0.95225644 ( Tan Y ) Y ) -0.46079302 ) ) )
     ( Cell1 ( Ridge ( Ridge Y -0.83537865 -0.50440097 ) ( Atan2 Y X ) ( Sin 0.20003605 ) ) ( Sqrt ( Cell1 ( FBM Y X 0.8879242 ) 0.23509383 -0.4539826 ) ) ( Atan2 ( * X ( Ridge 0.6816149 X Y ) ) ( Cell1 ( Sin ( Turbulence X -0.25605845 Y ) ) -0.30595016 Y ) ) ) )
@@ -180,7 +183,7 @@ mod tests {
     fn test_lexer_next_linebreak() {
         let (sender, _receiver) = channel::<Token>();
         let mut lexer = mock::mock_lexer(CODE, sender);
-        let expected =  vec![
+        let expected = vec![
             (0, 0, 1, 1, 0),
             (1, 0, 2, 1, 0),
             (2, 0, 3, 1, 0),

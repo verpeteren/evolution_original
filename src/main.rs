@@ -16,32 +16,32 @@ mod stack_machine;
 mod ui;
 
 use std::collections::HashMap;
-use std::env::{var};
+use std::env::var;
+use std::fs::{read_dir, File};
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
-use std::thread::{spawn};
-use std::fs::{read_dir,File};
-use std::io::prelude::*;
+use std::thread::spawn;
 
 use crate::actual_picture::ActualPicture;
 use crate::imgui_wrapper::ImGuiWrapper;
-use crate::pic::{Pic, lisp_to_pic};
-use crate::ui::{MouseState, MouseButtonState, Button};
+use crate::pic::{lisp_to_pic, Pic};
+use crate::ui::{Button, MouseButtonState, MouseState};
 
-use ggez::conf::{WindowSetup, WindowMode};
-use ggez::event::{run, EventHandler, KeyCode, KeyMods, MouseButton};
-use ggez::graphics::{window, clear, draw, present, Color, DrawParam, Image};
-use ggez::timer::{delta};
-use ggez::{Context, ContextBuilder, GameResult, GameError};
-use image::{ImageFormat, ColorType, save_buffer_with_format};
 use clap::Parser;
+use ggez::conf::{WindowMode, WindowSetup};
+use ggez::event::{run, EventHandler, KeyCode, KeyMods, MouseButton};
+use ggez::graphics::{clear, draw, present, window, Color, DrawParam, Image};
+use ggez::timer::delta;
+use ggez::{Context, ContextBuilder, GameError, GameResult};
+use image::{save_buffer_with_format, ColorType, ImageFormat};
+use rand::prelude::*;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use rand::prelude::*;
+use simdeez::avx2::*;
 use simdeez::scalar::*;
 use simdeez::sse2::*;
 use simdeez::sse41::*;
-use simdeez::avx2::*;
 
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
@@ -61,20 +61,25 @@ const STD_FILE_OUT: &'static str = "out.png";
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-   #[clap(short, long, value_parser, default_value = STD_PATH)]
-   pictures: String,
+    #[clap(short, long, value_parser, default_value = STD_PATH)]
+    pictures: String,
 
-   #[clap(short, long, value_parser, default_value_t = WIDTH)]
-   width: usize,
+    #[clap(short, long, value_parser, default_value_t = WIDTH)]
+    width: usize,
 
-   #[clap(short, long, value_parser, default_value_t = HEIGHT)]
-   height: usize,
+    #[clap(short, long, value_parser, default_value_t = HEIGHT)]
+    height: usize,
 
-   #[clap(short, long, value_parser, help="filename to read sexpr from and disabling the UI; Use '-' to read from stdin.")]
-   input: Option<String>,
+    #[clap(
+        short,
+        long,
+        value_parser,
+        help = "filename to read sexpr from and disabling the UI; Use '-' to read from stdin."
+    )]
+    input: Option<String>,
 
-   #[clap(short, long, value_parser, requires("input"))]
-   output: Option<String>,
+    #[clap(short, long, value_parser, requires("input"))]
+    output: Option<String>,
 }
 
 struct RwArc<T>(Arc<RwLock<T>>);
@@ -97,9 +102,16 @@ impl<T> RwArc<T> {
 }
 
 simd_runtime_generate!(
-fn pic_get_rgba8(pic: &Pic, threaded: bool, pictures: Arc<HashMap::<String, ActualPicture>>, width: usize, height: usize, t: f32) -> Vec<u8> {
-    pic.get_rgba8::<S>(threaded, pictures, width, height, t)
-}
+    fn pic_get_rgba8(
+        pic: &Pic,
+        threaded: bool,
+        pictures: Arc<HashMap<String, ActualPicture>>,
+        width: usize,
+        height: usize,
+        t: f32,
+    ) -> Vec<u8> {
+        pic.get_rgba8::<S>(threaded, pictures, width, height, t)
+    }
 );
 
 enum GameState {
@@ -116,7 +128,7 @@ enum BackgroundImage {
 struct MainState {
     state: GameState,
     mouse_state: MouseState,
-    imgui_wrapper: ImGuiWrapper,    
+    imgui_wrapper: ImGuiWrapper,
     img_buttons: Vec<Button>,
     pics: Vec<Pic>,
     dt: std::time::Duration,
@@ -129,11 +141,12 @@ struct MainState {
 impl MainState {
     fn new(mut ctx: &mut Context, pic_path: &Path) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-        let pics = load_pictures(Some(&mut ctx), pic_path).map_err(|x| GameError::FilesystemError(x))?;
+        let pics =
+            load_pictures(Some(&mut ctx), pic_path).map_err(|x| GameError::FilesystemError(x))?;
 
         let s = MainState {
             state: GameState::Select,
-            imgui_wrapper,            
+            imgui_wrapper,
             pics: Vec::new(),
             img_buttons: Vec::new(),
             dt: std::time::Duration::new(0, 0),
@@ -172,7 +185,14 @@ impl MainState {
                     ctx,
                     THUMB_WIDTH,
                     THUMB_HEIGHT,
-                    &pic_get_rgba8_runtime_select(&pic, false, self.pictures.clone(), THUMB_WIDTH as usize, THUMB_HEIGHT as usize, 0.0)[0..],
+                    &pic_get_rgba8_runtime_select(
+                        &pic,
+                        false,
+                        self.pictures.clone(),
+                        THUMB_WIDTH as usize,
+                        THUMB_HEIGHT as usize,
+                        0.0,
+                    )[0..],
                 )
                 .unwrap();
                 self.pics.push(pic);
@@ -195,7 +215,8 @@ impl MainState {
                 let arc = self.zoom_image.clone();
                 let pics = self.pictures.clone();
                 spawn(move || {
-                    let img_data = pic_get_rgba8_runtime_select(&pic, true, pics, WIDTH, HEIGHT, 0.0);
+                    let img_data =
+                        pic_get_rgba8_runtime_select(&pic, true, pics, WIDTH, HEIGHT, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom;
@@ -208,8 +229,7 @@ impl MainState {
         let maybe_img = match &*self.zoom_image.read() {
             BackgroundImage::NotYet => None,
             BackgroundImage::Almost(data) => {
-                let img = Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..])
-                    .unwrap();
+                let img = Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..]).unwrap();
                 Some(img)
             }
             BackgroundImage::Complete(_) => None,
@@ -322,18 +342,22 @@ impl EventHandler<GameError> for MainState {
     }
 }
 
-pub fn load_pictures(mut o_ctx: Option<&mut Context>, pic_path: &Path) -> Result<HashMap<String, ActualPicture>, String> {
+pub fn load_pictures(
+    mut o_ctx: Option<&mut Context>,
+    pic_path: &Path,
+) -> Result<HashMap<String, ActualPicture>, String> {
     let mut pictures = HashMap::new();
     for file in read_dir(pic_path).expect(&format!("Cannot read path {:?}", pic_path)) {
-        let short_file_name = file.as_ref()
-                                  .unwrap()
-                                  .file_name()
-                                  .into_string()
-                                  .expect("Cannot convert file's name ");
-        let pic = match o_ctx.as_mut()  {
+        let short_file_name = file
+            .as_ref()
+            .unwrap()
+            .file_name()
+            .into_string()
+            .expect("Cannot convert file's name ");
+        let pic = match o_ctx.as_mut() {
             Some(ctx) => {
                 ActualPicture::new_via_ctx(ctx, &short_file_name).expect("Cannot open file")
-            },
+            }
             None => {
                 let path = file.as_ref().unwrap().path();
                 let full_file_name = path.to_string_lossy();
@@ -390,7 +414,7 @@ fn main_cli(args: &Args) {
 
     let input_file_name = args.input.as_ref().unwrap();
     let mut contents = String::new();
-    if input_file_name == "-"{
+    if input_file_name == "-" {
         let _bytes = std::io::stdin().read_to_string(&mut contents).unwrap();
     } else {
         let mut file = File::open(input_file_name).unwrap();
@@ -407,7 +431,7 @@ fn main_cli(args: &Args) {
                 "dds" => ImageFormat::Dds,
                 "hdr" => ImageFormat::Hdr,
                 "farb" => ImageFormat::Farbfeld,
-                // do these imply video? 
+                // do these imply video?
                 "gif" => ImageFormat::Gif,
                 "avi" => ImageFormat::Avif,
                 // commodity
@@ -415,16 +439,24 @@ fn main_cli(args: &Args) {
                 "ico" => ImageFormat::Ico,
                 "webp" => ImageFormat::WebP,
                 "pnm" => ImageFormat::Pnm,
-                "tif"|"tiff" => ImageFormat::Tiff,
-                "jpg"| "jpeg" => ImageFormat::Jpeg,
+                "tif" | "tiff" => ImageFormat::Tiff,
+                "jpg" | "jpeg" => ImageFormat::Jpeg,
                 "png" => ImageFormat::Png,
                 _ => ImageFormat::Png,
-                }
             }
+        }
         None => ImageFormat::Png,
     };
 
-    save_buffer_with_format(out_file, &rgba8[0..], width as u32, height as u32, ColorType::Rgba8, format).unwrap();
+    save_buffer_with_format(
+        out_file,
+        &rgba8[0..],
+        width as u32,
+        height as u32,
+        ColorType::Rgba8,
+        format,
+    )
+    .unwrap();
 }
 
 pub fn main() {
@@ -438,10 +470,9 @@ pub fn main() {
             false
         }
     };
-    if run_gui{
+    if run_gui {
         main_gui(&args).unwrap();
     } else {
         main_cli(&args);
     }
 }
-

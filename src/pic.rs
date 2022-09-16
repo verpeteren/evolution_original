@@ -1,18 +1,18 @@
 use std::collections::HashMap;
-use std::sync::mpsc::{ channel, Receiver };
+use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 
 use crate::actual_picture::ActualPicture;
 use crate::apt::APTNode;
 use crate::ggez_utility::{get_random_color, lerp_color};
-use crate::parser::{Token, Lexer};
+use crate::parser::{Lexer, Token};
 use crate::stack_machine::StackMachine;
 
 use ggez::graphics::Color;
-use rand::rngs::StdRng;
-use simdeez::Simd;
 use rand::prelude::*;
+use rand::rngs::StdRng;
 use rayon::prelude::*;
+use simdeez::Simd;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
@@ -551,7 +551,7 @@ impl Pic {
         h: usize,
         t: f32,
     ) -> Vec<u8> {
-        unsafe {            
+        unsafe {
             let ts = S::set1_ps(t);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
@@ -663,11 +663,9 @@ pub fn expect_open_paren(receiver: &Receiver<Token>) -> Result<(), String> {
     let open_paren = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match open_paren {
         Token::OpenParen(_) => Ok(()),
-        Token::Operation(v, line)|Token::Constant(v, line) => {
-            return Err(format!(
-                "Expected '(' on line {}, got a '{}'", line, v
-            ))
-        },
+        Token::Operation(v, line) | Token::Constant(v, line) => {
+            return Err(format!("Expected '(' on line {}, got a '{}'", line, v))
+        }
         _ => {
             return Err(format!(
                 "Expected '(' on line {}",
@@ -762,7 +760,7 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
     let pic_type = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
-            "mono" => Ok(Pic::Mono(MonoData{
+            "mono" => Ok(Pic::Mono(MonoData {
                 c: APTNode::parse_apt_node(receiver)?,
                 coord: Cartesian,
             })),
@@ -788,14 +786,14 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
                 expect_operation("colors", receiver)?;
                 loop {
                     let _token = receiver.recv().map_err(|_| "Unexpected end of file")?;
-                    match expect_operations(vec!["color", "stopcolor"], receiver){
+                    match expect_operations(vec!["color", "stopcolor"], receiver) {
                         Err(e) => {
                             if e.starts_with("Unexpected token on line ") {
                                 break;
                             } else {
                                 panic!("{:?}", e);
                             }
-                        },
+                        }
                         Ok(color_type) => {
                             let r = expect_constant(receiver)?;
                             let g = expect_constant(receiver)?;
@@ -912,12 +910,14 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match pic {
-            Pic::Mono(MonoData{c, coord}) => {
+            Pic::Mono(MonoData { c, coord }) => {
                 let len = c.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
                 assert_eq!(coord, CoordinateSystem::Polar);
-            },
-            _ => {panic!("wrong type");},
+            }
+            _ => {
+                panic!("wrong type");
+            }
         };
     }
 
@@ -926,12 +926,14 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match pic {
-            Pic::Grayscale(GrayscaleData{c, coord}) => {
+            Pic::Grayscale(GrayscaleData { c, coord }) => {
                 let len = c.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
                 assert_eq!(coord, CoordinateSystem::Polar);
-            },
-            _ => {panic!("wrong type");},
+            }
+            _ => {
+                panic!("wrong type");
+            }
         };
     }
 
@@ -940,14 +942,20 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match pic {
-            Pic::Gradient(GradientData{colors, index, coord}) => {
+            Pic::Gradient(GradientData {
+                colors,
+                index,
+                coord,
+            }) => {
                 let len = colors.len();
                 assert!(len > 1 && len < 10);
                 let len = index.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
                 assert_eq!(coord, CoordinateSystem::Polar);
-            },
-            _ => {panic!("wrong type");},
+            }
+            _ => {
+                panic!("wrong type");
+            }
         };
     }
 
@@ -956,19 +964,21 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match pic {
-            Pic::RGB(RGBData{r, g, b, coord}) => {
+            Pic::RGB(RGBData { r, g, b, coord }) => {
                 let len = r.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
 
                 let len = g.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
 
                 let len = b.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
 
                 assert_eq!(coord, CoordinateSystem::Polar);
-            },
-            _ => {panic!("wrong type");},
+            }
+            _ => {
+                panic!("wrong type");
+            }
         };
     }
 
@@ -977,19 +987,21 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_hsv(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match pic {
-            Pic::HSV(HSVData{h, s, v, coord}) => {
+            Pic::HSV(HSVData { h, s, v, coord }) => {
                 let len = h.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
 
                 let len = s.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
 
                 let len = v.get_children().unwrap().len();
-                assert!( len > 0 && len < 60);
+                assert!(len > 0 && len < 60);
 
                 assert_eq!(coord, CoordinateSystem::Polar);
-            },
-            _ => {panic!("wrong type");},
+            }
+            _ => {
+                panic!("wrong type");
+            }
         };
     }
 
@@ -1038,5 +1050,4 @@ mod tests {
         assert_eq!(extract_line_number(&Token::Operation("blablabla", 6)), 6);
         assert_eq!(extract_line_number(&Token::Constant("blablabla", 6)), 6);
     }
-
 }

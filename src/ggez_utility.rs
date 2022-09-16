@@ -1,6 +1,6 @@
 use ggez::graphics::Color;
-use rand::rngs::StdRng;
 use rand::prelude::*;
+use rand::rngs::StdRng;
 
 pub fn lerp_color(a: Color, b: Color, pct: f32) -> Color {
     let red = a.r * (1.0 - pct) + b.r * pct;
@@ -16,7 +16,6 @@ pub fn get_random_color(rng: &mut StdRng) -> Color {
     let b = rng.gen_range(0.0..1.0);
     Color::new(r, g, b, 1.0)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -44,12 +43,11 @@ mod tests {
 
     #[test]
     fn test_get_random_color() {
-         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-         let color = get_random_color(&mut rng);
-         assert!(color.r >= 0.0 && color.r <= 1.0);
-         assert!(color.g >= 0.0 && color.g <= 1.0);
-         assert!(color.b >= 0.0 && color.b <= 1.0);
-         assert_eq!(color.a, 1.0);
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let color = get_random_color(&mut rng);
+        assert!(color.r >= 0.0 && color.r <= 1.0);
+        assert!(color.g >= 0.0 && color.g <= 1.0);
+        assert!(color.b >= 0.0 && color.b <= 1.0);
+        assert_eq!(color.a, 1.0);
     }
-
 }

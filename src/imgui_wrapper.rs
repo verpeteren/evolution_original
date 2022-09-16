@@ -1,13 +1,13 @@
 use std::time::Instant;
 
-use gfx_core::{handle::RenderTargetView, memory::Typed, format };
+use gfx_core::{format, handle::RenderTargetView, memory::Typed};
 use gfx_device_gl::Resources;
+use ggez::graphics::{drawable_size, gfx_objects};
 use ggez::Context;
-use ggez::graphics::{gfx_objects, drawable_size};
-use imgui::{Window, ImString, Condition};
+use imgui::{Condition, ImString, Window};
 use imgui_gfx_renderer::{Renderer, Shaders};
 
-const EXEC_NAME : &'static str = "Evolution";
+const EXEC_NAME: &'static str = "Evolution";
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
