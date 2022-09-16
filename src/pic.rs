@@ -78,7 +78,7 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         //let tree = APTNode::Picture("barn".to_string(),vec![APTNode::X,APTNode::Y]);
         Pic::Mono(MonoData {
@@ -94,7 +94,7 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let tree = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         Pic::Grayscale(GrayscaleData {
             c: tree,
@@ -111,11 +111,11 @@ impl Pic {
     ) -> Pic {
         //todo cleanup
         //color theory?
-        let num_colors = rng.gen_range(MIN_GRADIENT_COUNT, MAX_GRADIENT_COUNT);
+        let num_colors = rng.gen_range(MIN_GRADIENT_COUNT..MAX_GRADIENT_COUNT);
         let mut colors = Vec::with_capacity(num_colors);
 
         for _ in 0..num_colors {
-            let stop = rng.gen_range(0, GRADIENT_STOP_CHANCE);
+            let stop = rng.gen_range(0..GRADIENT_STOP_CHANCE);
             if stop == 0 {
                 colors.push((get_random_color(rng), true));
             } else {
@@ -125,7 +125,7 @@ impl Pic {
 
         Pic::Gradient(GradientData {
             colors: colors,
-            index: APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names),
+            index: APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names),
             coord: Polar,
         })
     }
@@ -137,9 +137,9 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let r = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
-        let g = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
-        let b = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let r = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let g = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let b = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
         Pic::RGB(RGBData {
             r,
@@ -156,9 +156,9 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let h = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
-        let s = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
-        let v = APTNode::generate_tree(rng.gen_range(min, max), video, rng, pic_names);
+        let h = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let s = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let v = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::HSV(HSVData {
             h,
             s,

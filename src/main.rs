@@ -108,7 +108,7 @@ impl MainState {
         for _ in 0..THUMB_ROWS {
             let mut x_pct = 0.01;
             for _ in 0..THUMB_COLS {
-                let pic_type = self.rng.gen_range(0, 5);
+                let pic_type = self.rng.gen_range(0..5);
 
                 //let pic_type = 4;
                 let pic = match pic_type {

@@ -146,7 +146,7 @@ impl APTNode {
     }
 
     pub fn get_random_node(rng: &mut StdRng, pic_names: &Vec<&String>) -> APTNode {
-        let r = rng.gen_range(0, APTNode::VARIANT_COUNT - 5);
+        let r = rng.gen_range(0..APTNode::VARIANT_COUNT - 5);
 
         match r {
             0 => Add(vec![Empty, Empty]),
@@ -175,7 +175,7 @@ impl APTNode {
             23 => Mod(vec![Empty, Empty]),
             24 => Mandlebrot(vec![Empty,Empty]),
             25 => {
-                let r = rng.gen_range(0, pic_names.len()) as usize;
+                let r = rng.gen_range(0..pic_names.len()) as usize;
                 Picture(pic_names[r].to_string(), vec![Empty, Empty])
             }
             _ => panic!("get_random_node generated unhandled r:{}", r),
@@ -183,22 +183,22 @@ impl APTNode {
     }
 
     pub fn get_random_leaf(rng: &mut StdRng) -> APTNode {
-        let r = rng.gen_range(0, 3);
+        let r = rng.gen_range(0..3);
         match r {
             0 => APTNode::X,
             1 => APTNode::Y,
-            2 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
+            2 => APTNode::Constant(rng.gen_range(-1.0..1.0)),
             _ => panic!("get_random_leaf generated unhandled r:{}", r),
         }
     }
 
     pub fn get_random_leaf_video(rng: &mut StdRng) -> APTNode {
-        let r = rng.gen_range(0, 4);
+        let r = rng.gen_range(0..4);
         match r {
             0 => APTNode::X,
             1 => APTNode::Y,
             2 => APTNode::T,
-            3 => APTNode::Constant(rng.gen_range(-1.0, 1.0)),
+            3 => APTNode::Constant(rng.gen_range(-1.0..1.0)),
             _ => panic!("get_random_leaf generated unhandled r:{}", r),
         }
     }
@@ -208,7 +208,7 @@ impl APTNode {
             Some(children) => children,
             None => panic!("tried to add_random to a leaf"),
         };
-        let add_index = rng.gen_range(0, children.len());
+        let add_index = rng.gen_range(0..children.len());
         match children[add_index] {
             APTNode::Empty => children[add_index] = node,
             _ => children[add_index].add_random(node, rng),
