@@ -77,10 +77,13 @@ impl APTNode {
                 children[2].to_lisp()
             ),
             Turbulence(children) => format!(
-                "( Turbulence {} {} {} )",
+                "( Turbulence {} {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
-                children[2].to_lisp()
+                children[2].to_lisp(),
+                children[3].to_lisp(),
+                children[4].to_lisp(),
+                children[5].to_lisp()
             ),
             Sqrt(children) => format!("( Sqrt {} )", children[0].to_lisp()),
             Sin(children) => format!("( Sin {} )", children[0].to_lisp()),
@@ -125,7 +128,7 @@ impl APTNode {
             "/" => Ok(Div(vec![Empty, Empty])),
             "fbm" => Ok(FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
             "ridge" => Ok(Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
-            "turbulence" => Ok(Turbulence(vec![Empty, Empty, Empty])),
+            "turbulence" => Ok(Turbulence(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
             "cell1" => Ok(Cell1(vec![Empty, Empty, Empty])),
             "cell2" => Ok(Cell2(vec![Empty, Empty, Empty])),
             "sqrt" => Ok(Sqrt(vec![Empty])),
