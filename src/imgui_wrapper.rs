@@ -1,13 +1,10 @@
-use ggez::graphics;
-use ggez::Context;
-
-use gfx_core::{handle::RenderTargetView, memory::Typed};
-use gfx_device_gl;
-use imgui::*;
-use imgui_gfx_renderer::*;
 use std::time::Instant;
 
-use crate::*;
+use gfx_core::{handle::RenderTargetView, memory::Typed};
+use ggez::Context;
+use ggez::graphics::{gfx_objects, drawable_size};
+use imgui::{Window, ImString, Condition};
+use imgui_gfx_renderer::{Renderer, Shaders};
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
@@ -28,7 +25,7 @@ impl ImGuiWrapper {
     pub fn new(ctx: &mut Context) -> Self {
         // Create the imgui object
         let mut imgui = imgui::Context::create();
-        let (factory, gfx_device, _, _, _) = graphics::gfx_objects(ctx);
+        let (factory, gfx_device, _, _, _) = gfx_objects(ctx);
 
         // Shaders
         let shaders = {
@@ -71,7 +68,7 @@ impl ImGuiWrapper {
         let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
         self.last_frame = now;
 
-        let (draw_width, draw_height) = graphics::drawable_size(ctx);
+        let (draw_width, draw_height) = drawable_size(ctx);
         self.imgui.io_mut().display_size = [draw_width, draw_height];
         self.imgui.io_mut().display_framebuffer_scale = [hidpi_factor, hidpi_factor];
         self.imgui.io_mut().delta_time = delta_s;
@@ -96,7 +93,7 @@ impl ImGuiWrapper {
             });
 
         // Render
-        let (factory, _, encoder, _, render_target) = graphics::gfx_objects(ctx);
+        let (factory, _, encoder, _, render_target) = gfx_objects(ctx);
         let draw_data = ui.render();
         self.renderer
             .render(
