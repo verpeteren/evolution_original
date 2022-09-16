@@ -5,10 +5,14 @@ use simdnoise::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
+
+/*
 pub const SIMPLEX_MULTIPLIER: f32 = 7.35;
 pub const SIMPLEX_OFFSET: f32 = 0.028;
 pub const CELL1_MULTUPLIER: f32 = 1.661291;
 pub const CELL1_OFFSET: f32 = 1.0;
+*/
+
 use Instruction::*;
 
 pub enum Instruction<S: Simd> {
