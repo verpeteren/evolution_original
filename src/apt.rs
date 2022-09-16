@@ -102,7 +102,7 @@ impl APTNode {
             Abs(children) => format!("( Abs {} )", children[0].to_lisp()),
             Floor(children) => format!("( Floor {} )", children[0].to_lisp()),
             Ceil(children) => format!("( Ceil {} )", children[0].to_lisp()),
-            Clamp(children) => format!("( Clamp  {} )", children[0].to_lisp()),
+            Clamp(children) => format!("( Clamp {} )", children[0].to_lisp()),
             Wrap(children) => format!("( Wrap {} )", children[0].to_lisp()),
             Square(children) => format!("( Square {} )", children[0].to_lisp()),
             Max(children) => format!("( Max {} {})", children[0].to_lisp(), children[1].to_lisp()),
