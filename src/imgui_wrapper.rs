@@ -1,10 +1,13 @@
 use std::time::Instant;
 
-use gfx_core::{handle::RenderTargetView, memory::Typed};
+use gfx_core::{handle::RenderTargetView, memory::Typed, format };
+use gfx_device_gl::Resources;
 use ggez::Context;
 use ggez::graphics::{gfx_objects, drawable_size};
 use imgui::{Window, ImString, Condition};
 use imgui_gfx_renderer::{Renderer, Shaders};
+
+const EXEC_NAME : &'static str = "Evolution";
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
@@ -15,7 +18,7 @@ struct MouseState {
 
 pub struct ImGuiWrapper {
     pub imgui: imgui::Context,
-    pub renderer: Renderer<gfx_core::format::Rgba8, gfx_device_gl::Resources>,
+    pub renderer: Renderer<format::Rgba8, Resources>,
     last_frame: Instant,
     mouse_state: MouseState,
     text_multiline: ImString,
@@ -75,12 +78,10 @@ impl ImGuiWrapper {
 
         let ui = self.imgui.frame();
         let t = &mut self.text_multiline;
-        Window::new("Hello world")
+        Window::new(EXEC_NAME)
             .size([300.0, 100.0], Condition::FirstUseEver)
             .build(&ui, || {
-                ui.text("Hello world!");
-                ui.text("こんにちは世界！");
-                ui.text("This...is...imgui-rs!");
+                ui.text(format!("This...is... {}!", EXEC_NAME));
                 ui.separator();
                 let mouse_pos = ui.io().mouse_pos;
                 ui.text(format!(
