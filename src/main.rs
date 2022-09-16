@@ -195,6 +195,24 @@ impl MainState {
                     )[0..],
                 )
                 .unwrap();
+
+                if true {
+                    //Debug stress test::see if we can parse it back
+                    let sexpr = pic.to_lisp();
+                    match lisp_to_pic(sexpr.clone()) {
+                        Ok(_) => {}
+                        Err(err) => {
+                            eprintln!(
+                                "-----\n{:?}\n{:?}\n{:?}\n{:?}",
+                                err,
+                                pic.to_tree(),
+                                pic.to_tree(),
+                                &sexpr
+                            );
+                        }
+                    }
+                }
+
                 self.pics.push(pic);
                 self.img_buttons
                     .push(Button::new(img, x_pct, y_pct, width - 0.01, height - 0.01));

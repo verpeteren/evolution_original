@@ -168,6 +168,16 @@ impl Pic {
         })
     }
 
+    pub fn to_tree(&self) -> Vec<&APTNode> {
+        match self {
+            Pic::Grayscale(data) => vec![&data.c],
+            Pic::Mono(data) => vec![&data.c],
+            Pic::Gradient(data) => vec![&data.index],
+            Pic::RGB(data) => vec![&data.r, &data.g, &data.b],
+            Pic::HSV(data) => vec![&data.h, &data.s, &data.v],
+        }
+    }
+
     pub fn to_lisp(&self) -> String {
         match self {
             Pic::Mono(data) => format!("( Mono\n {} )", data.c.to_lisp()),
