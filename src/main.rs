@@ -61,6 +61,12 @@ const STD_PATH: &'static str = "pictures";
 struct Args {
    #[clap(short, long, value_parser, default_value = STD_PATH)]
    pictures: String,
+
+   #[clap(short, long, value_parser, default_value_t = WIDTH)]
+   width: usize,
+
+   #[clap(short, long, value_parser, default_value_t = HEIGHT)]
+   height: usize,
 }
 
 struct RwArc<T>(Arc<RwLock<T>>);
@@ -353,7 +359,7 @@ pub fn main() -> GameResult {
         .add_resource_path(pic_path)
         .window_setup(WindowSetup::default().title("super_simple with imgui"))
         .window_mode(
-            WindowMode::default().dimensions(WIDTH as f32 * scale, HEIGHT as f32 * scale),
+            WindowMode::default().dimensions(args.width as f32 * scale, args.height as f32 * scale),
         );
     let (mut ctx, event_loop) = cb.build()?;
 
