@@ -664,6 +664,11 @@ pub fn expect_open_paren(receiver: &Receiver<Token>) -> Result<(), String> {
     let open_paren = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match open_paren {
         Token::OpenParen(_) => Ok(()),
+        Token::Operation(v, line)|Token::Constant(v, line) => {
+            return Err(format!(
+                "Expected '(' on line {}, got a '{}'", line, v
+            ))
+        },
         _ => {
             return Err(format!(
                 "Expected '(' on line {}",
@@ -782,25 +787,29 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
                 let mut colors = Vec::new();
                 expect_open_paren(receiver)?;
                 expect_operation("colors", receiver)?;
-
                 loop {
-                    let token = receiver.recv().map_err(|_| "Unexpected end of file")?;
-                    if discriminant(&token) == discriminant(&Token::CloseParen(0)) {
-                        break;
+                    let _token = receiver.recv().map_err(|_| "Unexpected end of file")?;
+                    match expect_operations(vec!["color", "stopcolor"], receiver){
+                        Err(e) => {
+                            if e.starts_with("Unexpected token on line ") {
+                                break;
+                            } else {
+                                panic!("{:?}", e);
+                            }
+                        },
+                        Ok(color_type) => {
+                            let r = expect_constant(receiver)?;
+                            let g = expect_constant(receiver)?;
+                            let b = expect_constant(receiver)?;
+                            if color_type == "color" {
+                                colors.push((Color::new(r, g, b, 1.0), false));
+                            } else {
+                                colors.push((Color::new(r, g, b, 1.0), true));
+                            }
+                            expect_close_paren(receiver)?;
+                        }
                     }
-                    expect_open_paren(receiver)?;
-                    let color_type = expect_operations(vec!["color", "stopcolor"], receiver)?;
-                    let r = expect_constant(receiver)?;
-                    let g = expect_constant(receiver)?;
-                    let b = expect_constant(receiver)?;
-                    if color_type == "color" {
-                        colors.push((Color::new(r, g, b, 1.0), false));
-                    } else {
-                        colors.push((Color::new(r, g, b, 1.0), true));
-                    }
-                    expect_close_paren(receiver)?;
                 }
-
                 Ok(Pic::Gradient(GradientData {
                     colors: colors,
                     index: APTNode::parse_apt_node(receiver)?,
