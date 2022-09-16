@@ -36,7 +36,7 @@ pub enum Instruction<S: Simd> {
     Max,
     Min,
     Mod,
-    Mandlebrot,
+    Mandelbrot,
     Picture(String),
     Constant(S::Vf32),
     X,
@@ -75,7 +75,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Max(_) => Max,
             APTNode::Min(_) => Min,
             APTNode::Mod(_) => Mod,
-            APTNode::Mandlebrot(_) => Mandlebrot,
+            APTNode::Mandelbrot(_) => Mandelbrot,
             APTNode::Picture(name, _) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
             APTNode::X => X,
@@ -313,7 +313,7 @@ impl<S: Simd> StackMachine<S> {
                         }
                         stack[sp - 1] = r;
                     }
-                    Mandlebrot => {
+                    Mandelbrot => {
                         sp -= 1;
                         //todo do
                     }

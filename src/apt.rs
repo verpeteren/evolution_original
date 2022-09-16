@@ -30,7 +30,7 @@ pub enum APTNode {
     Max(Vec<APTNode>),
     Min(Vec<APTNode>),
     Mod(Vec<APTNode>),
-    Mandlebrot(Vec<APTNode>),
+    Mandelbrot(Vec<APTNode>),
     Picture(String, Vec<APTNode>),
     Constant(f32),
     X,
@@ -95,7 +95,7 @@ impl APTNode {
             Max(children) => format!("( Max {} {})", children[0].to_lisp(), children[1].to_lisp()),
             Min(children) => format!("( Min {} {})", children[0].to_lisp(), children[1].to_lisp()),
             Mod(children) => format!("( Mod {} {})", children[0].to_lisp(), children[1].to_lisp()),
-            Mandlebrot(children) => format!("( Mandlebrot {} {})",children[0].to_lisp(), children[1].to_lisp()),
+            Mandelbrot(children) => format!("( Mandelbrot {} {})",children[0].to_lisp(), children[1].to_lisp()),
             Picture(name, children) => format!(
                 "( Pic-{} {} {} )",
                 name,
@@ -173,7 +173,7 @@ impl APTNode {
             21 => Max(vec![Empty, Empty]),
             22 => Min(vec![Empty, Empty]),
             23 => Mod(vec![Empty, Empty]),
-            24 => Mandlebrot(vec![Empty,Empty]),
+            24 => Mandelbrot(vec![Empty,Empty]),
             25 => {
                 let r = rng.gen_range(0..pic_names.len()) as usize;
                 Picture(pic_names[r].to_string(), vec![Empty, Empty])
@@ -305,7 +305,7 @@ impl APTNode {
                 let b = children[1].constant_eval();
                 a % b
             }
-            Mandlebrot(children) => {
+            Mandelbrot(children) => {
                 //todo 
                 0.0
             }
@@ -344,7 +344,7 @@ impl APTNode {
             Max(_) => Max(children),
             Min(_) => Min(children),
             Mod(_) => Mod(children),
-            Mandlebrot(_) => Mandlebrot(children),
+            Mandelbrot(_) => Mandelbrot(children),
             Picture(name, _) => Picture(name.to_string(), children),
             Constant(v) => Constant(*v),
             X => X,
@@ -405,7 +405,7 @@ impl APTNode {
             | Sqrt(children) | Sin(children) | Atan(children) | Atan2(children) | Tan(children)
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
-            | Min(children) | Mod(children) | Mandlebrot(children) => Some(children),         
+            | Min(children) | Mod(children) | Mandelbrot(children) => Some(children),         
             Picture(_, children) => Some(children),
             _ => None,
         }
@@ -418,7 +418,7 @@ impl APTNode {
             | Sqrt(children) | Sin(children) | Atan(children) | Atan2(children) | Tan(children)
             | Log(children) | Abs(children) | Floor(children) | Ceil(children)
             | Clamp(children) | Wrap(children) | Square(children) | Max(children)
-            | Min(children) | Mod(children) | Mandlebrot(children) => Some(children),
+            | Min(children) | Mod(children) | Mandelbrot(children) => Some(children),
             Picture(_, children) => Some(children),
             _ => None,
         }
