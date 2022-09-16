@@ -3,6 +3,13 @@ A desktop app that lets you generate and evolve your own art in the form of pict
 This generates random expressions, and lets the user breed them. Images are evaluated using a stack machine with SIMD instructions, leveraging [SIMDeez](https://github.com/jackmott/simdeez)
 and Rayon for parallelism at the instruction level and over multiple cores.
 
+## Dependencies
+
+```bash
+sudo apt-get install build-essential cmake libclang1 libclang-common-11-dev
+rustup install nightly
+```
+
 ## Some Possibilities
 
 ### HSV Images
