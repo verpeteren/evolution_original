@@ -1,7 +1,10 @@
-use crate::parser::*;
+use std::sync::mpsc::Receiver;
+
+use crate::parser::Token;
+
 use rand::prelude::*;
-use std::sync::mpsc::*;
-use variant_count::*;
+use variant_count::VariantCount;
+
 use APTNode::*;
 
 #[derive(VariantCount, Clone, Debug, PartialEq)]
