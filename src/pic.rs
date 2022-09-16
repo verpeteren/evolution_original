@@ -63,11 +63,11 @@ pub struct HSVData {
 
 #[derive(Clone)]
 pub enum Pic {
+    Mono(MonoData),
     Grayscale(GrayscaleData),
     RGB(RGBData),
     HSV(HSVData),
     Gradient(GradientData),
-    Mono(MonoData),
 }
 
 impl Pic {
@@ -169,8 +169,8 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
-            Pic::Grayscale(data) => format!("( Grayscale\n {} )", data.c.to_lisp()),
             Pic::Mono(data) => format!("( Mono\n {} )", data.c.to_lisp()),
+            Pic::Grayscale(data) => format!("( Grayscale\n {} )", data.c.to_lisp()),
             Pic::Gradient(data) => {
                 let mut colors = "( Colors ".to_string();
                 for (color, stop) in &data.colors {
