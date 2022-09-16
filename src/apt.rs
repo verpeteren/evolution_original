@@ -150,12 +150,18 @@ impl APTNode {
             "max" => Ok(Max(vec![Empty, Empty])),
             "min" => Ok(Min(vec![Empty, Empty])),
             "%" => Ok(Mod(vec![Empty, Empty])),
-            _ if lower == "pic" => Ok(X),
             "mandelbrot" => Ok(Mandelbrot(vec![Empty, Empty])),
             "x" => Ok(X),
             "y" => Ok(Y),
             "t" => Ok(T),
-            _ => Err(format!("Unknown operation '{}' ", s.to_string())),
+            _ => {
+                if lower.starts_with("pic-") {
+                    let name = lower[4..].to_owned();
+                    Ok(Picture(name, vec![Empty, Empty]))
+                } else {
+                    Err(format!("Unknown operation '{}' ", s.to_string()))
+                }
+            },
         }
     }
 
@@ -359,7 +365,7 @@ impl APTNode {
             Min(_) => Min(children),
             Mod(_) => Mod(children),
             Mandelbrot(_) => Mandelbrot(children),
-            Picture(name, _) => Picture(name.to_string(), children),
+            Picture(name, _) => Picture(name.to_string(), children[1..].to_vec()),
             Constant(v) => Constant(*v),
             X => X,
             Y => Y,
