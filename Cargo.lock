@@ -845,6 +845,7 @@ dependencies = [
  "gfx_core",
  "gfx_device_gl",
  "ggez",
+ "image",
  "imgui",
  "imgui-gfx-renderer",
  "rand 0.8.5",
