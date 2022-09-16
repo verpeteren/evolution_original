@@ -756,6 +756,10 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
     let pic_type = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
+            "mono" => Ok(Pic::Mono(MonoData{
+                c: APTNode::parse_apt_node(receiver)?,
+                coord: Cartesian,
+            })),
             "grayscale" => Ok(Pic::Grayscale(GrayscaleData {
                 c: APTNode::parse_apt_node(receiver)?,
                 coord: Cartesian,
