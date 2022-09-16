@@ -1,5 +1,5 @@
-use ggez::graphics::*;
-use ggez::input::mouse::*;
+use ggez::graphics::{DrawParam, draw, Rect, Image, size};
+use ggez::input::mouse::{MouseButton};
 use ggez::Context;
 use ggez::mint::{Point2, Vector2};
 
