@@ -105,7 +105,7 @@ impl APTNode {
             Clamp(children) => format!("( Clamp {} )", children[0].to_lisp()),
             Wrap(children) => format!("( Wrap {} )", children[0].to_lisp()),
             Square(children) => format!("( Square {} )", children[0].to_lisp()),
-            Max(children) => format!("( Max {} {})", children[0].to_lisp(), children[1].to_lisp()),
+            Max(children) => format!("( Max {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Min(children) => format!("( Min {} {})", children[0].to_lisp(), children[1].to_lisp()),
             Mod(children) => format!("( % {} {} )", children[0].to_lisp(), children[1].to_lisp()),
             Mandelbrot(children) => format!("( Mandelbrot {} {})",children[0].to_lisp(), children[1].to_lisp()),
