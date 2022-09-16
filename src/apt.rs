@@ -250,7 +250,7 @@ impl APTNode {
         }
     }
 
-    pub fn constant_eval(&self) -> f32 {
+    fn constant_eval(&self) -> f32 {
         match self {
             Add(children) => children[0].constant_eval() + children[1].constant_eval(),
             Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
@@ -367,7 +367,7 @@ impl APTNode {
         }
     }
 
-    pub fn constant_fold(&self) -> APTNode {
+    fn constant_fold(&self) -> APTNode {
         match self {
             Constant(v) => Constant(*v),
             X => X,
