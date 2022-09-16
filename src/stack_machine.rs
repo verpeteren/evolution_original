@@ -114,13 +114,10 @@ impl<S: Simd> StackMachine<S> {
     pub fn deal_with_nan(mut a: S::Vf32) -> S::Vf32 {
         for i in 0..S::VF32_WIDTH {
             if a[i] == std::f32::INFINITY {
-                //   println!("inf");
                 a[i] = 1.0;
             } else if a[i] == std::f32::NEG_INFINITY {
-                //  println!("neg inf");
                 a[i] = -1.0;
             } else if a[i].is_nan() {
-                //  println!("nan");
                 a[i] = 0.0;
             }
         }
@@ -343,7 +340,7 @@ impl<S: Simd> StackMachine<S> {
                         let yi = S::cvtps_epi32(ypct * hf);
                         let index = xi + w * yi;
 
-                        //println!("w:{:?} h{:?} xpct:{:?} ypct:{:?} index:{},{}",w[0],h[0],xpct[0],ypct[0],index[0],index[1]);
+                        // println!("w:{:?} h{:?} xpct:{:?} ypct:{:?} index:{},{}",w[0],h[0],xpct[0],ypct[0],index[0],index[1]);
                         for i in 0..S::VF32_WIDTH {
                             stack[sp - 1][i] = picture.brightness
                                 [index[i] as usize % (picture.w as usize * picture.h as usize)];

@@ -127,10 +127,8 @@ impl MainState {
                     .push(Button::new(img, x_pct, y_pct, width - 0.01, height - 0.01));
                 x_pct += width;
             }
-            println!("--------------------");
             y_pct += height;
         }
-        println!("genpop elapsed:{}", now.elapsed().as_millis());
     }
 
     fn new(mut ctx: &mut Context) -> GameResult<MainState> {
@@ -155,16 +153,13 @@ impl MainState {
         for (i, img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx, &self.mouse_state) {
                 println!("{}", self.pics[i].to_lisp());
-                println!("button left clicked");
                 break;
             }
             if img_button.right_clicked(ctx, &self.mouse_state) {
-                println!("button right clicked");
                 let pic = self.pics[i].clone();
                 let arc = self.zoom_image.clone();
                 let pics = self.pictures.clone();
                 spawn(move || {
-                    println!("create image");
                     let img_data = pic.get_rgba8::<Avx2>(true, pics, WIDTH, HEIGHT, 0.0);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
@@ -178,7 +173,6 @@ impl MainState {
         let maybe_img = match &*self.zoom_image.read() {
             BackgroundImage::NotYet => None,
             BackgroundImage::Almost(data) => {
-                println!("setting zoom image");
                 let img = Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..])
                     .unwrap();
                 Some(img)
@@ -190,13 +184,11 @@ impl MainState {
             Some(img) => self.zoom_image.write(BackgroundImage::Complete(img)),
         }
         //todo just check for clicks on the zoom image
-        for (i, img_button) in self.img_buttons.iter().enumerate() {
+        for (_i, img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx, &self.mouse_state) {
-                println!("{}", self.pics[i].to_lisp());
-                println!("button left clicked");
+                // println!("{}", self.pics[i].to_lisp());
             }
             if img_button.right_clicked(ctx, &self.mouse_state) {
-                println!("button right clicked");
                 self.zoom_image.write(BackgroundImage::NotYet);
                 self.state = GameState::Select;
             }

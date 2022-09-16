@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::mpsc::{ channel, Receiver };
 use std::sync::Arc;
 use std::mem::discriminant;
-use std::time::Instant;
 
 use crate::actual_picture::ActualPicture;
 use crate::apt::APTNode;
@@ -208,7 +207,6 @@ impl Pic {
         fps: u16,
         d: f32,
     ) -> Vec<Vec<u8>> {
-        let now = Instant::now();
         let frames = (fps as f32 * (d / 1000.0)) as i32;
         let frame_dt = 2.0 / frames as f32;
 
@@ -219,7 +217,6 @@ impl Pic {
             result.push(frame_buffer);
             t += frame_dt;
         }
-        println!("img elapsed:{}", now.elapsed().as_millis());
         result
     }
 
@@ -249,7 +246,6 @@ impl Pic {
         t: f32,
     ) -> Vec<u8> {
         unsafe {
-            let now = Instant::now();
             let ts = S::set1_ps(t);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
@@ -333,7 +329,6 @@ impl Pic {
             }
 
             // println!("min:{} max:{} range:{}",min,max,max-min);
-            println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
@@ -347,7 +342,6 @@ impl Pic {
         t: f32,
     ) -> Vec<u8> {
         unsafe {
-            let now = Instant::now();
             let ts = S::set1_ps(t);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
@@ -400,7 +394,6 @@ impl Pic {
                 result.chunks_exact_mut(4 * w).enumerate().for_each(process);
             }
             // println!("min:{} max:{} range:{}",min,max,max-min);
-            println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
@@ -414,7 +407,6 @@ impl Pic {
         t: f32,
     ) -> Vec<u8> {
         unsafe {
-            let now = Instant::now();
             let ts = S::set1_ps(t);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
@@ -462,7 +454,6 @@ impl Pic {
                 result.chunks_exact_mut(4 * w).enumerate().for_each(process);
             }
             // println!("min:{} max:{} range:{}",min,max,max-min);
-            println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
@@ -476,7 +467,6 @@ impl Pic {
         t: f32,
     ) -> Vec<u8> {
         unsafe {
-            let now = Instant::now();
             let ts = S::set1_ps(t);
 
             let vec_len = w * h * 4;
@@ -550,7 +540,6 @@ impl Pic {
                 result.chunks_exact_mut(4 * w).enumerate().for_each(process);
             }
 
-            println!("img elapsed:{}", now.elapsed().as_millis());
             result
         }
     }
