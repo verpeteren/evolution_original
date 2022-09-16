@@ -1,4 +1,4 @@
-use std::sync::mpsc::*;
+use std::sync::mpsc::Sender;
 
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {
