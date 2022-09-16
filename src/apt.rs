@@ -65,10 +65,12 @@ impl APTNode {
                 children[5].to_lisp()
             ),
             Cell1(children) => format!(
-                "( Cell1 {} {} {} )",
+                "( Cell1 {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
-                children[2].to_lisp()
+                children[2].to_lisp(),
+                children[3].to_lisp(),
+                children[4].to_lisp()
             ),
             Cell2(children) => format!(
                 "( Cell2 {} {} {} )",
@@ -129,7 +131,7 @@ impl APTNode {
             "fbm" => Ok(FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
             "ridge" => Ok(Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
             "turbulence" => Ok(Turbulence(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
-            "cell1" => Ok(Cell1(vec![Empty, Empty, Empty])),
+            "cell1" => Ok(Cell1(vec![Empty, Empty, Empty, Empty, Empty])),
             "cell2" => Ok(Cell2(vec![Empty, Empty, Empty])),
             "sqrt" => Ok(Sqrt(vec![Empty])),
             "sin" => Ok(Sin(vec![Empty])),
