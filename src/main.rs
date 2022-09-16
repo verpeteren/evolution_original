@@ -38,12 +38,15 @@ use rand::SeedableRng;
 use rand::prelude::*;
 use simdeez::avx2::*;
 
+
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 
 const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
+const THUMB_WIDTH: u16 = 128;
+const THUMB_HEIGHT: u16 = 128;
 
 const TREE_MIN: usize = 1;
 const TREE_MAX: usize = 40;
@@ -117,9 +120,9 @@ impl MainState {
 
                 let img = Image::from_rgba8(
                     ctx,
-                    256 as u16,
-                    256 as u16,
-                    &pic.get_rgba8::<Avx2>(false, self.pictures.clone(), 256, 256, 0.0)[0..],
+                    THUMB_WIDTH,
+                    THUMB_HEIGHT,
+                    &pic.get_rgba8::<Avx2>(false, self.pictures.clone(), THUMB_WIDTH as usize, THUMB_HEIGHT as usize, 0.0)[0..],
                 )
                 .unwrap();
                 self.pics.push(pic);
