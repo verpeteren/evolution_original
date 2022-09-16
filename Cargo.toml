@@ -7,13 +7,12 @@ edition="2018"
 
 
 [dependencies]
-ggez = "0.5.1"
+ggez = { version = "0.7.0", features = ["multithread-image-decoding"] }
 gfx_core = "0.9.2"
 gfx_device_gl = "0.16.2"
 imgui = "0.3.0"
 imgui-gfx-renderer = "0.3.0"
 rand = "*"
-nalgebra = "*"
 simdeez = { features = ["sleef"], path = "../simdeez" }
 simdnoise = { path = "../rust-simd-noise" }
 variant_count = "*"

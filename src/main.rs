@@ -21,7 +21,7 @@ use crate::pic::*;
 use crate::ui::*;
 use ggez::conf;
 use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
-use ggez::graphics::{self, Image};
+use ggez::graphics::{self, Image, Color};
 use ggez::timer;
 use ggez::{Context, GameResult};
 use rand::rngs::StdRng;
@@ -216,7 +216,7 @@ impl MainState {
         {
             let window = ggez::graphics::window(ctx);
 
-            self.imgui_wrapper.render(ctx,window.get_hidpi_factor() as f32);
+            self.imgui_wrapper.render(ctx, window.scale_factor() as f32);
         }
     }
 
@@ -244,7 +244,7 @@ impl EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::BLACK);
+        graphics::clear(ctx, Color::BLACK);
 
         match &self.state {
             GameState::Select => self.draw_select(ctx),
@@ -348,9 +348,9 @@ pub fn main() -> ggez::GameResult {
         .window_mode(
             conf::WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0),
         );
-    let (ref mut ctx, event_loop) = &mut cb.build()?;
+    let (mut ctx, event_loop) = cb.build()?;
 
-    let state = &mut MainState::new(ctx).unwrap();
-    state.gen_population(ctx);
+    let mut state = MainState::new(&mut ctx).unwrap();
+    state.gen_population(&mut ctx);
     event::run(ctx, event_loop, state)
 }

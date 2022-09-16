@@ -1,7 +1,7 @@
 use ggez::graphics::*;
 use ggez::input::mouse::*;
-use ggez::nalgebra as na;
 use ggez::Context;
+use ggez::mint::{Point2, Vector2};
 
 pub enum MouseState {
     Up(MouseButtonState),
@@ -48,7 +48,7 @@ impl Button {
                 button_state.which_button == MouseButton::Left
                     && self
                         .pixel_rect(ctx)
-                        .contains(na::Point2::new(button_state.x, button_state.y))
+                        .contains(Point2 {x: button_state.x, y: button_state.y })
             }
             _ => false,
         }
@@ -60,7 +60,7 @@ impl Button {
                 button_state.which_button == MouseButton::Right
                     && self
                         .pixel_rect(ctx)
-                        .contains(na::Point2::new(button_state.x, button_state.y))
+                        .contains(Point2 { x: button_state.x, y: button_state.y })
             }
             _ => false,
         }
@@ -71,8 +71,8 @@ impl Button {
         let x_scale = pixel_rect.w / self.img.width() as f32;
         let y_scale = pixel_rect.h / self.img.height() as f32;
         let params = DrawParam::new()
-            .dest(na::Point2::new(pixel_rect.x, pixel_rect.y))
-            .scale(na::Vector2::new(x_scale, y_scale));
+            .dest(Point2 { x: pixel_rect.x, y: pixel_rect.y })
+            .scale(Vector2 { x: x_scale, y: y_scale });
         let _ = draw(ctx, &self.img, params);
     }
 }
