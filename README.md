@@ -37,6 +37,7 @@ When the '--input` parameter is set, that will be used as a input.
 ### Ui mode
 
 Right mouse click opens a new window with the detailed image, or goes back from the detailed image
+Spacebar generates a new population of images
 
 ### Input DSL
 

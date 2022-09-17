@@ -140,6 +140,7 @@ struct MainState {
     zoom_image: RwArc<BackgroundImage>,
     pictures: Arc<HashMap<String, ActualPicture>>,
     dimensions: (usize, usize),
+    running: bool,
 }
 
 impl MainState {
@@ -160,70 +161,80 @@ impl MainState {
             zoom_image: RwArc::new(BackgroundImage::NotYet),
             pictures: Arc::new(pics),
             dimensions: (args.width, args.height),
+            running: false,
         };
         Ok(s)
     }
 
     fn gen_population(&mut self, ctx: &mut Context) {
-        // todo make this layout code less dumb
-        self.img_buttons.clear();
-        let width = 1.0 / (THUMB_COLS as f32 * 1.01);
-        let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
-        let mut y_pct = 0.01;
-        let pic_names = &self.pictures.keys().collect();
-        for _ in 0..THUMB_ROWS {
-            let mut x_pct = 0.01;
-            for _ in 0..THUMB_COLS {
-                let pic_type = self.rng.gen_range(0..5);
+        if ! self.running {
+            self.running = true;
+            let len = ( THUMB_COLS * THUMB_ROWS ) as usize;
+            println!("Generating a new population of {} thumbnails. Please be patient", len);
+            // todo make this layout code less dumb
+            let mut buttons = Vec::with_capacity(len);
+            let mut pics = Vec::with_capacity(len);
+            let width = 1.0 / (THUMB_COLS as f32 * 1.01);
+            let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
+            let mut y_pct = 0.01;
+            let pic_names = &self.pictures.keys().collect();
+            for _ in 0..THUMB_ROWS {
+                let mut x_pct = 0.01;
+                for _ in 0..THUMB_COLS {
+                    let pic_type = self.rng.gen_range(0..5);
 
-                //let pic_type = 4;
-                let pic = match pic_type {
-                    0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    _ => panic!("invalid"),
-                };
+                    //let pic_type = 4;
+                    let pic = match pic_type {
+                        0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                        1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                        2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                        3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                        4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                        _ => panic!("invalid"),
+                    };
 
-                let img = Image::from_rgba8(
-                    ctx,
-                    THUMB_WIDTH,
-                    THUMB_HEIGHT,
-                    &pic_get_rgba8_runtime_select(
-                        &pic,
-                        false,
-                        self.pictures.clone(),
-                        THUMB_WIDTH as usize,
-                        THUMB_HEIGHT as usize,
-                        self.frame_elapsed,
-                    )[0..],
-                )
-                .unwrap();
+                    let img = Image::from_rgba8(
+                        ctx,
+                        THUMB_WIDTH,
+                        THUMB_HEIGHT,
+                        &pic_get_rgba8_runtime_select(
+                            &pic,
+                            false,
+                            self.pictures.clone(),
+                            THUMB_WIDTH as usize,
+                            THUMB_HEIGHT as usize,
+                            self.frame_elapsed,
+                        )[0..],
+                    )
+                    .unwrap();
 
-                if true {
-                    //Debug stress test::see if we can parse it back
-                    let sexpr = pic.to_lisp();
-                    match lisp_to_pic(sexpr.clone()) {
-                        Ok(_) => {}
-                        Err(err) => {
-                            eprintln!(
-                                "-----\n{:?}\n{:?}\n{:?}\n{:?}",
-                                err,
-                                pic.to_tree(),
-                                pic.to_tree(),
-                                &sexpr
-                            );
+                    if true {
+                        //Debug stress test::see if we can parse it back
+                        let sexpr = pic.to_lisp();
+                        match lisp_to_pic(sexpr.clone()) {
+                            Ok(_) => {}
+                            Err(err) => {
+                                eprintln!(
+                                    "-----\n{:?}\n{:?}\n{:?}\n{:?}",
+                                    err,
+                                    pic.to_tree(),
+                                    pic.to_tree(),
+                                    &sexpr
+                                );
+                            }
                         }
                     }
-                }
 
-                self.pics.push(pic);
-                self.img_buttons
-                    .push(Button::new(img, x_pct, y_pct, width - 0.01, height - 0.01));
-                x_pct += width;
+                    pics.push(pic);
+                    buttons.push(Button::new(img, x_pct, y_pct, width - 0.01, height - 0.01));
+                    x_pct += width;
+                }
+                y_pct += height;
             }
-            y_pct += height;
+            self.pics = pics;
+            self.img_buttons = buttons;
+            self.running = false;
+            println!("...done");
         }
     }
 
@@ -363,8 +374,11 @@ impl EventHandler<GameError> for MainState {
         }
     }
 
-    fn text_input_event(&mut self, _ctx: &mut Context, ch: char) {
+    fn text_input_event(&mut self, ctx: &mut Context, ch: char) {
         self.imgui_wrapper.update_keyboard(ch);
+        if ch == ' ' {
+            self.gen_population(ctx);
+        }
     }
 }
 
