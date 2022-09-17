@@ -24,7 +24,7 @@ use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 
 use crate::actual_picture::ActualPicture;
-use crate::imgui_wrapper::ImGuiWrapper;
+use crate::imgui_wrapper::{ImGuiWrapper, EXEC_NAME};
 use crate::pic::{lisp_to_pic, Pic};
 use crate::ui::{Button, MouseButtonState, MouseState};
 
@@ -417,9 +417,9 @@ fn main_gui(args: &Args) -> GameResult {
     let pic_path = get_picture_path(&args);
     let scale = 1.0;
 
-    let cb = ContextBuilder::new("super_simple with imgui", "ggez")
+    let cb = ContextBuilder::new(EXEC_NAME, "ggez")
         .add_resource_path(pic_path.as_path())
-        .window_setup(WindowSetup::default().title("super_simple with imgui"))
+        .window_setup(WindowSetup::default().title(EXEC_NAME))
         .window_mode(
             WindowMode::default().dimensions(args.width as f32 * scale, args.height as f32 * scale),
         );

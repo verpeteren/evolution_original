@@ -7,7 +7,7 @@ use ggez::Context;
 use imgui::{Condition, ImString, Window};
 use imgui_gfx_renderer::{Renderer, Shaders};
 
-const EXEC_NAME: &'static str = "Evolution";
+pub const EXEC_NAME: &'static str = "Evolution";
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
