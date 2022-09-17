@@ -39,44 +39,126 @@ When the '--input` parameter is set, that will be used as a input.
 The syntax for the input files are simple, case-insensitive, s-expressions.
 
 ```ebnf
-SEXPR        = '(' PICTURE ')'
-PICTURE      = MONO | GRAYSCALE | GRADIENT | RGB | HSV
-MONO         = 'Mono' EXPR
-RGB          = 'RGB' EXPR EXPR EXPR
-HSV          = 'HSV' EXPR EXPR EXPR
-GRAYSCALE    = 'Grayscale' EXPR
-GRADIENT     = 'Gradient' '(' 'Colors' COLOR* ')'
-COLORS       = '(' COLORTYPE EXPR EXPR EXPR ')'
-COLORTYPE    = 'StopColor' | 'Color'
-EXPR         = | '(' '+' EXPR ')'
-               | '(' '-' EXPR ')'
-               | '(' '*' EXPR ')'
-               | '(' '/' EXPR ')'
-               | '(' '%' EXPR ')'
-               | '(' 'FBM' EXPR EXPR EXPR EXPR EXPR EXPR ')'
-               | '(' 'Ridge' EXPR EXPR EXPR EXPR EXPR EXPR ')'
-               | '(' 'Turbulence' EXPR EXPR EXPR EXPR EXPR EXPR ')'
-               | '(' 'Cell1' EXPR EXPR EXPR EXPR EXPR ')'
-               | '(' 'Cell2' EXPR EXPR EXPR EXPR EXPR ')'
-               | '(' 'Mandelbrot' EXPR EXPR ')'
-               | '(' 'Sin' EXPR ')'
-               | '(' 'Tan' EXPR ')'
-               | '(' 'Atan' EXPR ')'
-               | '(' 'Atan2' EXPR EXPR ')'
-               | '(' 'Min' EXPR ')'
-               | '(' 'Max' EXPR ')'
-               | '(' 'Square' EXPR ')'
-               | '(' 'Wrap' EXPR ')'
-               | '(' 'Clamp' EXPR ')'
-               | '(' 'Ceil' EXPR ')'
-               | '(' 'Floor' EXPR ')'
-               | '(' 'Abs' EXPR ')'
-               | '(' 'Log' EXPR ')'
-               | '(' 'Sqrt' EXPR ')'
-               | 'x'
-               | 'y'
-               | 'x'
+SEXPR        = '(' PICTURE ')' ;
+PICTURE      = MONO | GRAYSCALE | GRADIENT | RGB | HSV ;
+MONO         = 'Mono' EXPR ;
+RGB          = 'RGB' EXPR EXPR EXPR ;
+HSV          = 'HSV' EXPR EXPR EXPR ;
+GRAYSCALE    = 'Grayscale' EXPR ;
+GRADIENT     = 'Gradient' '(' 'Colors' COLOR* ')' ;
+COLORS       = '(' COLORTYPE EXPR EXPR EXPR ')' ;
+COLORTYPE    = 'StopColor' | 'Color' ;
+EXPR         = '(' EXPR ')';
+             | '(' '+' EXPR ')' ;
+             | '(' '-' EXPR ')' ;
+             | '(' '*' EXPR ')' ;
+             | '(' '/' EXPR ')' ;
+             | '(' '%' EXPR ')' ;
+             | '(' 'FBM' EXPR EXPR EXPR EXPR EXPR EXPR ')' ;
+             | '(' 'Ridge' EXPR EXPR EXPR EXPR EXPR EXPR ')' ;
+             | '(' 'Turbulence' EXPR EXPR EXPR EXPR EXPR EXPR ')' ;
+             | '(' 'Cell1' EXPR EXPR EXPR EXPR EXPR ')' ;
+             | '(' 'Cell2' EXPR EXPR EXPR EXPR EXPR ')' ;
+             | '(' 'Mandelbrot' EXPR EXPR ')' ;
+             | '(' 'Sin' EXPR ')' ;
+             | '(' 'Tan' EXPR ')' ;
+             | '(' 'Atan' EXPR ')' ;
+             | '(' 'Atan2' EXPR EXPR ')' ;
+             | '(' 'Min' EXPR ')' ;
+             | '(' 'Max' EXPR ')' ;
+             | '(' 'Square' EXPR ')' ;
+             | '(' 'Wrap' EXPR ')' ;
+             | '(' 'Clamp' EXPR ')' ;
+             | '(' 'Ceil' EXPR ')' ;
+             | '(' 'Floor' EXPR ')' ;
+             | '(' 'Abs' EXPR ')' ;
+             | '(' 'Log' EXPR ')' ;
+             | '(' 'Sqrt' EXPR ')' ;
+             | '(' 'Pic-' FILEDOTEXT EXPR EXPR ')';
+             | 'x' ;
+             | 'y' ;
+             | 'x' ;
+             | CONSTANT ;
+CONSTANT     = [NEGATE] DIGIT ;
+             | [NEGATE] DIGIT* '.' DIGIT DIGIT* ;
+DIGIT        = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+NEGATE       = '-';
+FILEDOTEXT   = CHAR* '.' CHAR* ;
 ```
+
+### Infinities and NaNs handling
+
+```text
+Positive infinity => + 1.0
+Negative infinity => - 1.0
+NaN               => 0.0
+```
+
+### Operations
+
+#### X, Y, T
+
+`X`: the X position in the image
+`Y`: the X position in the image
+`T`: the frame id for use in animations (the parameter is implement, but the animation not, so this evaluates to 0.0)
+
+#### Ugh, Math...
+
+The operations (`+`, `-`, `*`, `/`, `%`, `sin`, `tan`, `atan`, `atan2`, `min`, `max`, `square`, `wrap`, `clap`, `ceil`, `floor`, `abs`, `log`, `sqrt`) work as expected [citation needed].
+
+#### Noise
+
+##### Fractal Brownian Motion (FBM)
+
+p0: Todo
+p1: Todo
+p2: Todo
+p3: Todo
+p4: Todo
+p5: Todo
+
+##### Ridge
+
+p0: Todo
+p1: Todo
+p2: Todo
+p3: Todo
+p4: Todo
+p5: Todo
+
+##### Turbulence
+
+p0: Todo
+p1: Todo
+p2: Todo
+p3: Todo
+p4: Todo
+p5: Todo
+
+##### Cell1
+
+p0: Todo
+p1: Todo
+p2: Todo
+p3: Todo
+p4: Todo
+
+
+##### Cell2
+
+p0: Todo
+p1: Todo
+p2: Todo
+p3: Todo
+p4: Todo
+
+##### Mandlebrot
+
+This is not implemented yet.
+Currently, it resolves to 0.0
+
+p0: Todo
+p1: Todo
 
 ## Some Possibilities
 
