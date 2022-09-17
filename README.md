@@ -28,6 +28,7 @@ OPTIONS:
     -V, --version                Print version information
     -w, --width <WIDTH>          [default: 1920]
     -h, --height <HEIGHT>        [default: 1080]
+    -t, --time <TIME>            [default: 0]
 ```
 
 When the `--input` parameter is not set a Ui will start with several random generated examples
@@ -100,7 +101,7 @@ NaN               => 0.0
 
 `X`: the X position in the image
 `Y`: the X position in the image
-`T`: the frame id for use in animations (the parameter is implement, but the animation not, so this evaluates to 0.0)
+`T`: the frame id (seconds)
 
 #### Ugh, Math...
 
