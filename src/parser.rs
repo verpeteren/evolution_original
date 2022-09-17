@@ -307,6 +307,6 @@ mod tests {
         assert_eq!(Lexer::is_linebreak(' '), false);
         assert_eq!(Lexer::is_linebreak('\t'), false);
         assert_eq!(Lexer::is_linebreak('\n'), true);
-        //assert_eq!(Lexer::is_linebreak('\r'), false); // todo: investigate
+        assert_eq!(Lexer::is_linebreak('\r'), false);
     }
 }

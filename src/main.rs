@@ -167,10 +167,13 @@ impl MainState {
     }
 
     fn gen_population(&mut self, ctx: &mut Context) {
-        if ! self.running {
+        if !self.running {
             self.running = true;
-            let len = ( THUMB_COLS * THUMB_ROWS ) as usize;
-            println!("Generating a new population of {} thumbnails. Please be patient", len);
+            let len = (THUMB_COLS * THUMB_ROWS) as usize;
+            println!(
+                "Generating a new population of {} thumbnails. Please be patient",
+                len
+            );
             // todo make this layout code less dumb
             let mut buttons = Vec::with_capacity(len);
             let mut pics = Vec::with_capacity(len);
@@ -183,13 +186,14 @@ impl MainState {
                 for _ in 0..THUMB_COLS {
                     let pic_type = self.rng.gen_range(0..5);
 
-                    //let pic_type = 4;
                     let pic = match pic_type {
                         0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
                         1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
                         2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
                         3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                        4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
+                        4 => {
+                            Pic::new_grayscale(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names)
+                        }
                         _ => panic!("invalid"),
                     };
 
@@ -251,8 +255,7 @@ impl MainState {
                 let arc = self.zoom_image.clone();
                 let pics = self.pictures.clone();
                 spawn(move || {
-                    let img_data =
-                        pic_get_rgba8_runtime_select(&pic, true, pics, width, height, t);
+                    let img_data = pic_get_rgba8_runtime_select(&pic, true, pics, width, height, t);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom;

@@ -180,8 +180,7 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        ); //* S::set1_ps(SIMPLEX_MULTIPLIER)
-                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
+                        );
                     }
                     Ridge => {
                         sp -= 5;
@@ -197,8 +196,7 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        ); // S::set1_ps(SIMPLEX_OFFSET)
-                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1??
+                        );
                     }
                     Turbulence => {
                         sp -= 5;
@@ -214,8 +212,7 @@ impl<S: Simd> StackMachine<S> {
                             gain,
                             octaves,
                             3,
-                        ); // * S::set1_ps(SIMPLEX_MULTIPLIER)
-                           //- S::set1_ps(SIMPLEX_OFFSET); //todo clamp between -1 and 1?? \
+                        );
                     }
                     Cell1 => {
                         sp -= 4;
@@ -229,8 +226,7 @@ impl<S: Simd> StackMachine<S> {
                             CellReturnType::Distance,
                             jitter,
                             1,
-                        ); //* S::set1_ps(CELL1_MULTUPLIER)
-                           //- S::set1_ps(CELL1_OFFSET); //todo clamp between -1 and 1?? \
+                        );
                     }
                     Cell2 => {
                         sp -= 4;

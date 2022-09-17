@@ -80,8 +80,6 @@ impl Pic {
         pic_names: &Vec<&String>,
     ) -> Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
-        //let tree = APTNode::Picture("barn".to_string(),vec![APTNode::X,APTNode::Y]);
         Pic::Mono(MonoData {
             c: tree,
             coord: Polar,
@@ -96,7 +94,6 @@ impl Pic {
         pic_names: &Vec<&String>,
     ) -> Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        //let tree = APTNode::Cell2(vec![APTNode::X,APTNode::Y,APTNode::Constant(1.0)]);
         Pic::Grayscale(GrayscaleData {
             c: tree,
             coord: Polar,
@@ -141,7 +138,6 @@ impl Pic {
         let r = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         let g = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         let b = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        //let noise = APTNode::FBM::<S>(vec![APTNode::X,APTNode::Y]);
         Pic::RGB(RGBData {
             r,
             g,
@@ -910,6 +906,7 @@ fn hsv_to_rgb<S: Simd>(h: S::Vf32, s: S::Vf32, v: S::Vf32) -> (S::Vf32, S::Vf32,
         (r, g, b)
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
