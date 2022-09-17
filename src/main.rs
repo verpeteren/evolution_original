@@ -70,6 +70,9 @@ struct Args {
     #[clap(short, long, value_parser, default_value_t = HEIGHT)]
     height: usize,
 
+    #[clap(short, long, value_parser, default_value_t = 0.0)]
+    time: f32,
+
     #[clap(
         short,
         long,
@@ -136,10 +139,11 @@ struct MainState {
     rng: StdRng,
     zoom_image: RwArc<BackgroundImage>,
     pictures: Arc<HashMap<String, ActualPicture>>,
+    dimensions: (usize, usize),
 }
 
 impl MainState {
-    fn new(mut ctx: &mut Context, pic_path: &Path) -> GameResult<MainState> {
+    fn new(mut ctx: &mut Context, pic_path: &Path, args: &Args) -> GameResult<MainState> {
         let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
         let pics =
             load_pictures(Some(&mut ctx), pic_path).map_err(|x| GameError::FilesystemError(x))?;
@@ -150,11 +154,12 @@ impl MainState {
             pics: Vec::new(),
             img_buttons: Vec::new(),
             dt: std::time::Duration::new(0, 0),
-            frame_elapsed: 0.0,
+            frame_elapsed: args.time,
             rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
             mouse_state: MouseState::Nothing,
             zoom_image: RwArc::new(BackgroundImage::NotYet),
             pictures: Arc::new(pics),
+            dimensions: (args.width, args.height),
         };
         Ok(s)
     }
@@ -191,7 +196,7 @@ impl MainState {
                         self.pictures.clone(),
                         THUMB_WIDTH as usize,
                         THUMB_HEIGHT as usize,
-                        0.0,
+                        self.frame_elapsed,
                     )[0..],
                 )
                 .unwrap();
@@ -223,6 +228,8 @@ impl MainState {
     }
 
     fn update_select(&mut self, ctx: &mut Context) {
+        let (width, height) = self.dimensions;
+        let t = self.frame_elapsed;
         for (i, img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx, &self.mouse_state) {
                 println!("{}", self.pics[i].to_lisp());
@@ -234,7 +241,7 @@ impl MainState {
                 let pics = self.pictures.clone();
                 spawn(move || {
                     let img_data =
-                        pic_get_rgba8_runtime_select(&pic, true, pics, WIDTH, HEIGHT, 0.0);
+                        pic_get_rgba8_runtime_select(&pic, true, pics, width, height, t);
                     arc.write(BackgroundImage::Almost(img_data));
                 });
                 self.state = GameState::Zoom;
@@ -244,10 +251,11 @@ impl MainState {
     }
 
     fn update_zoom(&mut self, ctx: &mut Context) {
+        let (width, height) = self.dimensions;
         let maybe_img = match &*self.zoom_image.read() {
             BackgroundImage::NotYet => None,
             BackgroundImage::Almost(data) => {
-                let img = Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..]).unwrap();
+                let img = Image::from_rgba8(ctx, width as u16, height as u16, &data[0..]).unwrap();
                 Some(img)
             }
             BackgroundImage::Complete(_) => None,
@@ -417,14 +425,13 @@ fn main_gui(args: &Args) -> GameResult {
         );
     let (mut ctx, event_loop) = cb.build()?;
 
-    let mut state = MainState::new(&mut ctx, pic_path.as_path()).unwrap();
+    let mut state = MainState::new(&mut ctx, pic_path.as_path(), args).unwrap();
     state.gen_population(&mut ctx);
     run(ctx, event_loop, state)
 }
 
 fn main_cli(args: &Args) {
-    let t = 0.0;
-    let (width, height) = (args.width, args.height);
+    let (width, height, t) = (args.width, args.height, args.time);
     let out_filename = args.output.as_ref().unwrap().to_string();
     let pic_path = get_picture_path(&args);
 
