@@ -34,6 +34,9 @@ OPTIONS:
 When the `--input` parameter is not set a Ui will start with several random generated examples
 When the '--input` parameter is set, that will be used as a input.
 
+### Ui mode
+
+Right mouse click opens a new window with the detailed image, or goes back from the detailed image
 
 ### Input DSL
 
