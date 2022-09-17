@@ -10,6 +10,74 @@ sudo apt-get install build-essential cmake libclang1 libclang-common-11-dev
 rustup install nightly
 ```
 
+## Documentation
+
+### Command line input
+
+
+```text
+USAGE:
+    evolution [OPTIONS]
+
+OPTIONS:
+        --help                   Print help information
+    -i, --input <INPUT>          filename to read sexpr from and disabling the UI; Use '-' to read
+                                 from stdin.
+    -o, --output <OUTPUT>
+    -p, --pictures <PICTURES>    [default: pictures]
+    -V, --version                Print version information
+    -w, --width <WIDTH>          [default: 1920]
+    -h, --height <HEIGHT>        [default: 1080]
+```
+
+When the `--input` parameter is not set a Ui will start with several random generated examples
+When the '--input` parameter is set, that will be used as a input.
+
+
+### Input DSL
+
+The syntax for the input files are simple, case-insensitive, s-expressions.
+
+```ebnf
+SEXPR        = '(' PICTURE ')'
+PICTURE      = MONO | GRAYSCALE | GRADIENT | RGB | HSV
+MONO         = 'Mono' EXPR
+RGB          = 'RGB' EXPR EXPR EXPR
+HSV          = 'HSV' EXPR EXPR EXPR
+GRAYSCALE    = 'Grayscale' EXPR
+GRADIENT     = 'Gradient' '(' 'Colors' COLOR* ')'
+COLORS       = '(' COLORTYPE EXPR EXPR EXPR ')'
+COLORTYPE    = 'StopColor' | 'Color'
+EXPR         = | '(' '+' EXPR ')'
+               | '(' '-' EXPR ')'
+               | '(' '*' EXPR ')'
+               | '(' '/' EXPR ')'
+               | '(' '%' EXPR ')'
+               | '(' 'FBM' EXPR EXPR EXPR EXPR EXPR EXPR ')'
+               | '(' 'Ridge' EXPR EXPR EXPR EXPR EXPR EXPR ')'
+               | '(' 'Turbulence' EXPR EXPR EXPR EXPR EXPR EXPR ')'
+               | '(' 'Cell1' EXPR EXPR EXPR EXPR EXPR ')'
+               | '(' 'Cell2' EXPR EXPR EXPR EXPR EXPR ')'
+               | '(' 'Mandelbrot' EXPR EXPR ')'
+               | '(' 'Sin' EXPR ')'
+               | '(' 'Tan' EXPR ')'
+               | '(' 'Atan' EXPR ')'
+               | '(' 'Atan2' EXPR EXPR ')'
+               | '(' 'Min' EXPR ')'
+               | '(' 'Max' EXPR ')'
+               | '(' 'Square' EXPR ')'
+               | '(' 'Wrap' EXPR ')'
+               | '(' 'Clamp' EXPR ')'
+               | '(' 'Ceil' EXPR ')'
+               | '(' 'Floor' EXPR ')'
+               | '(' 'Abs' EXPR ')'
+               | '(' 'Log' EXPR ')'
+               | '(' 'Sqrt' EXPR ')'
+               | 'x'
+               | 'y'
+               | 'x'
+```
+
 ## Some Possibilities
 
 Note: These examples were created for an older version. The current parser implementation will fail.
