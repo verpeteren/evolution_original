@@ -318,10 +318,11 @@ impl Pic {
 
                     for j in 0..S::VF32_WIDTH {
                         let c = gradient[index[j] as usize % GRADIENT_SIZE];
-                        chunk[i + j * 4] = (c.r * 255.0) as u8;
-                        chunk[i + 1 + j * 4] = (c.g * 255.0) as u8;
-                        chunk[i + 2 + j * 4] = (c.b * 255.0) as u8;
-                        chunk[i + 3 + j * 4] = 255 as u8;
+                        let j4 = j * 4;
+                        chunk[i + j4] = (c.r * 255.0) as u8;
+                        chunk[i + 1 + j4] = (c.g * 255.0) as u8;
+                        chunk[i + 2 + j4] = (c.b * 255.0) as u8;
+                        chunk[i + 3 + j4] = 255 as u8;
                     }
                     x = x + x_step;
                 }
@@ -384,10 +385,11 @@ impl Pic {
 
                     for j in 0..S::VF32_WIDTH {
                         let c = (cs[j] as i32 % 256) as u8;
-                        chunk[i + j * 4] = c;
-                        chunk[i + 1 + j * 4] = c;
-                        chunk[i + 2 + j * 4] = c;
-                        chunk[i + 3 + j * 4] = 255 as u8;
+                        let j4 = j * 4;
+                        chunk[i + j4] = c;
+                        chunk[i + 1 + j4] = c;
+                        chunk[i + 2 + j4] = c;
+                        chunk[i + 3 + j4] = 255 as u8;
                     }
                     x = x + x_step;
                 }
@@ -398,7 +400,7 @@ impl Pic {
             } else {
                 result.chunks_exact_mut(4 * w).enumerate().for_each(process);
             }
-            // println!("min:{} max:{} range:{}",min,max,max-min);
+            // println!("min:{} max:{} range:{}",min, max, max-min);
             result
         }
     }
@@ -444,10 +446,11 @@ impl Pic {
 
                     for j in 0..S::VF32_WIDTH {
                         let c = if v[j] >= 0.0 { 255 } else { 0 };
-                        chunk[i + j * 4] = c;
-                        chunk[i + 1 + j * 4] = c;
-                        chunk[i + 2 + j * 4] = c;
-                        chunk[i + 3 + j * 4] = 255 as u8;
+                        let j4 = j * 4;
+                        chunk[i + j4] = c;
+                        chunk[i + 1 + j4] = c;
+                        chunk[i + 2 + j4] = c;
+                        chunk[i + 3 + j4] = 255 as u8;
                     }
                     x = x + x_step;
                 }
@@ -531,10 +534,11 @@ impl Pic {
                         let r = (rs[j] as i32 % 255) as u8;
                         let g = (gs[j] as i32 % 255) as u8;
                         let b = (bs[j] as i32 % 255) as u8;
-                        chunk[i + j * 4] = r;
-                        chunk[i + 1 + j * 4] = g;
-                        chunk[i + 2 + j * 4] = b;
-                        chunk[i + 3 + j * 4] = 255 as u8;
+                        let j4 = j * 4;
+                        chunk[i + j4] = r;
+                        chunk[i + 1 + j4] = g;
+                        chunk[i + 2 + j4] = b;
+                        chunk[i + 3 + j4] = 255 as u8;
                     }
                     x = x + x_step;
                 }
@@ -621,10 +625,11 @@ impl Pic {
                         let r = (rs[j] as i32 % 255) as u8;
                         let g = (gs[j] as i32 % 255) as u8;
                         let b = (bs[j] as i32 % 255) as u8;
-                        chunk[i + j * 4] = r;
-                        chunk[i + 1 + j * 4] = g;
-                        chunk[i + 2 + j * 4] = b;
-                        chunk[i + 3 + j * 4] = 255 as u8;
+                        let j4 = j * 4;
+                        chunk[i + j4] = r;
+                        chunk[i + 1 + j4] = g;
+                        chunk[i + 2 + j4] = b;
+                        chunk[i + 3 + j4] = 255 as u8;
                     }
                     x = x + x_step;
                 }
