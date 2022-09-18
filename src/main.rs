@@ -400,9 +400,13 @@ impl EventHandler<GameError> for MainState {
 
     fn text_input_event(&mut self, ctx: &mut Context, ch: char) {
         self.imgui_wrapper.update_keyboard(ch);
-        if ch == ' ' {
-            self.gen_population(ctx);
-        }
+        match (&self.state, ch) {
+            (&GameState::Select, ' ') => {
+                self.gen_population(ctx);
+            },
+            _ => {
+            }
+        };
     }
 }
 
