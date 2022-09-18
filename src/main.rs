@@ -27,7 +27,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::actual_picture::ActualPicture;
 use crate::imgui_wrapper::{ImGuiWrapper, EXEC_NAME};
-use crate::pic::{lisp_to_pic, Pic, DEFAULT_COORDINATE_SYSTEM, CoordinateSystem};
+use crate::pic::{lisp_to_pic, CoordinateSystem, Pic, DEFAULT_COORDINATE_SYSTEM};
 use crate::ui::{Button, MouseButtonState, MouseState};
 
 use clap::Parser;
@@ -113,7 +113,6 @@ struct Args {
 
     #[clap(short='s', long, value_parser, default_value_t = DEFAULT_COORDINATE_SYSTEM, help="The Coordinate system to use")]
     coordinate_system: CoordinateSystem,
-
 }
 
 struct RwArc<T>(Arc<RwLock<T>>);
@@ -404,9 +403,8 @@ impl EventHandler<GameError> for MainState {
         match (&self.state, ch) {
             (&GameState::Select, ' ') => {
                 self.gen_population(ctx);
-            },
-            _ => {
             }
+            _ => {}
         };
     }
 }

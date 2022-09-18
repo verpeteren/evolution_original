@@ -1,8 +1,8 @@
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter, Result as FResult};
+use std::ops::Not;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
-use std::ops::Not;
-use std::fmt::{Display, Formatter, Result as FResult};
 
 use crate::actual_picture::ActualPicture;
 use crate::apt::APTNode;
@@ -10,12 +10,12 @@ use crate::ggez_utility::{get_random_color, lerp_color};
 use crate::parser::{Lexer, Token};
 use crate::stack_machine::StackMachine;
 
+use clap::ArgEnum;
 use ggez::graphics::Color;
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use rayon::prelude::*;
 use simdeez::Simd;
-use clap::ArgEnum;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
@@ -256,7 +256,7 @@ impl Pic {
             Pic::Grayscale(data) => &data.coord,
             Pic::Gradient(data) => &data.coord,
             Pic::RGB(data) => &data.coord,
-            Pic::HSV(data) => &data.coord
+            Pic::HSV(data) => &data.coord,
         }
     }
 
@@ -808,23 +808,23 @@ pub fn parse_pic(receiver: &Receiver<Token>, coord: CoordinateSystem) -> Result<
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
             "mono" => Ok(Pic::Mono(MonoData {
                 c: APTNode::parse_apt_node(receiver)?,
-                coord
+                coord,
             })),
             "grayscale" => Ok(Pic::Grayscale(GrayscaleData {
                 c: APTNode::parse_apt_node(receiver)?,
-                coord
+                coord,
             })),
             "rgb" => Ok(Pic::RGB(RGBData {
                 r: APTNode::parse_apt_node(receiver)?,
                 g: APTNode::parse_apt_node(receiver)?,
                 b: APTNode::parse_apt_node(receiver)?,
-                coord
+                coord,
             })),
             "hsv" => Ok(Pic::HSV(HSVData {
                 h: APTNode::parse_apt_node(receiver)?,
                 s: APTNode::parse_apt_node(receiver)?,
                 v: APTNode::parse_apt_node(receiver)?,
-                coord
+                coord,
             })),
             "gradient" => {
                 let mut colors = Vec::new();
@@ -1106,7 +1106,11 @@ mod tests {
 
     #[test]
     fn test_pic_coord() {
-        assert_eq!(lisp_to_pic("(Mono X)".to_string(), CoordinateSystem::Polar).unwrap().coord(), &CoordinateSystem::Polar);
+        assert_eq!(
+            lisp_to_pic("(Mono X)".to_string(), CoordinateSystem::Polar)
+                .unwrap()
+                .coord(),
+            &CoordinateSystem::Polar
+        );
     }
-
 }
