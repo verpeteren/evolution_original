@@ -52,7 +52,6 @@ use simdeez::sse41::*;
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
-const FS_WATCH_INTERVAL: u64 = 250; //milliseconds
 
 const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
@@ -470,26 +469,36 @@ fn main_gui(args: &Args) -> GameResult {
 }
 
 fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
+    let out_filename = args.output.as_ref().expect("Invalid filename");
+    let input_filename = args.input.as_ref().expect("Invalid filename");
     let (width, height, t) = (args.width, args.height, args.time);
-    let out_filename = args.output.as_ref().unwrap().to_string();
     let pic_path = get_picture_path(&args);
-
-    let pictures = Arc::new(load_pictures(None, pic_path.as_path()).unwrap());
-
-    let input_filename = args.input.as_ref().unwrap();
+    let pictures = Arc::new(
+        load_pictures(None, pic_path.as_path())
+            .map_err(|e| format!("Cannot load picture folder. {:?}", e))?,
+    );
     let mut contents = String::new();
     if input_filename == "-" {
-        let _bytes = std::io::stdin().read_to_string(&mut contents).unwrap();
+        let _bytes = std::io::stdin()
+            .read_to_string(&mut contents)
+            .map_err(|e| format!("Cannot read from stdin. {}", e));
     } else {
-        let mut file = File::open(input_filename).unwrap();
-        file.read_to_string(&mut contents).unwrap();
+        let mut file =
+            File::open(input_filename).map_err(|e| format!("Cannot open input filename. {}", e))?;
+        file.read_to_string(&mut contents)
+            .map_err(|e| format!("Cannot read input filename. {}", e))?;
     }
     let pic = lisp_to_pic(contents).unwrap();
     let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
-    let out_file = Path::new(&out_filename);
+    let out_file = Path::new(out_filename);
     let format = match out_file.extension() {
         Some(ext) => {
-            match ext.to_str().unwrap().to_lowercase().as_str() {
+            match ext
+                .to_str()
+                .expect("Invalid file extension")
+                .to_lowercase()
+                .as_str()
+            {
                 // support these?
                 "tga" => ImageFormat::Tga,
                 "dds" => ImageFormat::Dds,
@@ -520,7 +529,7 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
         ColorType::Rgba8,
         format,
     )
-    .unwrap();
+    .map_err(|e| format!("Could not save {}", e))?;
     Ok((
         Path::new(input_filename).to_path_buf(),
         out_file.to_path_buf(),
