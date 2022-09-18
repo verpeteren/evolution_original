@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
+use std::ops::Not;
 
 use crate::actual_picture::ActualPicture;
 use crate::apt::APTNode;
@@ -27,7 +28,19 @@ enum CoordinateSystem {
     Cartesian,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+const DEFAULT_COORDINATE_SYSTEM: CoordinateSystem = CoordinateSystem::Polar;
+
+impl Not for CoordinateSystem {
+    type Output = Self;
+    fn not(self) -> Self::Output {
+        match self {
+            Polar => Cartesian,
+            Cartesian => Polar,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub struct GradientData {
     colors: Vec<(Color, bool)>,
     index: APTNode,
@@ -82,7 +95,7 @@ impl Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::Mono(MonoData {
             c: tree,
-            coord: Polar,
+            coord: DEFAULT_COORDINATE_SYSTEM,
         })
     }
 
@@ -96,7 +109,7 @@ impl Pic {
         let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::Grayscale(GrayscaleData {
             c: tree,
-            coord: Polar,
+            coord: DEFAULT_COORDINATE_SYSTEM,
         })
     }
 
@@ -124,7 +137,7 @@ impl Pic {
         Pic::Gradient(GradientData {
             colors: colors,
             index: APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names),
-            coord: Polar,
+            coord: DEFAULT_COORDINATE_SYSTEM,
         })
     }
 
@@ -142,7 +155,7 @@ impl Pic {
             r,
             g,
             b,
-            coord: Polar,
+            coord: DEFAULT_COORDINATE_SYSTEM,
         })
     }
 
@@ -160,7 +173,7 @@ impl Pic {
             h,
             s,
             v,
-            coord: Polar,
+            coord: DEFAULT_COORDINATE_SYSTEM,
         })
     }
 
@@ -773,23 +786,23 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
             "mono" => Ok(Pic::Mono(MonoData {
                 c: APTNode::parse_apt_node(receiver)?,
-                coord: Cartesian,
+                coord: DEFAULT_COORDINATE_SYSTEM,
             })),
             "grayscale" => Ok(Pic::Grayscale(GrayscaleData {
                 c: APTNode::parse_apt_node(receiver)?,
-                coord: Cartesian,
+                coord: DEFAULT_COORDINATE_SYSTEM,
             })),
             "rgb" => Ok(Pic::RGB(RGBData {
                 r: APTNode::parse_apt_node(receiver)?,
                 g: APTNode::parse_apt_node(receiver)?,
                 b: APTNode::parse_apt_node(receiver)?,
-                coord: Cartesian,
+                coord: DEFAULT_COORDINATE_SYSTEM,
             })),
             "hsv" => Ok(Pic::HSV(HSVData {
                 h: APTNode::parse_apt_node(receiver)?,
                 s: APTNode::parse_apt_node(receiver)?,
                 v: APTNode::parse_apt_node(receiver)?,
-                coord: Cartesian,
+                coord: DEFAULT_COORDINATE_SYSTEM,
             })),
             "gradient" => {
                 let mut colors = Vec::new();
@@ -821,7 +834,7 @@ pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
                 Ok(Pic::Gradient(GradientData {
                     colors: colors,
                     index: APTNode::parse_apt_node(receiver)?,
-                    coord: Cartesian,
+                    coord: DEFAULT_COORDINATE_SYSTEM,
                 }))
             }
             _ => Err(format!("Unknown pic type {} at line {}", s, line_number)),
@@ -925,7 +938,7 @@ mod tests {
             Pic::Mono(MonoData { c, coord }) => {
                 let len = c.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, CoordinateSystem::Polar);
+                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -941,7 +954,7 @@ mod tests {
             Pic::Grayscale(GrayscaleData { c, coord }) => {
                 let len = c.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, CoordinateSystem::Polar);
+                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -963,7 +976,7 @@ mod tests {
                 assert!(len > 1 && len < 10);
                 let len = index.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, CoordinateSystem::Polar);
+                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -986,7 +999,7 @@ mod tests {
                 let len = b.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
 
-                assert_eq!(coord, CoordinateSystem::Polar);
+                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1009,7 +1022,7 @@ mod tests {
                 let len = v.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
 
-                assert_eq!(coord, CoordinateSystem::Polar);
+                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
