@@ -219,9 +219,8 @@ impl MainState {
                             Ok(_) => {}
                             Err(err) => {
                                 eprintln!(
-                                    "-----\n{:?}\n{:?}\n{:?}\n{:?}",
+                                    "-----\n{:?}\n{:?}\n{:?}",
                                     err,
-                                    pic.to_tree(),
                                     pic.to_tree(),
                                     &sexpr
                                 );
