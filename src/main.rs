@@ -17,11 +17,12 @@ mod ui;
 
 use std::collections::HashMap;
 use std::env::var;
-use std::fs::{read_dir, File};
+use std::fs::{read_dir, File, create_dir_all, copy};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::actual_picture::ActualPicture;
 use crate::imgui_wrapper::{ImGuiWrapper, EXEC_NAME};
@@ -462,7 +463,7 @@ fn main_gui(args: &Args) -> GameResult {
     run(ctx, event_loop, state)
 }
 
-fn main_cli(args: &Args) {
+fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
     let (width, height, t) = (args.width, args.height, args.time);
     let out_filename = args.output.as_ref().unwrap().to_string();
     let pic_path = get_picture_path(&args);
@@ -514,6 +515,14 @@ fn main_cli(args: &Args) {
         format,
     )
     .unwrap();
+    Ok((Path::new(input_file_name).to_path_buf(), out_file.to_path_buf()))
+}
+
+fn filename_to_copy_to(target_dir: &Path, now: u64, filename: &str) -> PathBuf {
+    let new_filename = format!("{}_{}", now, filename);
+    let mut dest = target_dir.to_path_buf();
+    dest.push(Path::new(&new_filename));
+    dest
 }
 
 pub fn main() {
@@ -530,12 +539,25 @@ pub fn main() {
     if run_gui {
         main_gui(&args).unwrap();
     } else {
-        match args.copy_path {
-            Some(_copy_path) => {
-                unimplemented!();
-            },
-            None => {
-                main_cli(&args);
+        let one_shot = args.input.as_ref().unwrap() == "-" || args.copy_path.is_none ();
+        if one_shot {
+            let (_sexpr_filename, _img_filename) = main_cli(&args).unwrap();
+        } else {
+            let copy_path = args.copy_path.as_ref().unwrap();
+            let target_dir = Path::new(&copy_path);
+            if ! target_dir.exists() {
+                println!("Creating {} directory", copy_path);
+                create_dir_all(target_dir).unwrap();
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            // todo: watch for changes
+            // todo better handle errors during run
+            if let Ok((sexpr_filename, img_filename)) = main_cli(&args) {
+                let dest = filename_to_copy_to(&target_dir, now, &sexpr_filename.file_name().unwrap().to_string_lossy());
+                copy(sexpr_filename, dest.as_path()).unwrap();
+
+                let dest = filename_to_copy_to(&target_dir, now, &img_filename.file_name().unwrap().to_string_lossy());
+                copy(img_filename, dest.as_path()).unwrap();
             }
         }
     }
