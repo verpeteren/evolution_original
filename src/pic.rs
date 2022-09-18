@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::ops::Not;
+use std::fmt::{Display, Formatter, Result as FResult};
 
 use crate::actual_picture::ActualPicture;
 use crate::apt::APTNode;
@@ -14,6 +15,7 @@ use rand::prelude::*;
 use rand::rngs::StdRng;
 use rayon::prelude::*;
 use simdeez::Simd;
+use clap::ArgEnum;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
@@ -22,13 +24,23 @@ pub const GRADIENT_SIZE: usize = 512;
 
 use CoordinateSystem::*;
 
-#[derive(Clone, Debug, PartialEq)]
-enum CoordinateSystem {
+#[derive(Clone, Debug, PartialEq, ArgEnum)]
+pub enum CoordinateSystem {
     Polar,
     Cartesian,
 }
 
-const DEFAULT_COORDINATE_SYSTEM: CoordinateSystem = CoordinateSystem::Polar;
+impl Display for CoordinateSystem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
+        let x = match self {
+            Polar => "polar",
+            Cartesian => "cartesian",
+        };
+        write!(f, "{}", x)
+    }
+}
+
+pub const DEFAULT_COORDINATE_SYSTEM: CoordinateSystem = CoordinateSystem::Polar;
 
 impl Not for CoordinateSystem {
     type Output = Self;
@@ -236,6 +248,16 @@ impl Pic {
             t += frame_dt;
         }
         result
+    }
+
+    pub fn coord(&self) -> &CoordinateSystem {
+        match self {
+            Pic::Mono(data) => &data.coord,
+            Pic::Grayscale(data) => &data.coord,
+            Pic::Gradient(data) => &data.coord,
+            Pic::RGB(data) => &data.coord,
+            Pic::HSV(data) => &data.coord
+        }
     }
 
     pub fn get_rgba8<S: Simd>(
@@ -659,7 +681,7 @@ impl Pic {
     }
 }
 
-pub fn lisp_to_pic(code: String) -> Result<Pic, String> {
+pub fn lisp_to_pic(code: String, coord: CoordinateSystem) -> Result<Pic, String> {
     let mut pic_opt = None;
     rayon::scope(|s| {
         let (sender, receiver) = channel();
@@ -670,7 +692,7 @@ pub fn lisp_to_pic(code: String) -> Result<Pic, String> {
         // TODO: fix race condition that crashes at parser.rs:68. Workaround:
         std::thread::sleep(std::time::Duration::from_millis(1));
 
-        pic_opt = Some(parse_pic(&receiver))
+        pic_opt = Some(parse_pic(&receiver, coord))
     });
     pic_opt.unwrap()
 }
@@ -779,30 +801,30 @@ pub fn expect_constant(receiver: &Receiver<Token>) -> Result<f32, String> {
     }
 }
 
-pub fn parse_pic(receiver: &Receiver<Token>) -> Result<Pic, String> {
+pub fn parse_pic(receiver: &Receiver<Token>, coord: CoordinateSystem) -> Result<Pic, String> {
     expect_open_paren(receiver)?;
     let pic_type = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
             "mono" => Ok(Pic::Mono(MonoData {
                 c: APTNode::parse_apt_node(receiver)?,
-                coord: DEFAULT_COORDINATE_SYSTEM,
+                coord
             })),
             "grayscale" => Ok(Pic::Grayscale(GrayscaleData {
                 c: APTNode::parse_apt_node(receiver)?,
-                coord: DEFAULT_COORDINATE_SYSTEM,
+                coord
             })),
             "rgb" => Ok(Pic::RGB(RGBData {
                 r: APTNode::parse_apt_node(receiver)?,
                 g: APTNode::parse_apt_node(receiver)?,
                 b: APTNode::parse_apt_node(receiver)?,
-                coord: DEFAULT_COORDINATE_SYSTEM,
+                coord
             })),
             "hsv" => Ok(Pic::HSV(HSVData {
                 h: APTNode::parse_apt_node(receiver)?,
                 s: APTNode::parse_apt_node(receiver)?,
                 v: APTNode::parse_apt_node(receiver)?,
-                coord: DEFAULT_COORDINATE_SYSTEM,
+                coord
             })),
             "gradient" => {
                 let mut colors = Vec::new();
@@ -934,11 +956,12 @@ mod tests {
     fn test_pic_new_mono() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
-        match pic {
+        match &pic {
             Pic::Mono(MonoData { c, coord }) => {
                 let len = c.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -950,11 +973,12 @@ mod tests {
     fn test_pic_new_grayscale() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
-        match pic {
+        match &pic {
             Pic::Grayscale(GrayscaleData { c, coord }) => {
                 let len = c.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -966,7 +990,7 @@ mod tests {
     fn test_pic_new_gradient() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
-        match pic {
+        match &pic {
             Pic::Gradient(GradientData {
                 colors,
                 index,
@@ -976,7 +1000,8 @@ mod tests {
                 assert!(len > 1 && len < 10);
                 let len = index.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -988,7 +1013,7 @@ mod tests {
     fn test_pic_new_rgb() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
-        match pic {
+        match &pic {
             Pic::RGB(RGBData { r, g, b, coord }) => {
                 let len = r.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
@@ -999,7 +1024,8 @@ mod tests {
                 let len = b.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
 
-                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1011,7 +1037,7 @@ mod tests {
     fn test_pic_new_hsv() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_hsv(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
-        match pic {
+        match &pic {
             Pic::HSV(HSVData { h, s, v, coord }) => {
                 let len = h.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
@@ -1022,7 +1048,8 @@ mod tests {
                 let len = v.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
 
-                assert_eq!(coord, DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
+                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1036,6 +1063,7 @@ mod tests {
 
         let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
+
         assert!(sexpr.starts_with("( Mono\n "));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
@@ -1075,4 +1103,10 @@ mod tests {
         assert_eq!(extract_line_number(&Token::Operation("blablabla", 6)), 6);
         assert_eq!(extract_line_number(&Token::Constant("blablabla", 6)), 6);
     }
+
+    #[test]
+    fn test_pic_coord() {
+        assert_eq!(lisp_to_pic("(Mono X)".to_string(), CoordinateSystem::Polar).unwrap().coord(), &CoordinateSystem::Polar);
+    }
+
 }

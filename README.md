@@ -39,6 +39,9 @@ OPTIONS:
     -c, --copy-path <COPY_PATH>
             The path where to store a copy of the input and output files as part of the creative
             workflow
+    -s, --coordinate-system <COORDINATE_SYSTEM>
+            The Coordinate system to use [default: polar] [possible values: polar, cartesian]
+
 ```
 
 When the `--input` parameter is not set a Ui will start with several random generated examples

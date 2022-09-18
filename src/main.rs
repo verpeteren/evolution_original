@@ -27,7 +27,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::actual_picture::ActualPicture;
 use crate::imgui_wrapper::{ImGuiWrapper, EXEC_NAME};
-use crate::pic::{lisp_to_pic, Pic};
+use crate::pic::{lisp_to_pic, Pic, DEFAULT_COORDINATE_SYSTEM, CoordinateSystem};
 use crate::ui::{Button, MouseButtonState, MouseState};
 
 use clap::Parser;
@@ -110,6 +110,10 @@ struct Args {
         help = "The path where to store a copy of the input and output files as part of the creative workflow"
     )]
     copy_path: Option<String>,
+
+    #[clap(short='s', long, value_parser, default_value_t = DEFAULT_COORDINATE_SYSTEM, help="The Coordinate system to use")]
+    coordinate_system: CoordinateSystem,
+
 }
 
 struct RwArc<T>(Arc<RwLock<T>>);
@@ -242,7 +246,7 @@ impl MainState {
                     if true {
                         //Debug stress test::see if we can parse it back
                         let sexpr = pic.to_lisp();
-                        match lisp_to_pic(sexpr.clone()) {
+                        match lisp_to_pic(sexpr.clone(), pic.coord().clone()) {
                             Ok(_) => {}
                             Err(err) => {
                                 eprintln!("-----\n{:?}\n{:?}\n{:?}", err, pic.to_tree(), &sexpr);
@@ -489,7 +493,7 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
         file.read_to_string(&mut contents)
             .map_err(|e| format!("Cannot read input filename. {}", e))?;
     }
-    let pic = lisp_to_pic(contents).unwrap();
+    let pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
     let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
     let out_file = Path::new(out_filename);
     let format = match out_file.extension() {
