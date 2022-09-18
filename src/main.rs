@@ -301,9 +301,6 @@ impl MainState {
         }
         //todo just check for clicks on the zoom image
         for (_i, img_button) in self.img_buttons.iter().enumerate() {
-            if img_button.left_clicked(ctx, &self.mouse_state) {
-                // println!("{}", self.pics[i].to_lisp());
-            }
             if img_button.right_clicked(ctx, &self.mouse_state) {
                 self.zoom_image.write(BackgroundImage::NotYet);
                 self.state = GameState::Select;
