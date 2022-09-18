@@ -36,10 +36,14 @@ OPTIONS:
             filename to read sexpr from and disabling the UI; Use '-' to read from stdin.
     -o, --output <OUTPUT>
             image file to write to
+    -c, --copy-path <COPY_PATH>
+            The path where to store a copy of the input and output files as part of the creative
+            workflow
 ```
 
 When the `--input` parameter is not set a Ui will start with several random generated examples
 When the '--input` parameter is set, that will be used as a input.
+When the '--copy-path' parameter is set, the application will create a new image file if the input file changed. On success, the input and output files will be written (with timestamp prefix) in the copy-path directory.
 
 ### Ui mode
 
