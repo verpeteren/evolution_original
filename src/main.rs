@@ -62,7 +62,7 @@ const STD_FILE_OUT: &'static str = "out.png";
 #[clap(author, version, about, long_about = None)]
 struct Args {
     #[clap(short, long, value_parser, default_value = STD_PATH)]
-    pictures: String,
+    pictures_path: String,
 
     #[clap(short, long, value_parser, default_value_t = WIDTH)]
     width: usize,
@@ -417,7 +417,7 @@ fn get_picture_path(args: &Args) -> PathBuf {
     } else {
         PathBuf::from("./")
     };
-    path_buf.push(args.pictures.clone());
+    path_buf.push(args.pictures_path.clone());
     path_buf
 }
 

@@ -20,15 +20,23 @@ USAGE:
     evolution [OPTIONS]
 
 OPTIONS:
-        --help                   Print help information
-    -i, --input <INPUT>          filename to read sexpr from and disabling the UI; Use '-' to read
-                                 from stdin.
+    -h, --help
+            Print help information
+    -V, --version
+            Print version information
+    -i, --input <INPUT>
+            filename to read sexpr from and disabling the UI; Use '-' to read from stdin.
     -o, --output <OUTPUT>
-    -p, --pictures <PICTURES>    [default: pictures]
-    -V, --version                Print version information
-    -w, --width <WIDTH>          [default: 1920]
-    -h, --height <HEIGHT>        [default: 1080]
-    -t, --time <TIME>            [default: 0]
+            
+    -p, --pictures-path <PICTURES_PATH>
+            [default: pictures]
+    -t, --time <TIME>
+            [default: 0]
+    -w, --width <WIDTH>
+            [default: 1920]
+    -h, --height <HEIGHT>
+            [default: 1080]
+
 ```
 
 When the `--input` parameter is not set a Ui will start with several random generated examples
