@@ -45,10 +45,12 @@ When the `--input` parameter is not set a Ui will start with several random gene
 When the '--input` parameter is set, that will be used as a input.
 When the '--input` parameter is not "-" and the `--copy-path' parameter is set, the application will create a new image file if the input file changed. On success, the input and output files will be written (with timestamp prefix) in the copy-path directory.
 
-### Ui mode
+### Ui modes
 
-Right mouse click opens a new window with the detailed image, or goes back from the detailed image
-Spacebar generates a new population of images
+| Action | Select mode | Zoom Mode |
+| ------ | ----------- | --------- |
+| Right mouse click | thumbnail is opened in Zoom mode | Go back to select mode |
+| spacebar | generate population | |
 
 ### Input DSL
 
