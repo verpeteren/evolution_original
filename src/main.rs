@@ -61,16 +61,22 @@ const STD_FILE_OUT: &'static str = "out.png";
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    #[clap(short, long, value_parser, default_value = STD_PATH)]
+    #[clap(short, long, value_parser, default_value = STD_PATH, help="The path to images that can be loaded via the Pic- operation")]
     pictures_path: String,
 
-    #[clap(short, long, value_parser, default_value_t = WIDTH)]
+    #[clap(short, long, value_parser, default_value_t = WIDTH, help="The width of the generated image")]
     width: usize,
 
-    #[clap(short, long, value_parser, default_value_t = HEIGHT)]
+    #[clap(short, long, value_parser, default_value_t = HEIGHT, help="The height of the generated image")]
     height: usize,
 
-    #[clap(short, long, value_parser, default_value_t = 0.0)]
+    #[clap(
+        short,
+        long,
+        value_parser,
+        default_value_t = 0.0,
+        help = "set the T variable"
+    )]
     time: f32,
 
     #[clap(
@@ -81,7 +87,13 @@ struct Args {
     )]
     input: Option<String>,
 
-    #[clap(short, long, value_parser, requires("input"))]
+    #[clap(
+        short,
+        long,
+        value_parser,
+        requires("input"),
+        help = "image file to write to"
+    )]
     output: Option<String>,
 }
 
@@ -218,12 +230,7 @@ impl MainState {
                         match lisp_to_pic(sexpr.clone()) {
                             Ok(_) => {}
                             Err(err) => {
-                                eprintln!(
-                                    "-----\n{:?}\n{:?}\n{:?}",
-                                    err,
-                                    pic.to_tree(),
-                                    &sexpr
-                                );
+                                eprintln!("-----\n{:?}\n{:?}\n{:?}", err, pic.to_tree(), &sexpr);
                             }
                         }
                     }

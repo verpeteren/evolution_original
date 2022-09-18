@@ -20,23 +20,22 @@ USAGE:
     evolution [OPTIONS]
 
 OPTIONS:
-    -h, --help
+    -h,  --help
             Print help information
     -V, --version
             Print version information
+    -p, --pictures-path <PICTURES_PATH>
+            The path to images that can be loaded via the Pic- operation [default: pictures]
+    -t, --time <TIME>
+            set the T variable [default: 0]
+    -w, --width <WIDTH>
+            The width of the generated image [default: 1920]
+    -h, --height <HEIGHT>
+            The height of the generated image [default: 1080]
     -i, --input <INPUT>
             filename to read sexpr from and disabling the UI; Use '-' to read from stdin.
     -o, --output <OUTPUT>
-            
-    -p, --pictures-path <PICTURES_PATH>
-            [default: pictures]
-    -t, --time <TIME>
-            [default: 0]
-    -w, --width <WIDTH>
-            [default: 1920]
-    -h, --height <HEIGHT>
-            [default: 1080]
-
+            image file to write to
 ```
 
 When the `--input` parameter is not set a Ui will start with several random generated examples
