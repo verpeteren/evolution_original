@@ -530,6 +530,13 @@ pub fn main() {
     if run_gui {
         main_gui(&args).unwrap();
     } else {
-        main_cli(&args);
+        match args.copy_path {
+            Some(_copy_path) => {
+                unimplemented!();
+            },
+            None => {
+                main_cli(&args);
+            }
+        }
     }
 }
