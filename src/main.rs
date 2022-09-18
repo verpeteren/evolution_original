@@ -17,12 +17,13 @@ mod ui;
 
 use std::collections::HashMap;
 use std::env::var;
-use std::fs::{read_dir, File, create_dir_all, copy};
+use std::fs::{copy, create_dir_all, read_dir, File};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use std::process::exit;
 use std::sync::{Arc, RwLock};
 use std::thread::spawn;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::actual_picture::ActualPicture;
 use crate::imgui_wrapper::{ImGuiWrapper, EXEC_NAME};
@@ -36,6 +37,10 @@ use ggez::graphics::{clear, draw, present, window, Color, DrawParam, Image};
 use ggez::timer::delta;
 use ggez::{Context, ContextBuilder, GameError, GameResult};
 use image::{save_buffer_with_format, ColorType, ImageFormat};
+use notify::{
+    event::{AccessKind, AccessMode},
+    Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher,
+};
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -47,6 +52,7 @@ use simdeez::sse41::*;
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
+const FS_WATCH_INTERVAL: u64 = 250; //milliseconds
 
 const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
@@ -156,7 +162,7 @@ struct MainState {
     imgui_wrapper: ImGuiWrapper,
     img_buttons: Vec<Button>,
     pics: Vec<Pic>,
-    dt: std::time::Duration,
+    dt: Duration,
     frame_elapsed: f32,
     rng: StdRng,
     zoom_image: RwArc<BackgroundImage>,
@@ -176,7 +182,7 @@ impl MainState {
             imgui_wrapper,
             pics: Vec::new(),
             img_buttons: Vec::new(),
-            dt: std::time::Duration::new(0, 0),
+            dt: Duration::new(0, 0),
             frame_elapsed: args.time,
             rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
             mouse_state: MouseState::Nothing,
@@ -470,12 +476,12 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
 
     let pictures = Arc::new(load_pictures(None, pic_path.as_path()).unwrap());
 
-    let input_file_name = args.input.as_ref().unwrap();
+    let input_filename = args.input.as_ref().unwrap();
     let mut contents = String::new();
-    if input_file_name == "-" {
+    if input_filename == "-" {
         let _bytes = std::io::stdin().read_to_string(&mut contents).unwrap();
     } else {
-        let mut file = File::open(input_file_name).unwrap();
+        let mut file = File::open(input_filename).unwrap();
         file.read_to_string(&mut contents).unwrap();
     }
     let pic = lisp_to_pic(contents).unwrap();
@@ -515,7 +521,10 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
         format,
     )
     .unwrap();
-    Ok((Path::new(input_file_name).to_path_buf(), out_file.to_path_buf()))
+    Ok((
+        Path::new(input_filename).to_path_buf(),
+        out_file.to_path_buf(),
+    ))
 }
 
 fn filename_to_copy_to(target_dir: &Path, now: u64, filename: &str) -> PathBuf {
@@ -539,25 +548,80 @@ pub fn main() {
     if run_gui {
         main_gui(&args).unwrap();
     } else {
-        let one_shot = args.input.as_ref().unwrap() == "-" || args.copy_path.is_none ();
+        let input_filename = args.input.as_ref().unwrap();
+        let one_shot = input_filename == "-" || args.copy_path.is_none();
         if one_shot {
             let (_sexpr_filename, _img_filename) = main_cli(&args).unwrap();
         } else {
             let copy_path = args.copy_path.as_ref().unwrap();
             let target_dir = Path::new(&copy_path);
-            if ! target_dir.exists() {
+            if !target_dir.exists() {
                 println!("Creating {} directory", copy_path);
                 create_dir_all(target_dir).unwrap();
             }
-            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-            // todo: watch for changes
-            // todo better handle errors during run
-            if let Ok((sexpr_filename, img_filename)) = main_cli(&args) {
-                let dest = filename_to_copy_to(&target_dir, now, &sexpr_filename.file_name().unwrap().to_string_lossy());
-                copy(sexpr_filename, dest.as_path()).unwrap();
+            let input_file = Path::new(input_filename);
+            println!("Watching changes to {}", input_filename);
+            let (tx, rx) = std::sync::mpsc::channel();
+            let mut watcher = RecommendedWatcher::new(tx, Config::default()).unwrap();
+            watcher
+                .watch(input_file.as_ref(), RecursiveMode::NonRecursive)
+                .unwrap();
+            for res in rx {
+                match res {
+                    /*
+                    If you came here to find out why this runs only during the first save, welcome!
+                    Your editor is probably swapping files instead of actually writing them.
+                    Try these workarounds:
+                    - for vim users:
+                      set backupcopy=yes
+                      set nobackup
+                      set nowritebackup
+                    - use a real filesystem watcher like [entr](http://eradman.com/entrproject/)
+                    - fix this, preferably by commiting something to [notify](https://crates.io/crates/notify)
+                      watch the directory instead of a file, for every event, if the filename matches, then launch
+                    */
+                    Ok(event) => {
+                        match event.kind {
+                            EventKind::Access(AccessKind::Close(AccessMode::Write)) => {
+                                println!("file {} changed, rerunning", input_filename);
+                                let now = SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs();
+                                // todo better handle errors during run
+                                if let Ok((sexpr_filename, img_filename)) = main_cli(&args) {
+                                    let dest = filename_to_copy_to(
+                                        &target_dir,
+                                        now,
+                                        &sexpr_filename.file_name().unwrap().to_string_lossy(),
+                                    );
+                                    copy(&sexpr_filename, dest.as_path()).unwrap();
 
-                let dest = filename_to_copy_to(&target_dir, now, &img_filename.file_name().unwrap().to_string_lossy());
-                copy(img_filename, dest.as_path()).unwrap();
+                                    let dest = filename_to_copy_to(
+                                        &target_dir,
+                                        now,
+                                        &img_filename.file_name().unwrap().to_string_lossy(),
+                                    );
+                                    copy(img_filename, dest.as_path()).unwrap();
+                                    println!(
+                                        ".. ran and copied as {} and {}",
+                                        sexpr_filename.display(),
+                                        dest.display()
+                                    );
+                                }
+                            }
+                            EventKind::Remove(_) => {
+                                eprintln!("File was removed {:?}", input_filename);
+                                exit(1);
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("watch error: {:?}", e);
+                        exit(1);
+                    }
+                }
             }
         }
     }
