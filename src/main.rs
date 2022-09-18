@@ -95,6 +95,15 @@ struct Args {
         help = "image file to write to"
     )]
     output: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        value_parser,
+        requires("input"),
+        help = "The path where to store a copy of the input and output files as part of the creative workflow"
+    )]
+    copy_path: Option<String>,
 }
 
 struct RwArc<T>(Arc<RwLock<T>>);
