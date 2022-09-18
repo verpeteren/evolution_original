@@ -173,7 +173,7 @@ p4: Todo
 ##### Mandlebrot
 
 This is not implemented yet.
-Currently, it resolves to 0.0
+Currently, it is a No-Op
 
 p0: Todo
 p1: Todo
