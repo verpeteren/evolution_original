@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result as FResult};
 use std::ops::Not;
+use std::str::FromStr;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 
@@ -41,6 +42,17 @@ impl Display for CoordinateSystem {
 }
 
 pub const DEFAULT_COORDINATE_SYSTEM: CoordinateSystem = CoordinateSystem::Polar;
+
+impl FromStr for CoordinateSystem {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, String> {
+        match s.to_lowercase().as_ref() {
+            "polar" => Ok(Polar),
+            "cartesian" => Ok(Cartesian),
+            _ => Err(format!("Cannot parse {}. Not a known coordinate system", s)),
+        }
+    }
+}
 
 impl Not for CoordinateSystem {
     type Output = Self;
@@ -811,7 +823,8 @@ pub fn expect_constant(receiver: &Receiver<Token>) -> Result<f32, String> {
     }
 }
 
-pub fn parse_pic(receiver: &Receiver<Token>, coord: CoordinateSystem) -> Result<Pic, String> {
+pub fn parse_pic(receiver: &Receiver<Token>, coord_default: CoordinateSystem) -> Result<Pic, String> {
+    let mut coord = coord_default;
     expect_open_paren(receiver)?;
     let pic_type = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match pic_type {
@@ -820,10 +833,17 @@ pub fn parse_pic(receiver: &Receiver<Token>, coord: CoordinateSystem) -> Result<
                 c: APTNode::parse_apt_node(receiver)?,
                 coord,
             })),
-            "grayscale" => Ok(Pic::Grayscale(GrayscaleData {
-                c: APTNode::parse_apt_node(receiver)?,
-                coord,
-            })),
+            "grayscale" => {
+                if let Ok(coord_system) =
+                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
+                {
+                    coord = coord_system.parse().unwrap();
+                };
+                Ok(Pic::Grayscale(GrayscaleData {
+                    c: APTNode::parse_apt_node(receiver)?,
+                    coord,
+                }))
+            },
             "rgb" => Ok(Pic::RGB(RGBData {
                 r: APTNode::parse_apt_node(receiver)?,
                 g: APTNode::parse_apt_node(receiver)?,
@@ -866,7 +886,7 @@ pub fn parse_pic(receiver: &Receiver<Token>, coord: CoordinateSystem) -> Result<
                 Ok(Pic::Gradient(GradientData {
                     colors: colors,
                     index: APTNode::parse_apt_node(receiver)?,
-                    coord: DEFAULT_COORDINATE_SYSTEM,
+                    coord,
                 }))
             }
             _ => Err(format!("Unknown pic type {} at line {}", s, line_number)),
@@ -1206,5 +1226,63 @@ mod tests {
                 panic!("could not parse formula with E {:?}", err);
             }
         }
+    }
+    #[test]
+    fn test_handle_coord_system_polar() {
+        let sexpr = "(GrayScale POLAR ( X )";
+        match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::Grayscale(GrayscaleData {
+                        c: APTNode::X,
+                        coord: Polar
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( Grayscale\n X )");
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_handle_coord_system_cartesian() {
+        let sexpr = "(GrayScale CARTESIAN ( X )";
+        match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::Grayscale(GrayscaleData {
+                        c: APTNode::X,
+                        coord: Cartesian 
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( Grayscale\n X )"); //todo if coord != DEFAULT print
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_coordsystem_parse() {
+        assert_eq!("Polar".parse(), Ok(Polar));
+        assert_eq!("PoLar".parse(), Ok(Polar));
+        assert_eq!("POLAR".parse(), Ok(Polar));
+        assert_eq!("cartesian".parse(), Ok(Cartesian));
+        assert_eq!("Cartesian".parse(), Ok(Cartesian));
+        assert_eq!("CARTESIAN".parse(), Ok(Cartesian));
+        assert_eq!("mercator".parse::<CoordinateSystem>(), Err("Cannot parse mercator. Not a known coordinate system".to_string()));
+    }
+
+    #[test]
+    fn test_coordsystem_not() {
+        assert_eq!(! Polar, Cartesian);
+        assert_eq!(! Cartesian, Polar);
     }
 }
