@@ -17,6 +17,7 @@ use rand::prelude::*;
 use rand::rngs::StdRng;
 use rayon::prelude::*;
 use simdeez::Simd;
+use variant_count::VariantCount;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
@@ -25,7 +26,7 @@ pub const GRADIENT_SIZE: usize = 512;
 
 use CoordinateSystem::*;
 
-#[derive(Clone, Debug, PartialEq, ArgEnum)]
+#[derive(Clone, Debug, PartialEq, ArgEnum, VariantCount)]
 pub enum CoordinateSystem {
     Polar,
     Cartesian,
@@ -40,8 +41,8 @@ impl CoordinateSystem {
 impl Display for CoordinateSystem {
     fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
         let x = match self {
-            Polar => "POLAR",
-            Cartesian => "CARTESIAN",
+            Polar => "polar",
+            Cartesian => "cartesian",
         };
         write!(f, "{}", x)
     }
@@ -122,11 +123,8 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::Mono(MonoData {
-            c: tree,
-            coord: DEFAULT_COORDINATE_SYSTEM,
-        })
+        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        Pic::Mono(MonoData { c: tree, coord })
     }
 
     pub fn new_grayscale(
@@ -136,11 +134,8 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let tree = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::Grayscale(GrayscaleData {
-            c: tree,
-            coord: DEFAULT_COORDINATE_SYSTEM,
-        })
+        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        Pic::Grayscale(GrayscaleData { c: tree, coord })
     }
 
     pub fn new_gradient(
@@ -164,10 +159,11 @@ impl Pic {
             }
         }
 
+        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::Gradient(GradientData {
             colors: colors,
-            index: APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names),
-            coord: DEFAULT_COORDINATE_SYSTEM,
+            index: tree,
+            coord,
         })
     }
 
@@ -178,15 +174,10 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let r = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let g = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let b = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::RGB(RGBData {
-            r,
-            g,
-            b,
-            coord: DEFAULT_COORDINATE_SYSTEM,
-        })
+        let (r, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (g, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (b, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        Pic::RGB(RGBData { r, g, b, coord })
     }
 
     pub fn new_hsv(
@@ -196,15 +187,10 @@ impl Pic {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> Pic {
-        let h = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let s = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let v = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::HSV(HSVData {
-            h,
-            s,
-            v,
-            coord: DEFAULT_COORDINATE_SYSTEM,
-        })
+        let (h, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (s, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (v, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        Pic::HSV(HSVData { h, s, v, coord })
     }
 
     pub fn to_tree(&self) -> Vec<&APTNode> {
@@ -219,9 +205,17 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
-            Pic::Mono(data) => format!("( MONO {}\n ( {} ) )", data.coord, data.c.to_lisp()),
+            Pic::Mono(data) => format!(
+                "( MONO {}\n ( {} ) )",
+                data.coord.to_string().to_uppercase(),
+                data.c.to_lisp()
+            ),
             Pic::Grayscale(data) => {
-                format!("( GRAYSCALE {}\n ( {} ) )", data.coord, data.c.to_lisp())
+                format!(
+                    "( GRAYSCALE {}\n ( {} ) )",
+                    data.coord.to_string().to_uppercase(),
+                    data.c.to_lisp()
+                )
             }
             Pic::Gradient(data) => {
                 let mut colors = "( COLORS ".to_string();
@@ -234,21 +228,21 @@ impl Pic {
                 }
                 format!(
                     "( GRADIENT {}\n {} {} )",
-                    data.coord,
+                    data.coord.to_string().to_uppercase(),
                     colors,
                     data.index.to_lisp()
                 )
             }
             Pic::RGB(data) => format!(
                 "( RGB {}\n ( {} )\n ( {} )\n ( {} ) )",
-                data.coord,
+                data.coord.to_string().to_uppercase(),
                 data.r.to_lisp(),
                 data.g.to_lisp(),
                 data.b.to_lisp()
             ),
             Pic::HSV(data) => format!(
                 "( HSV {}\n ( {} )\n ( {} )\n ( {} ) )",
-                data.coord,
+                data.coord.to_string().to_uppercase(),
                 data.h.to_lisp(),
                 data.s.to_lisp(),
                 data.v.to_lisp()
@@ -1051,11 +1045,9 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
-            Pic::Mono(MonoData { c, coord }) => {
+            Pic::Mono(MonoData { c, coord: _coord }) => {
                 let len = c.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
-                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1068,11 +1060,9 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
-            Pic::Grayscale(GrayscaleData { c, coord }) => {
+            Pic::Grayscale(GrayscaleData { c, coord: _coord }) => {
                 let len = c.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
-                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1088,14 +1078,12 @@ mod tests {
             Pic::Gradient(GradientData {
                 colors,
                 index,
-                coord,
+                coord: _coord,
             }) => {
                 let len = colors.len();
                 assert!(len > 1 && len < 10);
                 let len = index.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
-                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1108,7 +1096,7 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
-            Pic::RGB(RGBData { r, g, b, coord }) => {
+            Pic::RGB(RGBData { r, g, b, coord: _ }) => {
                 let len = r.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
 
@@ -1117,9 +1105,6 @@ mod tests {
 
                 let len = b.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-
-                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
-                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1132,7 +1117,7 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = Pic::new_hsv(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
-            Pic::HSV(HSVData { h, s, v, coord }) => {
+            Pic::HSV(HSVData { h, s, v, coord: _ }) => {
                 let len = h.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
 
@@ -1141,9 +1126,6 @@ mod tests {
 
                 let len = v.get_children().unwrap().len();
                 assert!(len > 0 && len < 60);
-
-                assert_eq!(coord, &DEFAULT_COORDINATE_SYSTEM);
-                assert_eq!(pic.coord(), &DEFAULT_COORDINATE_SYSTEM);
             }
             _ => {
                 panic!("wrong type");
@@ -1158,19 +1140,25 @@ mod tests {
         let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
 
-        assert!(sexpr.starts_with("( MONO POLAR\n ("));
+        assert!(sexpr.starts_with("( MONO POLAR\n (") || sexpr.starts_with("( MONO CARTESIAN\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
         let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( GRAYSCALE POLAR\n ("));
+        assert!(
+            sexpr.starts_with("( GRAYSCALE POLAR\n (")
+                || sexpr.starts_with("( GRAYSCALE CARTESIAN\n (")
+        );
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
         let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( GRADIENT POLAR\n ("));
+        assert!(
+            sexpr.starts_with("( GRADIENT POLAR\n (")
+                || sexpr.starts_with("( GRADIENT CARTESIAN\n (")
+        );
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.contains("( COLORS ") || sexpr.contains(" ( STOPCOLOR "));
         assert!(sexpr.contains(" ( COLOR "));
@@ -1178,13 +1166,13 @@ mod tests {
 
         let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( RGB POLAR\n ("));
+        assert!(sexpr.starts_with("( RGB POLAR\n (") || sexpr.starts_with("( RGB CARTESIAN\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 3);
 
         let pic = Pic::new_hsv(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( HSV POLAR\n ("));
+        assert!(sexpr.starts_with("( HSV POLAR\n (") || sexpr.starts_with("( HSV CARTESIAN\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
     }
@@ -1489,5 +1477,11 @@ mod tests {
     fn test_coordsystem_not() {
         assert_eq!(!Polar, Cartesian);
         assert_eq!(!Cartesian, Polar);
+    }
+
+    #[test]
+    fn test_coordsystem_display() {
+        assert_eq!(&Polar.to_string(), "polar");
+        assert_eq!(&Cartesian.to_string(), "cartesian");
     }
 }

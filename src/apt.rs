@@ -5,6 +5,7 @@ use crate::parser::Token;
 use rand::prelude::*;
 use variant_count::VariantCount;
 
+use crate::pic::CoordinateSystem;
 use APTNode::*;
 
 #[derive(VariantCount, Clone, Debug, PartialEq)]
@@ -197,6 +198,15 @@ impl APTNode {
                     Err(format!("Unknown operation '{}' ", s.to_string()))
                 }
             }
+        }
+    }
+    pub fn get_random_coord(rng: &mut StdRng) -> CoordinateSystem {
+        let r = rng.gen_range(0..CoordinateSystem::VARIANT_COUNT);
+
+        match r {
+            0 => CoordinateSystem::Polar,
+            1 => CoordinateSystem::Cartesian,
+            _ => panic!("get_random_coord generated unhandled r:{}", r),
         }
     }
 
@@ -449,7 +459,8 @@ impl APTNode {
         video: bool,
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
-    ) -> APTNode {
+    ) -> (APTNode, CoordinateSystem) {
+        let coord = APTNode::get_random_coord(rng);
         let leaf_func = if video {
             APTNode::get_random_leaf_video
         } else {
@@ -460,7 +471,7 @@ impl APTNode {
             first.add_random(APTNode::get_random_node(rng, pic_names), rng);
         }
         while first.add_leaf(&leaf_func(rng)) {}
-        first
+        (first, coord)
     }
 
     pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode>> {
