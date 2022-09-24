@@ -213,8 +213,8 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
-            Pic::Mono(data) => format!("( Mono\n {} )", data.c.to_lisp()),
-            Pic::Grayscale(data) => format!("( Grayscale\n {} )", data.c.to_lisp()),
+            Pic::Mono(data) => format!("( Mono\n ( {} ) )", data.c.to_lisp()),
+            Pic::Grayscale(data) => format!("( Grayscale\n ( {} ) )", data.c.to_lisp()),
             Pic::Gradient(data) => {
                 let mut colors = "( Colors ".to_string();
                 for (color, stop) in &data.colors {
@@ -227,13 +227,13 @@ impl Pic {
                 format!("( Gradient\n {} {} )", colors, data.index.to_lisp())
             }
             Pic::RGB(data) => format!(
-                "( RGB\n {}\n {}\n {} )",
+                "( RGB\n ( {} )\n ( {} )\n ( {} ) )",
                 data.r.to_lisp(),
                 data.g.to_lisp(),
                 data.b.to_lisp()
             ),
             Pic::HSV(data) => format!(
-                "( HSV\n {}\n {}\n {} )",
+                "( HSV\n ( {} )\n ( {} )\n ( {} ) )",
                 data.h.to_lisp(),
                 data.s.to_lisp(),
                 data.v.to_lisp()
@@ -1209,7 +1209,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( / X WIDTH ) )");
+                assert_eq!(resexpr, "( Grayscale\n ( ( / X WIDTH ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -1230,7 +1230,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( / Y HEIGHT ) )");
+                assert_eq!(resexpr, "( Grayscale\n ( ( / Y HEIGHT ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -1251,7 +1251,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( Sin ( / X PI ) ) )");
+                assert_eq!(resexpr, "( Grayscale\n ( ( Sin ( / X PI ) ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with PI {:?}", err);
@@ -1272,7 +1272,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( Log ( / X E ) ) )");
+                assert_eq!(resexpr, "( Grayscale\n ( ( Log ( / X E ) ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1282,7 +1282,7 @@ mod tests {
 
     #[test]
     fn test_handle_mono_coord_system_polar() {
-        let sexpr = "(Mono POLAR ( X )";
+        let sexpr = "(Mono POLAR ( X ) )";
         match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
             Ok(pic) => {
                 assert_eq!(
@@ -1293,7 +1293,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Mono\n X )");
+                assert_eq!(resexpr, "( Mono\n ( X ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1314,7 +1314,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Mono\n X )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( Mono\n ( X ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1337,7 +1337,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( RGB\n X\n Y\n T )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( RGB\n ( X )\n ( Y )\n ( T ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1360,7 +1360,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( RGB\n X\n Y\n T )");
+                assert_eq!(resexpr, "( RGB\n ( X )\n ( Y )\n ( T ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1383,7 +1383,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( HSV\n X\n Y\n T )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( HSV\n ( X )\n ( Y )\n ( T ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1406,7 +1406,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( HSV\n X\n Y\n T )");
+                assert_eq!(resexpr, "( HSV\n ( X )\n ( Y )\n ( T ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1426,7 +1426,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n X )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( Grayscale\n ( X ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
