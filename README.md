@@ -97,6 +97,7 @@ EXPR         = '(' EXPR ')';
              | '(' 'Sqrt' EXPR ')' ;
              | '(' 'Pic-' FILEDOTEXT EXPR EXPR ')';
              | 'WIDTH' ;
+             | 'HEIGHT' ;
              | 'PI' ;
              | 'E' ;
              | 'x' ;
@@ -120,11 +121,12 @@ NaN               => 0.0
 
 ### Operations
 
-### Constants PI, E, Width
+### Constants PI, E, Width, Height
 
 PI: std::f32::consts::PI
 E: std::f32::consts::E
 Width: the 'width' of the image; Either a default or set via the '--width' command line parameter.
+Height: the 'height' of the image; Either a default or set via the '--height' command line parameter.
 
 #### X, Y, T
 

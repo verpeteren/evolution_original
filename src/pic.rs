@@ -288,6 +288,7 @@ impl Pic {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
+            let hf = S::set1_ps(h as f32);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
@@ -344,10 +345,10 @@ impl Pic {
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                     let v = if data.coord == Cartesian {
-                        sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                     } else {
                         let (r, theta) = cartesian_to_polar::<S>(x, y);
-                        sm.execute(&mut stack, pics.clone(), r, theta, ts, wf)
+                        sm.execute(&mut stack, pics.clone(), r, theta, ts, wf, hf)
                     };
                     let scaled_v = (v + S::set1_ps(1.0)) * S::set1_ps(0.5);
                     let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
@@ -386,6 +387,7 @@ impl Pic {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
+            let hf = S::set1_ps(h as f32);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
@@ -409,10 +411,10 @@ impl Pic {
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                     let v = if data.coord == Cartesian {
-                        sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                     } else {
                         let (r, theta) = cartesian_to_polar::<S>(x, y);
-                        sm.execute(&mut stack, pics.clone(), r, theta, ts, wf)
+                        sm.execute(&mut stack, pics.clone(), r, theta, ts, wf, hf)
                     };
 
                     // if v[0] > max { max = v[0]; }
@@ -453,6 +455,7 @@ impl Pic {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
+            let hf = S::set1_ps(h as f32);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
@@ -476,10 +479,10 @@ impl Pic {
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                     let v = if data.coord == Cartesian {
-                        sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                     } else {
                         let (r, theta) = cartesian_to_polar::<S>(x, y);
-                        sm.execute(&mut stack, pics.clone(), r, theta, ts, wf)
+                        sm.execute(&mut stack, pics.clone(), r, theta, ts, wf, hf)
                     };
 
                     for j in 0..S::VF32_WIDTH {
@@ -515,6 +518,7 @@ impl Pic {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
+            let hf = S::set1_ps(h as f32);
 
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
@@ -545,25 +549,25 @@ impl Pic {
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                     let (rs, gs, bs) = if data.coord == Cartesian {
-                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
-                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
-                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
                         (rs, gs, bs)
                     } else {
                         let (x, y) = cartesian_to_polar::<S>(x, y);
-                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
-                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let gs = (g_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
-                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let bs = (b_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
                         (rs, gs, bs)
@@ -603,6 +607,7 @@ impl Pic {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
+            let hf = S::set1_ps(h as f32);
             let vec_len = w * h * 4;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
@@ -632,25 +637,25 @@ impl Pic {
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                     let (hs, ss, vs) = if data.coord == Cartesian {
-                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
-                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
-                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
                         (hs, ss, vs)
                     } else {
                         let (x, y) = cartesian_to_polar::<S>(x, y);
-                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
-                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let ss = (s_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
-                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts, wf)
+                        let vs = (v_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
                         (hs, ss, vs)
@@ -1139,6 +1144,28 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_handle_height() {
+        let sexpr = "(GrayScale ( / y Height ) )";
+        match lisp_to_pic(sexpr.to_string(), Polar) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::Grayscale(GrayscaleData {
+                        c: APTNode::Div(vec![APTNode::Y, APTNode::Height]),
+                        coord: Polar
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( Grayscale\n ( / Y HEIGHT ) )");
+            }
+            Err(err) => {
+                panic!("could not parse formula with width {:?}", err);
+            }
+        }
+    }
+
     #[test]
     fn test_handle_pi() {
         let sexpr = "(GrayScale( sin (/ x PI ) ) )";

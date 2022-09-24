@@ -49,6 +49,7 @@ pub enum Instruction<S: Simd> {
     Picture(String),
     Constant(S::Vf32),
     Width,
+    Height,
     PI,
     E,
     X,
@@ -91,6 +92,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Picture(name, _) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
             APTNode::Width => Width,
+            APTNode::Height => Height,
             APTNode::PI => PI,
             APTNode::E => E,
             APTNode::X => X,
@@ -142,6 +144,7 @@ impl<S: Simd> StackMachine<S> {
         y: S::Vf32,
         t: S::Vf32,
         w: S::Vf32,
+        h: S::Vf32,
     ) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
@@ -359,6 +362,10 @@ impl<S: Simd> StackMachine<S> {
                     }
                     Width => {
                         stack[sp] = w;
+                        sp += 1;
+                    }
+                    Height => {
+                        stack[sp] = h;
                         sp += 1;
                     }
                     PI => {
@@ -585,6 +592,12 @@ mod tests {
             }
             match StackMachine::<S>::get_instruction(&APTNode::Width) {
                 Instruction::Width => {}
+                _ => {
+                    panic!("Unexpected result");
+                }
+            }
+            match StackMachine::<S>::get_instruction(&APTNode::Height) {
+                Instruction::Height => {}
                 _ => {
                     panic!("Unexpected result");
                 }
