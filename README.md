@@ -96,6 +96,7 @@ EXPR         = '(' EXPR ')';
              | '(' 'Log' EXPR ')' ;
              | '(' 'Sqrt' EXPR ')' ;
              | '(' 'Pic-' FILEDOTEXT EXPR EXPR ')';
+             | 'PI' ;
              | 'x' ;
              | 'y' ;
              | 'x' ;
@@ -116,6 +117,10 @@ NaN               => 0.0
 ```
 
 ### Operations
+
+### Constants PI
+
+PI: std::f32::consts::PI
 
 #### X, Y, T
 

@@ -52,26 +52,26 @@ impl Not for CoordinateSystem {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GradientData {
     colors: Vec<(Color, bool)>,
     index: APTNode,
     coord: CoordinateSystem,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GrayscaleData {
     c: APTNode,
     coord: CoordinateSystem,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MonoData {
     c: APTNode,
     coord: CoordinateSystem,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RGBData {
     r: APTNode,
     g: APTNode,
@@ -79,7 +79,7 @@ pub struct RGBData {
     coord: CoordinateSystem,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct HSVData {
     h: APTNode,
     s: APTNode,
@@ -87,7 +87,7 @@ pub struct HSVData {
     coord: CoordinateSystem,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Pic {
     Mono(MonoData),
     Grayscale(GrayscaleData),
@@ -1112,5 +1112,26 @@ mod tests {
                 .coord(),
             &CoordinateSystem::Polar
         );
+    }
+
+    #[test]
+    fn test_handle_pi() {
+        let sexpr = "(GrayScale( sin (/ x PI ) ) )";
+        match lisp_to_pic(sexpr.to_string(), Polar) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::Grayscale(GrayscaleData {
+                        c: APTNode::Sin(vec![APTNode::Div(vec![APTNode::X, APTNode::PI,])]),
+                        coord: Polar
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( Grayscale\n ( Sin ( / X PI ) ) )");
+            }
+            Err(err) => {
+                panic!("could not parse formula with PI {:?}", err);
+            }
+        }
     }
 }
