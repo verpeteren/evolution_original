@@ -31,11 +31,17 @@ pub enum CoordinateSystem {
     Cartesian,
 }
 
+impl CoordinateSystem {
+    pub fn list_all<'a>() -> Vec<String> {
+        vec![Polar.to_string(), Cartesian.to_string()]
+    }
+}
+
 impl Display for CoordinateSystem {
     fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
         let x = match self {
-            Polar => "polar",
-            Cartesian => "cartesian",
+            Polar => "POLAR",
+            Cartesian => "CARTESIAN",
         };
         write!(f, "{}", x)
     }
@@ -213,8 +219,10 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
-            Pic::Mono(data) => format!("( Mono\n ( {} ) )", data.c.to_lisp()),
-            Pic::Grayscale(data) => format!("( Grayscale\n ( {} ) )", data.c.to_lisp()),
+            Pic::Mono(data) => format!("( Mono {}\n ( {} ) )", data.coord, data.c.to_lisp()),
+            Pic::Grayscale(data) => {
+                format!("( Grayscale {}\n ( {} ) )", data.coord, data.c.to_lisp())
+            }
             Pic::Gradient(data) => {
                 let mut colors = "( Colors ".to_string();
                 for (color, stop) in &data.colors {
@@ -224,16 +232,23 @@ impl Pic {
                         colors += &format!(" ( Color {} {} {} )", color.r, color.g, color.b);
                     }
                 }
-                format!("( Gradient\n {} {} )", colors, data.index.to_lisp())
+                format!(
+                    "( Gradient {}\n {} {} )",
+                    data.coord,
+                    colors,
+                    data.index.to_lisp()
+                )
             }
             Pic::RGB(data) => format!(
-                "( RGB\n ( {} )\n ( {} )\n ( {} ) )",
+                "( RGB {}\n ( {} )\n ( {} )\n ( {} ) )",
+                data.coord,
                 data.r.to_lisp(),
                 data.g.to_lisp(),
                 data.b.to_lisp()
             ),
             Pic::HSV(data) => format!(
-                "( HSV\n ( {} )\n ( {} )\n ( {} ) )",
+                "( HSV {}\n ( {} )\n ( {} )\n ( {} ) )",
+                data.coord,
                 data.h.to_lisp(),
                 data.s.to_lisp(),
                 data.v.to_lisp()
@@ -790,7 +805,7 @@ pub fn expect_operations(ops: Vec<&str>, receiver: &Receiver<Token>) -> Result<S
     for s in ops {
         match op {
             Token::Operation(op_str, _) => {
-                if op_str.to_lowercase() == s {
+                if op_str.to_lowercase() == s.to_lowercase() {
                     return Ok(op_str.to_string());
                 }
             }
@@ -833,9 +848,13 @@ pub fn parse_pic(
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
             "mono" => {
-                if let Ok(coord_system) =
-                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
-                {
+                if let Ok(coord_system) = expect_operations(
+                    CoordinateSystem::list_all()
+                        .iter()
+                        .map(|x| x.as_str())
+                        .collect(),
+                    receiver,
+                ) {
                     coord = coord_system.parse().unwrap();
                 };
                 Ok(Pic::Mono(MonoData {
@@ -844,9 +863,13 @@ pub fn parse_pic(
                 }))
             }
             "grayscale" => {
-                if let Ok(coord_system) =
-                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
-                {
+                if let Ok(coord_system) = expect_operations(
+                    CoordinateSystem::list_all()
+                        .iter()
+                        .map(|x| x.as_str())
+                        .collect(),
+                    receiver,
+                ) {
                     coord = coord_system.parse().unwrap();
                 };
                 Ok(Pic::Grayscale(GrayscaleData {
@@ -855,9 +878,13 @@ pub fn parse_pic(
                 }))
             }
             "rgb" => {
-                if let Ok(coord_system) =
-                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
-                {
+                if let Ok(coord_system) = expect_operations(
+                    CoordinateSystem::list_all()
+                        .iter()
+                        .map(|x| x.as_str())
+                        .collect(),
+                    receiver,
+                ) {
                     coord = coord_system.parse().unwrap();
                 };
                 Ok(Pic::RGB(RGBData {
@@ -868,9 +895,13 @@ pub fn parse_pic(
                 }))
             }
             "hsv" => {
-                if let Ok(coord_system) =
-                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
-                {
+                if let Ok(coord_system) = expect_operations(
+                    CoordinateSystem::list_all()
+                        .iter()
+                        .map(|x| x.as_str())
+                        .collect(),
+                    receiver,
+                ) {
                     coord = coord_system.parse().unwrap();
                 };
                 Ok(Pic::HSV(HSVData {
@@ -881,9 +912,13 @@ pub fn parse_pic(
                 }))
             }
             "gradient" => {
-                if let Ok(coord_system) =
-                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
-                {
+                if let Ok(coord_system) = expect_operations(
+                    CoordinateSystem::list_all()
+                        .iter()
+                        .map(|x| x.as_str())
+                        .collect(),
+                    receiver,
+                ) {
                     coord = coord_system.parse().unwrap();
                 };
                 let mut colors = Vec::new();
@@ -1123,19 +1158,19 @@ mod tests {
         let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
 
-        assert!(sexpr.starts_with("( Mono\n "));
+        assert!(sexpr.starts_with("( Mono POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
         let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( Grayscale\n "));
+        assert!(sexpr.starts_with("( Grayscale POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
         let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( Gradient\n "));
+        assert!(sexpr.starts_with("( Gradient POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.contains("( Colors ") || sexpr.contains(" ( StopColor "));
         assert!(sexpr.contains(" ( Color "));
@@ -1143,13 +1178,13 @@ mod tests {
 
         let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( RGB\n"));
+        assert!(sexpr.starts_with("( RGB POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 3);
 
         let pic = Pic::new_hsv(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( HSV\n"));
+        assert!(sexpr.starts_with("( HSV POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
     }
@@ -1209,7 +1244,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( ( / X WIDTH ) ) )");
+                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( / X WIDTH ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -1230,7 +1265,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( ( / Y HEIGHT ) ) )");
+                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( / Y HEIGHT ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -1251,7 +1286,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( ( Sin ( / X PI ) ) ) )");
+                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( Sin ( / X PI ) ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with PI {:?}", err);
@@ -1272,7 +1307,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( ( Log ( / X E ) ) ) )");
+                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( Log ( / X E ) ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1293,7 +1328,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Mono\n ( X ) )");
+                assert_eq!(resexpr, "( Mono POLAR\n ( X ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1314,7 +1349,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Mono\n ( X ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( Mono CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1324,7 +1359,7 @@ mod tests {
 
     #[test]
     fn test_handle_rgb_coord_system_cartesian() {
-        let sexpr = "(RGB CARTESIAN ( X ) (Y) (T)";
+        let sexpr = "(RGB CARTESIAN ( X ) (Y) (T) )";
         match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
             Ok(pic) => {
                 assert_eq!(
@@ -1337,7 +1372,8 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( RGB\n ( X )\n ( Y )\n ( T ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( RGB CARTESIAN\n ( X )\n ( Y )\n ( T ) )");
+                //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1360,7 +1396,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( RGB\n ( X )\n ( Y )\n ( T ) )");
+                assert_eq!(resexpr, "( RGB POLAR\n ( X )\n ( Y )\n ( T ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1383,7 +1419,8 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( HSV\n ( X )\n ( Y )\n ( T ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( HSV CARTESIAN\n ( X )\n ( Y )\n ( T ) )");
+                //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1406,7 +1443,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( HSV\n ( X )\n ( Y )\n ( T ) )");
+                assert_eq!(resexpr, "( HSV POLAR\n ( X )\n ( Y )\n ( T ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1426,7 +1463,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n ( X ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( Grayscale CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
