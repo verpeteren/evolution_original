@@ -1134,4 +1134,25 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_handle_e() {
+        let sexpr = "(GrayScale( Log (/ x E ) ) )";
+        match lisp_to_pic(sexpr.to_string(), Polar) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::Grayscale(GrayscaleData {
+                        c: APTNode::Log(vec![APTNode::Div(vec![APTNode::X, APTNode::E,])]),
+                        coord: Polar
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( Grayscale\n ( Log ( / X E ) ) )");
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
 }

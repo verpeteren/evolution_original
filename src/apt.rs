@@ -37,6 +37,7 @@ pub enum APTNode {
     Picture(String, Vec<APTNode>),
     Constant(f32),
     PI,
+    E,
     X,
     Y,
     T,
@@ -134,11 +135,14 @@ impl APTNode {
             Constant(v) => {
                 if v == &std::f32::consts::PI {
                     format!("PI")
+                }else if v == &std::f32::consts::E {
+                    format!("E")
                 } else {
                     format!("{}", v)
                 }
             }
             PI => format!("PI"),
+            E => format!("E"),
             X => format!("X"),
             Y => format!("Y"),
             T => format!("T"),
@@ -175,6 +179,8 @@ impl APTNode {
             "min" => Ok(Min(vec![Empty, Empty])),
             "mandelbrot" => Ok(Mandelbrot(vec![Empty, Empty])),
             "pi" => Ok(PI),
+            "pi" => Ok(PI),
+            "e" => Ok(E),
             "x" => Ok(X),
             "y" => Ok(Y),
             "t" => Ok(T),
@@ -190,7 +196,7 @@ impl APTNode {
     }
 
     pub fn get_random_node(rng: &mut StdRng, pic_names: &Vec<&String>) -> APTNode {
-        let r = rng.gen_range(0..APTNode::VARIANT_COUNT - 6);
+        let r = rng.gen_range(0..APTNode::VARIANT_COUNT - 7);
 
         match r {
             0 => Add(vec![Empty, Empty]),
@@ -358,6 +364,7 @@ impl APTNode {
                 0.0
             }
             PI => std::f32::consts::PI,
+            E => std::f32::consts::E,
             Constant(v) => *v,
             _ => panic!("invalid node passed to constant_esval"),
         }
@@ -393,6 +400,7 @@ impl APTNode {
             Picture(name, _) => Picture(name.to_string(), children[1..].to_vec()),
             Constant(v) => Constant(*v),
             PI => PI,
+            E => E,
             X => X,
             Y => Y,
             T => T,
@@ -404,6 +412,7 @@ impl APTNode {
         match self {
             Constant(v) => Constant(*v),
             PI => PI,
+            E => E,
             X => X,
             Y => Y,
             T => T,
@@ -474,6 +483,7 @@ impl APTNode {
     pub fn is_leaf(&self) -> bool {
         match self {
             APTNode::PI
+            | APTNode::E
             | APTNode::X
             | APTNode::Y
             | APTNode::T
@@ -755,6 +765,8 @@ mod tests {
         assert_eq!(APTNode::Constant(1.0).to_lisp(), "1");
         assert_eq!(APTNode::Constant(std::f32::consts::PI).to_lisp(), "PI");
         assert_eq!(APTNode::PI.to_lisp(), "PI");
+        assert_eq!(APTNode::Constant(std::f32::consts::E).to_lisp(), "E");
+        assert_eq!(APTNode::E.to_lisp(), "E");
         assert_eq!(APTNode::X.to_lisp(), "X");
         assert_eq!(APTNode::Y.to_lisp(), "Y");
         assert_eq!(APTNode::T.to_lisp(), "T");
@@ -859,6 +871,7 @@ mod tests {
             ))
         );
         assert_eq!(APTNode::str_to_node("Pi"), Ok(PI));
+        assert_eq!(APTNode::str_to_node("e"), Ok(E));
         assert_eq!(APTNode::str_to_node("x"), Ok(X));
         assert_eq!(APTNode::str_to_node("y"), Ok(Y));
         assert_eq!(APTNode::str_to_node("t"), Ok(T));
@@ -1090,6 +1103,7 @@ mod tests {
             0.0
         );
         assert_eq!(APTNode::PI.constant_eval(), std::f32::consts::PI);
+        assert_eq!(APTNode::E.constant_eval(), std::f32::consts::E);
         assert_eq!(APTNode::Constant(123.456).constant_eval(), 123.456);
         assert_eq!(APTNode::Constant(0.0).constant_eval(), 0.0);
         assert_eq!(APTNode::Constant(1.0).constant_eval(), 1.0);
@@ -1332,6 +1346,7 @@ mod tests {
         );
 
         assert_eq!(APTNode::PI.set_children(vec![APTNode::Empty]), APTNode::PI);
+        assert_eq!(APTNode::E.set_children(vec![APTNode::Empty]), APTNode::E);
 
         assert_eq!(APTNode::X.set_children(vec![APTNode::Empty]), APTNode::X);
 
@@ -1349,6 +1364,7 @@ mod tests {
     #[test]
     fn test_aptnode_constant_fold() {
         assert_eq!(APTNode::PI.constant_fold(), APTNode::PI);
+        assert_eq!(APTNode::E.constant_fold(), APTNode::E);
         assert_eq!(APTNode::X.constant_fold(), APTNode::X);
         assert_eq!(APTNode::Y.constant_fold(), APTNode::Y);
         assert_eq!(APTNode::T.constant_fold(), APTNode::T);
@@ -1556,6 +1572,7 @@ mod tests {
         );
         assert_eq!(APTNode::Constant(1.2).get_children_mut(), None);
         assert_eq!(APTNode::PI.get_children_mut(), None);
+        assert_eq!(APTNode::E.get_children_mut(), None);
         assert_eq!(APTNode::X.get_children_mut(), None);
         assert_eq!(APTNode::Y.get_children_mut(), None);
         assert_eq!(APTNode::T.get_children_mut(), None);
@@ -1752,6 +1769,7 @@ mod tests {
         );
         assert_eq!(APTNode::Constant(1.2).get_children(), None);
         assert_eq!(APTNode::PI.get_children(), None);
+        assert_eq!(APTNode::E.get_children(), None);
         assert_eq!(APTNode::X.get_children(), None);
         assert_eq!(APTNode::Y.get_children(), None);
         assert_eq!(APTNode::T.get_children(), None);
@@ -1839,6 +1857,7 @@ mod tests {
         assert_eq!(APTNode::Constant(1.2).is_leaf(), true);
         assert_eq!(APTNode::X.is_leaf(), true);
         assert_eq!(APTNode::PI.is_leaf(), true);
+        assert_eq!(APTNode::E.is_leaf(), true);
         assert_eq!(APTNode::Y.is_leaf(), true);
         assert_eq!(APTNode::T.is_leaf(), true);
         assert_eq!(APTNode::Empty.is_leaf(), true);
