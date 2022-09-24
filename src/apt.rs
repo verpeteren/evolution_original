@@ -64,7 +64,7 @@ impl APTNode {
                 children[5].to_lisp()
             ),
             Ridge(children) => format!(
-                "( Ridge {} {} {} {} {} {} )",
+                "( RIDGE {} {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
                 children[2].to_lisp(),
@@ -73,7 +73,7 @@ impl APTNode {
                 children[5].to_lisp()
             ),
             Cell1(children) => format!(
-                "( Cell1 {} {} {} {} {} )",
+                "( CELL1 {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
                 children[2].to_lisp(),
@@ -81,7 +81,7 @@ impl APTNode {
                 children[4].to_lisp()
             ),
             Cell2(children) => format!(
-                "( Cell2 {} {} {} {} {} )",
+                "( CELL2 {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
                 children[2].to_lisp(),
@@ -89,7 +89,7 @@ impl APTNode {
                 children[4].to_lisp()
             ),
             Turbulence(children) => format!(
-                "( Turbulence {} {} {} {} {} {} )",
+                "( TURBULENCE {} {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
                 children[2].to_lisp(),
@@ -97,39 +97,39 @@ impl APTNode {
                 children[4].to_lisp(),
                 children[5].to_lisp()
             ),
-            Sqrt(children) => format!("( Sqrt {} )", children[0].to_lisp()),
-            Sin(children) => format!("( Sin {} )", children[0].to_lisp()),
-            Atan(children) => format!("( Atan {} )", children[0].to_lisp()),
+            Sqrt(children) => format!("( SQRT {} )", children[0].to_lisp()),
+            Sin(children) => format!("( SIN {} )", children[0].to_lisp()),
+            Atan(children) => format!("( ATAN {} )", children[0].to_lisp()),
             Atan2(children) => format!(
-                "( Atan2 {} {} )",
+                "( ATAN2 {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
-            Tan(children) => format!("( Tan {} )", children[0].to_lisp()),
-            Log(children) => format!("( Log {} )", children[0].to_lisp()),
-            Abs(children) => format!("( Abs {} )", children[0].to_lisp()),
-            Floor(children) => format!("( Floor {} )", children[0].to_lisp()),
-            Ceil(children) => format!("( Ceil {} )", children[0].to_lisp()),
-            Clamp(children) => format!("( Clamp {} )", children[0].to_lisp()),
-            Wrap(children) => format!("( Wrap {} )", children[0].to_lisp()),
-            Square(children) => format!("( Square {} )", children[0].to_lisp()),
+            Tan(children) => format!("( TAN {} )", children[0].to_lisp()),
+            Log(children) => format!("( LOG {} )", children[0].to_lisp()),
+            Abs(children) => format!("( ABS {} )", children[0].to_lisp()),
+            Floor(children) => format!("( FLOOR {} )", children[0].to_lisp()),
+            Ceil(children) => format!("( CEIL {} )", children[0].to_lisp()),
+            Clamp(children) => format!("( CLAMP {} )", children[0].to_lisp()),
+            Wrap(children) => format!("( WRAP {} )", children[0].to_lisp()),
+            Square(children) => format!("( SQUARE {} )", children[0].to_lisp()),
             Max(children) => format!(
-                "( Max {} {} )",
+                "( MAX {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
             Min(children) => format!(
-                "( Min {} {} )",
+                "( MIN {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
             Mandelbrot(children) => format!(
-                "( Mandelbrot {} {} )",
+                "( MANDELBROT {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
             Picture(name, children) => format!(
-                "( Pic-{} {} {} )",
+                "( PIC-{} {} {} )",
                 name,
                 children[0].to_lisp(),
                 children[1].to_lisp()
@@ -673,91 +673,91 @@ mod tests {
         );
         assert_eq!(
             APTNode::Ridge(mock::mock_params_ridge(true)).to_lisp(),
-            "( Ridge 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )"
+            "( RIDGE 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )"
         );
         assert_eq!(
             APTNode::Cell1(mock::mock_params_cell1(true)).to_lisp(),
-            "( Cell1 1 2.1 3.1999998 4.2999997 5.3999996 )"
+            "( CELL1 1 2.1 3.1999998 4.2999997 5.3999996 )"
         );
         assert_eq!(
             APTNode::Cell2(mock::mock_params_cell2(true)).to_lisp(),
-            "( Cell2 1 2.1 3.1999998 4.2999997 5.3999996 )"
+            "( CELL2 1 2.1 3.1999998 4.2999997 5.3999996 )"
         );
         assert_eq!(
             APTNode::Turbulence(mock::mock_params_turbulence(true)).to_lisp(),
-            "( Turbulence 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )"
+            "( TURBULENCE 1 2.1 3.1999998 4.2999997 5.3999996 6.4999995 )"
         );
         assert_eq!(
             APTNode::Sqrt(mock::mock_params_sqrt(true)).to_lisp(),
-            "( Sqrt 1 )"
+            "( SQRT 1 )"
         );
         assert_eq!(
             APTNode::Sin(mock::mock_params_sin(true)).to_lisp(),
-            "( Sin 1 )"
+            "( SIN 1 )"
         );
         assert_eq!(
             APTNode::Atan(mock::mock_params_atan(true)).to_lisp(),
-            "( Atan 1 )"
+            "( ATAN 1 )"
         );
         assert_eq!(
             APTNode::Atan2(mock::mock_params_atan2(true)).to_lisp(),
-            "( Atan2 1 2.1 )"
+            "( ATAN2 1 2.1 )"
         );
         assert_eq!(
             APTNode::Tan(mock::mock_params_tan(true)).to_lisp(),
-            "( Tan 1 )"
+            "( TAN 1 )"
         );
         assert_eq!(
             APTNode::Log(mock::mock_params_log(true)).to_lisp(),
-            "( Log 1 )"
+            "( LOG 1 )"
         );
         assert_eq!(
             APTNode::Abs(mock::mock_params_abs(true)).to_lisp(),
-            "( Abs 1 )"
+            "( ABS 1 )"
         );
         assert_eq!(
             APTNode::Abs(vec![APTNode::Constant(-10000.5)]).to_lisp(),
-            "( Abs -10000.5 )"
+            "( ABS -10000.5 )"
         );
         assert_eq!(
             APTNode::Floor(mock::mock_params_floor(true)).to_lisp(),
-            "( Floor 1 )"
+            "( FLOOR 1 )"
         );
         assert_eq!(
             APTNode::Floor(vec![APTNode::Constant(10000.5)]).to_lisp(),
-            "( Floor 10000.5 )"
+            "( FLOOR 10000.5 )"
         );
         assert_eq!(
             APTNode::Ceil(mock::mock_params_ceil(true)).to_lisp(),
-            "( Ceil 1 )"
+            "( CEIL 1 )"
         );
         assert_eq!(
             APTNode::Ceil(vec![APTNode::Constant(10000.5)]).to_lisp(),
-            "( Ceil 10000.5 )"
+            "( CEIL 10000.5 )"
         );
         assert_eq!(
             APTNode::Clamp(mock::mock_params_clamp(true)).to_lisp(),
-            "( Clamp 1 )"
+            "( CLAMP 1 )"
         );
         assert_eq!(
             APTNode::Wrap(mock::mock_params_wrap(true)).to_lisp(),
-            "( Wrap 1 )"
+            "( WRAP 1 )"
         );
         assert_eq!(
             APTNode::Square(mock::mock_params_square(true)).to_lisp(),
-            "( Square 1 )"
+            "( SQUARE 1 )"
         );
         assert_eq!(
             APTNode::Max(mock::mock_params_max(true)).to_lisp(),
-            "( Max 1 2.1 )"
+            "( MAX 1 2.1 )"
         );
         assert_eq!(
             APTNode::Min(mock::mock_params_min(true)).to_lisp(),
-            "( Min 1 2.1 )"
+            "( MIN 1 2.1 )"
         );
         assert_eq!(
             APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).to_lisp(),
-            "( Mandelbrot 1 2.1 )"
+            "( MANDELBROT 1 2.1 )"
         );
         assert_eq!(
             APTNode::Picture(
@@ -765,11 +765,11 @@ mod tests {
                 vec![APTNode::Constant(800.0), APTNode::Constant(600.0)]
             )
             .to_lisp(),
-            "( Pic-eye.jpg 800 600 )".to_string()
+            "( PIC-eye.jpg 800 600 )".to_string()
         );
         assert_eq!(
             APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true)).to_lisp(),
-            "( Pic-eye.jpg 1 2.1 )".to_string()
+            "( PIC-eye.jpg 1 2.1 )".to_string()
         );
         assert_eq!(APTNode::Constant(123.456).to_lisp(), "123.456");
         assert_eq!(APTNode::Constant(0.0).to_lisp(), "0");
@@ -877,7 +877,7 @@ mod tests {
             Ok(Mandelbrot(mock::mock_params_mandelbrot(false)))
         );
         assert_eq!(
-            APTNode::str_to_node("Pic-eye.jpg"),
+            APTNode::str_to_node("PIC-eye.jpg"),
             Ok(Picture(
                 "eye.jpg".to_string(),
                 mock::mock_params_picture(false)

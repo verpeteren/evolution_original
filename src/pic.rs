@@ -219,21 +219,21 @@ impl Pic {
 
     pub fn to_lisp(&self) -> String {
         match self {
-            Pic::Mono(data) => format!("( Mono {}\n ( {} ) )", data.coord, data.c.to_lisp()),
+            Pic::Mono(data) => format!("( MONO {}\n ( {} ) )", data.coord, data.c.to_lisp()),
             Pic::Grayscale(data) => {
-                format!("( Grayscale {}\n ( {} ) )", data.coord, data.c.to_lisp())
+                format!("( GRAYSCALE {}\n ( {} ) )", data.coord, data.c.to_lisp())
             }
             Pic::Gradient(data) => {
-                let mut colors = "( Colors ".to_string();
+                let mut colors = "( COLORS ".to_string();
                 for (color, stop) in &data.colors {
                     if *stop {
-                        colors += &format!(" ( StopColor {} {} {} )", color.r, color.g, color.b);
+                        colors += &format!(" ( STOPCOLOR {} {} {} )", color.r, color.g, color.b);
                     } else {
-                        colors += &format!(" ( Color {} {} {} )", color.r, color.g, color.b);
+                        colors += &format!(" ( COLOR {} {} {} )", color.r, color.g, color.b);
                     }
                 }
                 format!(
-                    "( Gradient {}\n {} {} )",
+                    "( GRADIENT {}\n {} {} )",
                     data.coord,
                     colors,
                     data.index.to_lisp()
@@ -1158,22 +1158,22 @@ mod tests {
         let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
 
-        assert!(sexpr.starts_with("( Mono POLAR\n ("));
+        assert!(sexpr.starts_with("( MONO POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
         let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( Grayscale POLAR\n ("));
+        assert!(sexpr.starts_with("( GRAYSCALE POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
         let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( Gradient POLAR\n ("));
+        assert!(sexpr.starts_with("( GRADIENT POLAR\n ("));
         assert!(sexpr.ends_with(" )"));
-        assert!(sexpr.contains("( Colors ") || sexpr.contains(" ( StopColor "));
-        assert!(sexpr.contains(" ( Color "));
+        assert!(sexpr.contains("( COLORS ") || sexpr.contains(" ( STOPCOLOR "));
+        assert!(sexpr.contains(" ( COLOR "));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 0);
 
         let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
@@ -1244,7 +1244,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( / X WIDTH ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( / X WIDTH ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -1265,7 +1265,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( / Y HEIGHT ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( / Y HEIGHT ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -1286,7 +1286,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( Sin ( / X PI ) ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( SIN ( / X PI ) ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with PI {:?}", err);
@@ -1307,7 +1307,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale POLAR\n ( ( Log ( / X E ) ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( LOG ( / X E ) ) ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1328,7 +1328,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Mono POLAR\n ( X ) )");
+                assert_eq!(resexpr, "( MONO POLAR\n ( X ) )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1349,7 +1349,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Mono CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( MONO CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1463,7 +1463,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( GRAYSCALE CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
