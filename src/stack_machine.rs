@@ -48,6 +48,7 @@ pub enum Instruction<S: Simd> {
     Mandelbrot,
     Picture(String),
     Constant(S::Vf32),
+    Width,
     PI,
     E,
     X,
@@ -89,6 +90,7 @@ impl<S: Simd> StackMachine<S> {
             APTNode::Mandelbrot(_) => Mandelbrot,
             APTNode::Picture(name, _) => Picture(name.to_string()),
             APTNode::Constant(v) => Constant(unsafe { S::set1_ps(*v) }),
+            APTNode::Width => Width,
             APTNode::PI => PI,
             APTNode::E => E,
             APTNode::X => X,
@@ -139,6 +141,7 @@ impl<S: Simd> StackMachine<S> {
         x: S::Vf32,
         y: S::Vf32,
         t: S::Vf32,
+        w: S::Vf32,
     ) -> S::Vf32 {
         unsafe {
             let mut sp = 0;
@@ -352,6 +355,10 @@ impl<S: Simd> StackMachine<S> {
                     }
                     Constant(v) => {
                         stack[sp] = *v;
+                        sp += 1;
+                    }
+                    Width => {
+                        stack[sp] = w;
                         sp += 1;
                     }
                     PI => {
@@ -572,6 +579,12 @@ mod tests {
             }
             match StackMachine::<S>::get_instruction(&APTNode::Constant(6.0)) {
                 Instruction::Constant(_) => {}
+                _ => {
+                    panic!("Unexpected result");
+                }
+            }
+            match StackMachine::<S>::get_instruction(&APTNode::Width) {
+                Instruction::Width => {}
                 _ => {
                     panic!("Unexpected result");
                 }
