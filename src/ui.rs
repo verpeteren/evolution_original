@@ -1,3 +1,4 @@
+use ggez::error::GameResult;
 use ggez::graphics::{draw, size, DrawParam, Image, Rect};
 use ggez::input::mouse::MouseButton;
 use ggez::mint::{Point2, Vector2};
@@ -82,5 +83,8 @@ impl Button {
                 y: y_scale,
             });
         let _ = draw(ctx, &self.img, params);
+    }
+    pub fn pic_bytes(&self, ctx: &mut Context) -> GameResult<Vec<u8>> {
+        self.img.to_rgba8(ctx)
     }
 }

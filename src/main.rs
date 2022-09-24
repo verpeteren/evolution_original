@@ -269,9 +269,48 @@ impl MainState {
     fn update_select(&mut self, ctx: &mut Context) {
         let (width, height) = self.dimensions;
         let t = self.frame_elapsed;
+        let target_dir = Path::new(".");
         for (i, img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx, &self.mouse_state) {
-                println!("{}", self.pics[i].to_lisp());
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+
+                let sexpr = self.pics[i].to_lisp();
+                //let's save this to a sexpr_file
+                //todo: make this less dumb
+                let tfn = format!("{}.sexpr", EXEC_NAME);
+                let sexpr_filename = Path::new(&tfn);
+                let dest = filename_to_copy_to(
+                    &target_dir,
+                    now,
+                    &sexpr_filename.file_name().unwrap().to_string_lossy(),
+                );
+                println!("writing to {:?}", dest);
+                File::create(dest)
+                    .unwrap()
+                    .write_all(sexpr.as_bytes())
+                    .unwrap();
+                //let's save this to a png file
+                let tfn = format!("{}.png", EXEC_NAME);
+                let png_filename = Path::new(&tfn);
+                let dest = filename_to_copy_to(
+                    &target_dir,
+                    now,
+                    &png_filename.file_name().unwrap().to_string_lossy(),
+                );
+                let bytes = img_button.pic_bytes(ctx).unwrap();
+                save_buffer_with_format(
+                    dest,
+                    &bytes,
+                    THUMB_WIDTH as u32,
+                    THUMB_HEIGHT as u32,
+                    ColorType::Rgba8,
+                    ImageFormat::Png,
+                )
+                .unwrap();
+
                 break;
             }
             if img_button.right_clicked(ctx, &self.mouse_state) {
