@@ -823,16 +823,26 @@ pub fn expect_constant(receiver: &Receiver<Token>) -> Result<f32, String> {
     }
 }
 
-pub fn parse_pic(receiver: &Receiver<Token>, coord_default: CoordinateSystem) -> Result<Pic, String> {
+pub fn parse_pic(
+    receiver: &Receiver<Token>,
+    coord_default: CoordinateSystem,
+) -> Result<Pic, String> {
     let mut coord = coord_default;
     expect_open_paren(receiver)?;
     let pic_type = receiver.recv().map_err(|_| "Unexpected end of file")?;
     match pic_type {
         Token::Operation(s, line_number) => match &s.to_lowercase()[..] {
-            "mono" => Ok(Pic::Mono(MonoData {
-                c: APTNode::parse_apt_node(receiver)?,
-                coord,
-            })),
+            "mono" => {
+                if let Ok(coord_system) =
+                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
+                {
+                    coord = coord_system.parse().unwrap();
+                };
+                Ok(Pic::Mono(MonoData {
+                    c: APTNode::parse_apt_node(receiver)?,
+                    coord,
+                }))
+            }
             "grayscale" => {
                 if let Ok(coord_system) =
                     expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
@@ -843,20 +853,39 @@ pub fn parse_pic(receiver: &Receiver<Token>, coord_default: CoordinateSystem) ->
                     c: APTNode::parse_apt_node(receiver)?,
                     coord,
                 }))
-            },
-            "rgb" => Ok(Pic::RGB(RGBData {
-                r: APTNode::parse_apt_node(receiver)?,
-                g: APTNode::parse_apt_node(receiver)?,
-                b: APTNode::parse_apt_node(receiver)?,
-                coord,
-            })),
-            "hsv" => Ok(Pic::HSV(HSVData {
-                h: APTNode::parse_apt_node(receiver)?,
-                s: APTNode::parse_apt_node(receiver)?,
-                v: APTNode::parse_apt_node(receiver)?,
-                coord,
-            })),
+            }
+            "rgb" => {
+                if let Ok(coord_system) =
+                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
+                {
+                    coord = coord_system.parse().unwrap();
+                };
+                Ok(Pic::RGB(RGBData {
+                    r: APTNode::parse_apt_node(receiver)?,
+                    g: APTNode::parse_apt_node(receiver)?,
+                    b: APTNode::parse_apt_node(receiver)?,
+                    coord,
+                }))
+            }
+            "hsv" => {
+                if let Ok(coord_system) =
+                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
+                {
+                    coord = coord_system.parse().unwrap();
+                };
+                Ok(Pic::HSV(HSVData {
+                    h: APTNode::parse_apt_node(receiver)?,
+                    s: APTNode::parse_apt_node(receiver)?,
+                    v: APTNode::parse_apt_node(receiver)?,
+                    coord,
+                }))
+            }
             "gradient" => {
+                if let Ok(coord_system) =
+                    expect_operations(vec![&Polar.to_string(), &Cartesian.to_string()], receiver)
+                {
+                    coord = coord_system.parse().unwrap();
+                };
                 let mut colors = Vec::new();
                 expect_open_paren(receiver)?;
                 expect_operation("colors", receiver)?;
@@ -1137,11 +1166,34 @@ mod tests {
     #[test]
     fn test_pic_coord() {
         assert_eq!(
-            lisp_to_pic("(Mono X)".to_string(), CoordinateSystem::Polar)
+            lisp_to_pic("(Mono Polar (X) )".to_string(), CoordinateSystem::Polar)
                 .unwrap()
                 .coord(),
             &CoordinateSystem::Polar
         );
+        assert_eq!(
+            lisp_to_pic(
+                "(Mono Cartesian (X) )".to_string(),
+                CoordinateSystem::Cartesian
+            )
+            .unwrap()
+            .coord(),
+            &CoordinateSystem::Cartesian
+        );
+        assert_eq!(
+            lisp_to_pic("(Mono (X) )".to_string(), CoordinateSystem::Polar)
+                .unwrap()
+                .coord(),
+            &CoordinateSystem::Polar
+        );
+    }
+
+    #[test]
+    //todo Currently wrong CoordinateSystems are still accepted, but ignored
+    fn test_pic_coord_fail() {
+        lisp_to_pic("(Mono Lunar (X) )".to_string(), CoordinateSystem::Polar)
+            .unwrap()
+            .coord();
     }
 
     #[test]
@@ -1227,20 +1279,21 @@ mod tests {
             }
         }
     }
+
     #[test]
-    fn test_handle_coord_system_polar() {
-        let sexpr = "(GrayScale POLAR ( X )";
+    fn test_handle_mono_coord_system_polar() {
+        let sexpr = "(Mono POLAR ( X )";
         match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
             Ok(pic) => {
                 assert_eq!(
                     pic,
-                    Pic::Grayscale(GrayscaleData {
+                    Pic::Mono(MonoData {
                         c: APTNode::X,
                         coord: Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( Grayscale\n X )");
+                assert_eq!(resexpr, "( Mono\n X )");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -1249,7 +1302,119 @@ mod tests {
     }
 
     #[test]
-    fn test_handle_coord_system_cartesian() {
+    fn test_handle_mono_coord_system_cartesian() {
+        let sexpr = "(Mono CARTESIAN ( X )";
+        match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::Mono(MonoData {
+                        c: APTNode::X,
+                        coord: Cartesian
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( Mono\n X )"); //todo if coord != DEFAULT print
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_handle_rgb_coord_system_cartesian() {
+        let sexpr = "(RGB CARTESIAN ( X ) (Y) (T)";
+        match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::RGB(RGBData {
+                        r: APTNode::X,
+                        g: APTNode::Y,
+                        b: APTNode::T,
+                        coord: Cartesian
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( RGB\n X\n Y\n T )"); //todo if coord != DEFAULT print
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_handle_rgb_coord_system_polar() {
+        let sexpr = "(RGB POLAR ( X ) ( Y ) (T) )";
+        match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::RGB(RGBData {
+                        r: APTNode::X,
+                        g: APTNode::Y,
+                        b: APTNode::T,
+                        coord: Polar
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( RGB\n X\n Y\n T )");
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_handle_hsv_coord_system_cartesian() {
+        let sexpr = "(HSV CARTESIAN ( X ) (Y) (T)";
+        match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::HSV(HSVData {
+                        h: APTNode::X,
+                        s: APTNode::Y,
+                        v: APTNode::T,
+                        coord: Cartesian
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( HSV\n X\n Y\n T )"); //todo if coord != DEFAULT print
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_handle_hsv_coord_system_polar() {
+        let sexpr = "(HSV POLAR ( X ) ( Y) (T) )";
+        match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
+            Ok(pic) => {
+                assert_eq!(
+                    pic,
+                    Pic::HSV(HSVData {
+                        h: APTNode::X,
+                        s: APTNode::Y,
+                        v: APTNode::T,
+                        coord: Polar
+                    })
+                );
+                let resexpr = pic.to_lisp();
+                assert_eq!(resexpr, "( HSV\n X\n Y\n T )");
+            }
+            Err(err) => {
+                panic!("could not parse formula with E {:?}", err);
+            }
+        }
+    }
+    #[test]
+    fn test_handle_grayscale_coord_system_cartesian() {
         let sexpr = "(GrayScale CARTESIAN ( X )";
         match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
             Ok(pic) => {
@@ -1257,7 +1422,7 @@ mod tests {
                     pic,
                     Pic::Grayscale(GrayscaleData {
                         c: APTNode::X,
-                        coord: Cartesian 
+                        coord: Cartesian
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1277,12 +1442,15 @@ mod tests {
         assert_eq!("cartesian".parse(), Ok(Cartesian));
         assert_eq!("Cartesian".parse(), Ok(Cartesian));
         assert_eq!("CARTESIAN".parse(), Ok(Cartesian));
-        assert_eq!("mercator".parse::<CoordinateSystem>(), Err("Cannot parse mercator. Not a known coordinate system".to_string()));
+        assert_eq!(
+            "mercator".parse::<CoordinateSystem>(),
+            Err("Cannot parse mercator. Not a known coordinate system".to_string())
+        );
     }
 
     #[test]
     fn test_coordsystem_not() {
-        assert_eq!(! Polar, Cartesian);
-        assert_eq!(! Cartesian, Polar);
+        assert_eq!(!Polar, Cartesian);
+        assert_eq!(!Cartesian, Polar);
     }
 }

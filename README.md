@@ -62,11 +62,12 @@ The syntax for the input files are simple, case-insensitive, s-expressions.
 ```ebnf
 SEXPR        = '(' PICTURE ')' ;
 PICTURE      = MONO | GRAYSCALE | GRADIENT | RGB | HSV ;
-MONO         = 'Mono' EXPR ;
+MONO         = 'Mono' [COORDSYS] EXPR ;
 RGB          = 'RGB' EXPR EXPR EXPR ;
 HSV          = 'HSV' EXPR EXPR EXPR ;
 GRAYSCALE    = 'Grayscale' EXPR ;
 GRADIENT     = 'Gradient' '(' 'Colors' COLOR* EXPR ')';
+COORDSYS     = 'Polar' | 'Cartesian' | CHAR*;
 COLORS       = '(' COLORTYPE EXPR EXPR EXPR ')' ;
 COLORTYPE    = 'StopColor' | 'Color' ;
 EXPR         = '(' EXPR ')';
@@ -110,6 +111,10 @@ DIGIT        = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 NEGATE       = '-';
 FILEDOTEXT   = CHAR* '.' CHAR* ;
 ```
+
+### Coordinate System
+
+Invalid Coordinate systems are ignored, the default Coordinate System (Cartesian) will be used.
 
 ### Infinities and NaNs handling
 
