@@ -9,12 +9,7 @@ use imgui_gfx_renderer::{Renderer, Shaders};
 
 pub const EXEC_NAME: &'static str = "Evolution";
 
-#[derive(Copy, Clone, PartialEq, Debug, Default)]
-struct MouseActionState {
-    pos: (i32, i32),
-    pressed: (bool, bool, bool),
-    wheel: f32,
-}
+use super::mouseactionstate::MouseActionState;
 
 pub struct ImGuiWrapper {
     pub imgui: imgui::Context,
