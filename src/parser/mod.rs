@@ -1,12 +1,8 @@
 use std::sync::mpsc::Sender;
 
-#[derive(Debug, PartialEq)]
-pub enum Token<'a> {
-    OpenParen(usize),
-    CloseParen(usize),
-    Operation(&'a str, usize),
-    Constant(&'a str, usize),
-}
+pub mod token;
+
+pub use token::Token;
 
 // Function pointer definition must be wrapped in a struct to be recursive
 struct StateFunction(fn(&mut Lexer) -> Option<StateFunction>);
