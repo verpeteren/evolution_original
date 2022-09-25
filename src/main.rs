@@ -8,8 +8,8 @@ extern crate image;
 
 mod parser;
 mod pic;
-mod vm;
 mod ui;
+mod vm;
 
 use std::collections::HashMap;
 use std::env::var;
@@ -21,10 +21,15 @@ use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::pic::pic::{lisp_to_pic, Pic};
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::{CoordinateSystem, DEFAULT_COORDINATE_SYSTEM};
-use crate::ui::{button::Button, mousebuttonstate::MouseButtonState, mousestate::MouseState, imgui_wrapper::{ImGuiWrapper, EXEC_NAME}};
+use crate::pic::pic::{lisp_to_pic, Pic};
+use crate::ui::{
+    button::Button,
+    imgui_wrapper::{ImGuiWrapper, EXEC_NAME},
+    mousebuttonstate::MouseButtonState,
+    mousestate::MouseState,
+};
 
 use clap::Parser;
 use ggez::conf::{WindowMode, WindowSetup};

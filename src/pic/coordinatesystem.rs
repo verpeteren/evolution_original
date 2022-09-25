@@ -13,7 +13,10 @@ pub enum CoordinateSystem {
 
 impl CoordinateSystem {
     pub fn list_all<'a>() -> Vec<String> {
-        vec![CoordinateSystem::Polar.to_string(), CoordinateSystem::Cartesian.to_string()]
+        vec![
+            CoordinateSystem::Polar.to_string(),
+            CoordinateSystem::Cartesian.to_string(),
+        ]
     }
 }
 

@@ -1,6 +1,6 @@
 use ggez::error::GameResult;
-use ggez::input::mouse::MouseButton;
 use ggez::graphics::{draw, size, DrawParam, Image, Rect};
+use ggez::input::mouse::MouseButton;
 use ggez::mint::{Point2, Vector2};
 use ggez::Context;
 

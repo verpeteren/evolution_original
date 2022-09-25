@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 
-use crate::pic::actual_picture::ActualPicture;
-use crate::pic::ggez_utility::{get_random_color, lerp_color};
-use crate::pic::data::{MonoData, GrayscaleData, RGBData, HSVData, GradientData};
-use crate::pic::coordinatesystem::{CoordinateSystem};
 use crate::parser::{aptnode::APTNode, lexer::Lexer, token::Token};
+use crate::pic::actual_picture::ActualPicture;
+use crate::pic::coordinatesystem::CoordinateSystem;
+use crate::pic::data::{GradientData, GrayscaleData, HSVData, MonoData, RGBData};
+use crate::pic::ggez_utility::{get_random_color, lerp_color};
 use crate::vm::stackmachine::StackMachine;
 
 use ggez::graphics::Color;
@@ -860,7 +860,6 @@ pub fn parse_pic(
     }
 }
 
-
 pub fn extract_line_number(token: &Token) -> usize {
     match token {
         Token::OpenParen(ln) | Token::CloseParen(ln) => *ln,
@@ -949,7 +948,6 @@ fn hsv_to_rgb<S: Simd>(h: S::Vf32, s: S::Vf32, v: S::Vf32) -> (S::Vf32, S::Vf32,
         (r, g, b)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

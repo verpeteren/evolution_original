@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::pic::actual_picture::ActualPicture;
 use crate::parser::aptnode::APTNode;
+use crate::pic::actual_picture::ActualPicture;
 use crate::vm::instruction::Instruction;
 
 use simdeez::Simd;
@@ -631,4 +631,3 @@ mod tests {
         impl_stackmachine_deal_with_nan_runtime_select();
     }
 }
-

@@ -1,5 +1,5 @@
-use crate::pic::coordinatesystem::CoordinateSystem;
 use crate::parser::aptnode::APTNode;
+use crate::pic::coordinatesystem::CoordinateSystem;
 
 use ggez::graphics::Color;
 

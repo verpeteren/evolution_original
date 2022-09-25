@@ -1,5 +1,5 @@
-use crate::pic::coordinatesystem::CoordinateSystem;
 use crate::parser::aptnode::APTNode;
+use crate::pic::coordinatesystem::CoordinateSystem;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct HSVData {
