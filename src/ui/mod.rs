@@ -6,15 +6,12 @@ use ggez::Context;
 
 mod mouseactionstate;
 mod mousebuttonstate;
+mod mousestate;
 pub mod imgui_wrapper;
 
 pub use mousebuttonstate::MouseButtonState;
+pub use mousestate::MouseState;
 
-pub enum MouseState {
-    Up(MouseButtonState),
-    Down(MouseButtonState),
-    Nothing,
-}
 
 pub struct Button {
     img: Image,
