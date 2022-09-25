@@ -21,7 +21,7 @@ use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::pic::{lisp_to_pic, CoordinateSystem, Pic, DEFAULT_COORDINATE_SYSTEM, actual_picture::ActualPicture};
+use crate::pic::{pic::lisp_to_pic, CoordinateSystem, Pic, DEFAULT_COORDINATE_SYSTEM, actual_picture::ActualPicture};
 use crate::ui::{Button, MouseButtonState, MouseState, imgui_wrapper::{ImGuiWrapper, EXEC_NAME}};
 
 use clap::Parser;
