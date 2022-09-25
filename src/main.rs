@@ -8,7 +8,7 @@ extern crate image;
 
 mod parser;
 mod pic;
-mod stack_machine;
+mod vm;
 mod ui;
 
 use std::collections::HashMap;

@@ -7,7 +7,7 @@ use crate::pic::ggez_utility::{get_random_color, lerp_color};
 use crate::pic::{MonoData, GrayscaleData, RGBData, HSVData, GradientData};
 use crate::pic::coordinatesystem::{CoordinateSystem};
 use crate::parser::{APTNode, Lexer, Token};
-use crate::stack_machine::StackMachine;
+use crate::vm::StackMachine;
 
 use ggez::graphics::Color;
 use rand::prelude::*;
