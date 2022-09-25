@@ -4,10 +4,10 @@ use std::sync::Arc;
 
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::ggez_utility::{get_random_color, lerp_color};
-use crate::pic::{MonoData, GrayscaleData, RGBData, HSVData, GradientData};
+use crate::pic::data::{MonoData, GrayscaleData, RGBData, HSVData, GradientData};
 use crate::pic::coordinatesystem::{CoordinateSystem};
-use crate::parser::{APTNode, Lexer, Token};
-use crate::vm::StackMachine;
+use crate::parser::{aptnode::APTNode, lexer::Lexer, token::Token};
+use crate::vm::stackmachine::StackMachine;
 
 use ggez::graphics::Color;
 use rand::prelude::*;
@@ -954,7 +954,7 @@ fn hsv_to_rgb<S: Simd>(h: S::Vf32, s: S::Vf32, v: S::Vf32) -> (S::Vf32, S::Vf32,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::Token;
+    use crate::parser::token::Token;
     use crate::pic::coordinatesystem::DEFAULT_COORDINATE_SYSTEM;
 
     #[test]

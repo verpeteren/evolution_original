@@ -4,7 +4,7 @@ use ggez::graphics::{draw, size, DrawParam, Image, Rect};
 use ggez::mint::{Point2, Vector2};
 use ggez::Context;
 
-use super::mousestate::MouseState;
+use crate::ui::mousestate::MouseState;
 
 pub struct Button {
     img: Image,

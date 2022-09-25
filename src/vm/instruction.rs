@@ -43,4 +43,3 @@ pub enum Instruction<S: Simd> {
     Y,
     T,
 }
-

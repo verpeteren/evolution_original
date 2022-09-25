@@ -9,7 +9,7 @@ use imgui_gfx_renderer::{Renderer, Shaders};
 
 pub const EXEC_NAME: &'static str = "Evolution";
 
-use super::mouseactionstate::MouseActionState;
+use crate::ui::mouseactionstate::MouseActionState;
 
 pub struct ImGuiWrapper {
     pub imgui: imgui::Context,

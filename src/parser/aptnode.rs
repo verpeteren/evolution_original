@@ -1,11 +1,11 @@
 use std::sync::mpsc::Receiver;
 
-use crate::parser::Token;
+use crate::parser::token::Token;
+use crate::pic::coordinatesystem::CoordinateSystem;
 
 use rand::prelude::*;
 use variant_count::VariantCount;
 
-use crate::pic::CoordinateSystem;
 use APTNode::*;
 
 #[derive(VariantCount, Clone, Debug, PartialEq)]

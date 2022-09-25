@@ -5,4 +5,3 @@ pub struct MouseButtonState {
     pub x: f32,
     pub y: f32,
 }
-

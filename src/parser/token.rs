@@ -1,4 +1,3 @@
-
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {
     OpenParen(usize),
@@ -6,5 +5,3 @@ pub enum Token<'a> {
     Operation(&'a str, usize),
     Constant(&'a str, usize),
 }
-
-

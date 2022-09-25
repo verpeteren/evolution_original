@@ -4,4 +4,3 @@ pub struct MouseActionState {
     pub pressed: (bool, bool, bool),
     pub wheel: f32,
 }
-

@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::pic::actual_picture::ActualPicture;
-use crate::parser::APTNode;
+use crate::parser::aptnode::APTNode;
+use crate::vm::instruction::Instruction;
 
 use simdeez::Simd;
 use simdnoise::{
@@ -10,8 +11,6 @@ use simdnoise::{
     simplex::{fbm_2d, ridge_2d, turbulence_2d},
     CellDistanceFunction, CellReturnType,
 };
-
-use super::instruction::Instruction;
 
 pub struct StackMachine<S: Simd> {
     pub instructions: Vec<Instruction<S>>,
