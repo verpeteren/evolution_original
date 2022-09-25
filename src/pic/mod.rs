@@ -2,6 +2,7 @@ pub mod actual_picture;
 
 mod ggez_utility;
 pub mod coordinatesystem;
+pub mod data;
 
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
@@ -24,41 +25,7 @@ const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
 
 pub use coordinatesystem::{CoordinateSystem, DEFAULT_COORDINATE_SYSTEM};
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct GradientData {
-    colors: Vec<(Color, bool)>,
-    index: APTNode,
-    coord: CoordinateSystem,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct GrayscaleData {
-    c: APTNode,
-    coord: CoordinateSystem,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct MonoData {
-    c: APTNode,
-    coord: CoordinateSystem,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct RGBData {
-    r: APTNode,
-    g: APTNode,
-    b: APTNode,
-    coord: CoordinateSystem,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct HSVData {
-    h: APTNode,
-    s: APTNode,
-    v: APTNode,
-    coord: CoordinateSystem,
-}
+pub use data::{MonoData, GrayscaleData, RGBData, HSVData, GradientData};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Pic {
