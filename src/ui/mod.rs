@@ -1,21 +1,19 @@
 use ggez::error::GameResult;
-use ggez::graphics::{draw, size, DrawParam, Image, Rect};
 use ggez::input::mouse::MouseButton;
+use ggez::graphics::{draw, size, DrawParam, Image, Rect};
 use ggez::mint::{Point2, Vector2};
 use ggez::Context;
 
 mod mouseactionstate;
+mod mousebuttonstate;
 pub mod imgui_wrapper;
+
+pub use mousebuttonstate::MouseButtonState;
 
 pub enum MouseState {
     Up(MouseButtonState),
     Down(MouseButtonState),
     Nothing,
-}
-pub struct MouseButtonState {
-    pub which_button: MouseButton,
-    pub x: f32,
-    pub y: f32,
 }
 
 pub struct Button {
