@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::pic::actual_picture::ActualPicture;
-use crate::apt::APTNode;
+use crate::parser::APTNode;
 
 use simdeez::Simd;
 use simdnoise::{
@@ -399,7 +399,7 @@ impl<S: Simd> StackMachine<S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::apt::mock;
+    use crate::parser::aptnode::mock;
 
     use super::*;
     use simdeez::avx2::*;

@@ -6,7 +6,6 @@
 extern crate ggez;
 extern crate image;
 
-mod apt;
 mod parser;
 mod pic;
 mod stack_machine;
