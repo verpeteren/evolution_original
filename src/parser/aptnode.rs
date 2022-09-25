@@ -6,8 +6,6 @@ use crate::pic::coordinatesystem::CoordinateSystem;
 use rand::prelude::*;
 use variant_count::VariantCount;
 
-use APTNode::*;
-
 #[derive(VariantCount, Clone, Debug, PartialEq)]
 pub enum APTNode {
     Add(Vec<APTNode>),
@@ -50,12 +48,12 @@ pub enum APTNode {
 impl APTNode {
     pub fn to_lisp(&self) -> String {
         match self {
-            Add(children) => format!("( + {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Sub(children) => format!("( - {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Mul(children) => format!("( * {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Div(children) => format!("( / {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            Mod(children) => format!("( % {} {} )", children[0].to_lisp(), children[1].to_lisp()),
-            FBM(children) => format!(
+            APTNode::Add(children) => format!("( + {} {} )", children[0].to_lisp(), children[1].to_lisp()),
+            APTNode::Sub(children) => format!("( - {} {} )", children[0].to_lisp(), children[1].to_lisp()),
+            APTNode::Mul(children) => format!("( * {} {} )", children[0].to_lisp(), children[1].to_lisp()),
+            APTNode::Div(children) => format!("( / {} {} )", children[0].to_lisp(), children[1].to_lisp()),
+            APTNode::Mod(children) => format!("( % {} {} )", children[0].to_lisp(), children[1].to_lisp()),
+            APTNode::FBM(children) => format!(
                 "( FBM {} {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
@@ -64,7 +62,7 @@ impl APTNode {
                 children[4].to_lisp(),
                 children[5].to_lisp()
             ),
-            Ridge(children) => format!(
+            APTNode::Ridge(children) => format!(
                 "( RIDGE {} {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
@@ -73,7 +71,7 @@ impl APTNode {
                 children[4].to_lisp(),
                 children[5].to_lisp()
             ),
-            Cell1(children) => format!(
+            APTNode::Cell1(children) => format!(
                 "( CELL1 {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
@@ -81,7 +79,7 @@ impl APTNode {
                 children[3].to_lisp(),
                 children[4].to_lisp()
             ),
-            Cell2(children) => format!(
+            APTNode::Cell2(children) => format!(
                 "( CELL2 {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
@@ -89,7 +87,7 @@ impl APTNode {
                 children[3].to_lisp(),
                 children[4].to_lisp()
             ),
-            Turbulence(children) => format!(
+            APTNode::Turbulence(children) => format!(
                 "( TURBULENCE {} {} {} {} {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp(),
@@ -98,44 +96,44 @@ impl APTNode {
                 children[4].to_lisp(),
                 children[5].to_lisp()
             ),
-            Sqrt(children) => format!("( SQRT {} )", children[0].to_lisp()),
-            Sin(children) => format!("( SIN {} )", children[0].to_lisp()),
-            Atan(children) => format!("( ATAN {} )", children[0].to_lisp()),
-            Atan2(children) => format!(
+            APTNode::Sqrt(children) => format!("( SQRT {} )", children[0].to_lisp()),
+            APTNode::Sin(children) => format!("( SIN {} )", children[0].to_lisp()),
+            APTNode::Atan(children) => format!("( ATAN {} )", children[0].to_lisp()),
+            APTNode::Atan2(children) => format!(
                 "( ATAN2 {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
-            Tan(children) => format!("( TAN {} )", children[0].to_lisp()),
-            Log(children) => format!("( LOG {} )", children[0].to_lisp()),
-            Abs(children) => format!("( ABS {} )", children[0].to_lisp()),
-            Floor(children) => format!("( FLOOR {} )", children[0].to_lisp()),
-            Ceil(children) => format!("( CEIL {} )", children[0].to_lisp()),
-            Clamp(children) => format!("( CLAMP {} )", children[0].to_lisp()),
-            Wrap(children) => format!("( WRAP {} )", children[0].to_lisp()),
-            Square(children) => format!("( SQUARE {} )", children[0].to_lisp()),
-            Max(children) => format!(
+            APTNode::Tan(children) => format!("( TAN {} )", children[0].to_lisp()),
+            APTNode::Log(children) => format!("( LOG {} )", children[0].to_lisp()),
+            APTNode::Abs(children) => format!("( ABS {} )", children[0].to_lisp()),
+            APTNode::Floor(children) => format!("( FLOOR {} )", children[0].to_lisp()),
+            APTNode::Ceil(children) => format!("( CEIL {} )", children[0].to_lisp()),
+            APTNode::Clamp(children) => format!("( CLAMP {} )", children[0].to_lisp()),
+            APTNode::Wrap(children) => format!("( WRAP {} )", children[0].to_lisp()),
+            APTNode::Square(children) => format!("( SQUARE {} )", children[0].to_lisp()),
+            APTNode::Max(children) => format!(
                 "( MAX {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
-            Min(children) => format!(
+            APTNode::Min(children) => format!(
                 "( MIN {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
-            Mandelbrot(children) => format!(
+            APTNode::Mandelbrot(children) => format!(
                 "( MANDELBROT {} {} )",
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
-            Picture(name, children) => format!(
+            APTNode::Picture(name, children) => format!(
                 "( PIC-{} {} {} )",
                 name,
                 children[0].to_lisp(),
                 children[1].to_lisp()
             ),
-            Constant(v) => {
+            APTNode::Constant(v) => {
                 if v == &std::f32::consts::PI {
                     format!("PI")
                 } else if v == &std::f32::consts::E {
@@ -144,56 +142,56 @@ impl APTNode {
                     format!("{}", v)
                 }
             }
-            Width => format!("WIDTH"),
-            Height => format!("HEIGHT"),
-            PI => format!("PI"),
-            E => format!("E"),
-            X => format!("X"),
-            Y => format!("Y"),
-            T => format!("T"),
-            Empty => format!("EMPTY"),
+            APTNode::Width => format!("WIDTH"),
+            APTNode::Height => format!("HEIGHT"),
+            APTNode::PI => format!("PI"),
+            APTNode::E => format!("E"),
+            APTNode::X => format!("X"),
+            APTNode::Y => format!("Y"),
+            APTNode::T => format!("T"),
+            APTNode::Empty => format!("EMPTY"),
         }
     }
 
     pub fn str_to_node(s: &str) -> Result<APTNode, String> {
         let lower = &s.to_lowercase()[..];
         match lower {
-            "+" => Ok(Add(vec![Empty, Empty])),
-            "-" => Ok(Sub(vec![Empty, Empty])),
-            "*" => Ok(Mul(vec![Empty, Empty])),
-            "/" => Ok(Div(vec![Empty, Empty])),
-            "%" => Ok(Mod(vec![Empty, Empty])),
-            "fbm" => Ok(FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
-            "ridge" => Ok(Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
-            "turbulence" => Ok(Turbulence(vec![Empty, Empty, Empty, Empty, Empty, Empty])),
-            "cell1" => Ok(Cell1(vec![Empty, Empty, Empty, Empty, Empty])),
-            "cell2" => Ok(Cell2(vec![Empty, Empty, Empty, Empty, Empty])),
-            "sqrt" => Ok(Sqrt(vec![Empty])),
-            "sin" => Ok(Sin(vec![Empty])),
-            "atan" => Ok(Atan(vec![Empty])),
-            "atan2" => Ok(Atan2(vec![Empty, Empty])),
-            "tan" => Ok(Tan(vec![Empty])),
-            "log" => Ok(Log(vec![Empty])),
-            "abs" => Ok(Abs(vec![Empty])),
-            "floor" => Ok(Floor(vec![Empty])),
-            "ceil" => Ok(Ceil(vec![Empty])),
-            "clamp" => Ok(Clamp(vec![Empty])),
-            "wrap" => Ok(Wrap(vec![Empty])),
-            "square" => Ok(Square(vec![Empty])),
-            "max" => Ok(Max(vec![Empty, Empty])),
-            "min" => Ok(Min(vec![Empty, Empty])),
-            "mandelbrot" => Ok(Mandelbrot(vec![Empty, Empty])),
-            "width" => Ok(Width),
-            "height" => Ok(Height),
-            "pi" => Ok(PI),
-            "e" => Ok(E),
-            "x" => Ok(X),
-            "y" => Ok(Y),
-            "t" => Ok(T),
+            "+" => Ok(APTNode::Add(vec![APTNode::Empty, APTNode::Empty])),
+            "-" => Ok(APTNode::Sub(vec![APTNode::Empty, APTNode::Empty])),
+            "*" => Ok(APTNode::Mul(vec![APTNode::Empty, APTNode::Empty])),
+            "/" => Ok(APTNode::Div(vec![APTNode::Empty, APTNode::Empty])),
+            "%" => Ok(APTNode::Mod(vec![APTNode::Empty, APTNode::Empty])),
+            "fbm" => Ok(APTNode::FBM(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty])),
+            "ridge" => Ok(APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty])),
+            "turbulence" => Ok(APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty])),
+            "cell1" => Ok(APTNode::Cell1(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty])),
+            "cell2" => Ok(APTNode::Cell2(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty])),
+            "sqrt" => Ok(APTNode::Sqrt(vec![APTNode::Empty])),
+            "sin" => Ok(APTNode::Sin(vec![APTNode::Empty])),
+            "atan" => Ok(APTNode::Atan(vec![APTNode::Empty])),
+            "atan2" => Ok(APTNode::Atan2(vec![APTNode::Empty, APTNode::Empty])),
+            "tan" => Ok(APTNode::Tan(vec![APTNode::Empty])),
+            "log" => Ok(APTNode::Log(vec![APTNode::Empty])),
+            "abs" => Ok(APTNode::Abs(vec![APTNode::Empty])),
+            "floor" => Ok(APTNode::Floor(vec![APTNode::Empty])),
+            "ceil" => Ok(APTNode::Ceil(vec![APTNode::Empty])),
+            "clamp" => Ok(APTNode::Clamp(vec![APTNode::Empty])),
+            "wrap" => Ok(APTNode::Wrap(vec![APTNode::Empty])),
+            "square" => Ok(APTNode::Square(vec![APTNode::Empty])),
+            "max" => Ok(APTNode::Max(vec![APTNode::Empty, APTNode::Empty])),
+            "min" => Ok(APTNode::Min(vec![APTNode::Empty, APTNode::Empty])),
+            "mandelbrot" => Ok(APTNode::Mandelbrot(vec![APTNode::Empty, APTNode::Empty])),
+            "width" => Ok(APTNode::Width),
+            "height" => Ok(APTNode::Height),
+            "pi" => Ok(APTNode::PI),
+            "e" => Ok(APTNode::E),
+            "x" => Ok(APTNode::X),
+            "y" => Ok(APTNode::Y),
+            "t" => Ok(APTNode::T),
             _ => {
                 if lower.starts_with("pic-") {
                     let name = lower[4..].to_owned();
-                    Ok(Picture(name, vec![Empty, Empty]))
+                    Ok(APTNode::Picture(name, vec![APTNode::Empty, APTNode::Empty]))
                 } else {
                     Err(format!("Unknown operation '{}' ", s.to_string()))
                 }
@@ -214,34 +212,34 @@ impl APTNode {
         let r = rng.gen_range(0..APTNode::VARIANT_COUNT - 9);
 
         match r {
-            0 => Add(vec![Empty, Empty]),
-            1 => Sub(vec![Empty, Empty]),
-            2 => Mul(vec![Empty, Empty]),
-            3 => Div(vec![Empty, Empty]),
-            4 => Mod(vec![Empty, Empty]),
-            5 => FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
-            6 => Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
-            7 => Turbulence(vec![Empty, Empty, Empty, Empty, Empty, Empty]),
-            8 => Cell1(vec![Empty, Empty, Empty, Empty, Empty]),
-            9 => Cell2(vec![Empty, Empty, Empty, Empty, Empty]),
-            10 => Sqrt(vec![Empty]),
-            11 => Sin(vec![Empty]),
-            12 => Atan(vec![Empty]),
-            13 => Atan2(vec![Empty, Empty]),
-            14 => Tan(vec![Empty]),
-            15 => Log(vec![Empty]),
-            16 => Abs(vec![Empty]),
-            17 => Floor(vec![Empty]),
-            18 => Ceil(vec![Empty]),
-            19 => Clamp(vec![Empty]),
-            20 => Wrap(vec![Empty]),
-            21 => Square(vec![Empty]),
-            22 => Max(vec![Empty, Empty]),
-            23 => Min(vec![Empty, Empty]),
-            24 => Mandelbrot(vec![Empty, Empty]),
+            0 => APTNode::Add(vec![APTNode::Empty, APTNode::Empty]),
+            1 => APTNode::Sub(vec![APTNode::Empty, APTNode::Empty]),
+            2 => APTNode::Mul(vec![APTNode::Empty, APTNode::Empty]),
+            3 => APTNode::Div(vec![APTNode::Empty, APTNode::Empty]),
+            4 => APTNode::Mod(vec![APTNode::Empty, APTNode::Empty]),
+            5 => APTNode::FBM(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            6 => APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            7 => APTNode::Turbulence(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            8 => APTNode::Cell1(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            9 => APTNode::Cell2(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty]),
+            10 => APTNode::Sqrt(vec![APTNode::Empty]),
+            11 => APTNode::Sin(vec![APTNode::Empty]),
+            12 => APTNode::Atan(vec![APTNode::Empty]),
+            13 => APTNode::Atan2(vec![APTNode::Empty, APTNode::Empty]),
+            14 => APTNode::Tan(vec![APTNode::Empty]),
+            15 => APTNode::Log(vec![APTNode::Empty]),
+            16 => APTNode::Abs(vec![APTNode::Empty]),
+            17 => APTNode::Floor(vec![APTNode::Empty]),
+            18 => APTNode::Ceil(vec![APTNode::Empty]),
+            19 => APTNode::Clamp(vec![APTNode::Empty]),
+            20 => APTNode::Wrap(vec![APTNode::Empty]),
+            21 => APTNode::Square(vec![APTNode::Empty]),
+            22 => APTNode::Max(vec![APTNode::Empty, APTNode::Empty]),
+            23 => APTNode::Min(vec![APTNode::Empty, APTNode::Empty]),
+            24 => APTNode::Mandelbrot(vec![APTNode::Empty, APTNode::Empty]),
             25 => {
                 let r = rng.gen_range(0..pic_names.len()) as usize;
-                Picture(pic_names[r].to_string(), vec![Empty, Empty])
+                APTNode::Picture(pic_names[r].to_string(), vec![APTNode::Empty, APTNode::Empty])
             }
             _ => panic!("get_random_node generated unhandled r:{}", r),
         }
@@ -304,32 +302,32 @@ impl APTNode {
 
     fn constant_eval(&self) -> f32 {
         match self {
-            Add(children) => children[0].constant_eval() + children[1].constant_eval(),
-            Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
-            Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
-            Div(children) => children[0].constant_eval() / children[1].constant_eval(),
-            Mod(children) => {
+            APTNode::Add(children) => children[0].constant_eval() + children[1].constant_eval(),
+            APTNode::Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
+            APTNode::Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
+            APTNode::Div(children) => children[0].constant_eval() / children[1].constant_eval(),
+            APTNode::Mod(children) => {
                 let a = children[0].constant_eval();
                 let b = children[1].constant_eval();
                 a % b
             }
-            FBM(_) => 0.0,
-            Ridge(_) => 0.0,
-            Turbulence(_) => 0.0, // if the noise functions all have constants it isn't worth bothering maybe?
-            Cell1(_) => 0.0,
-            Cell2(_) => 0.0,
-            Sqrt(children) => children[0].constant_eval().sqrt(),
-            Sin(children) => children[0].constant_eval().sin(),
-            Atan(children) => children[0].constant_eval().atan(),
-            Atan2(children) => children[0]
+            APTNode::FBM(_) => 0.0,
+            APTNode::Ridge(_) => 0.0,
+            APTNode::Turbulence(_) => 0.0, // if the noise functions all have constants it isn't worth bothering maybe?
+            APTNode::Cell1(_) => 0.0,
+            APTNode::Cell2(_) => 0.0,
+            APTNode::Sqrt(children) => children[0].constant_eval().sqrt(),
+            APTNode::Sin(children) => children[0].constant_eval().sin(),
+            APTNode::Atan(children) => children[0].constant_eval().atan(),
+            APTNode::Atan2(children) => children[0]
                 .constant_eval()
                 .atan2(children[1].constant_eval()),
-            Tan(children) => children[0].constant_eval().tan(),
-            Log(children) => children[0].constant_eval().log2(),
-            Abs(children) => children[0].constant_eval().abs(),
-            Floor(children) => children[0].constant_eval().floor(),
-            Ceil(children) => children[0].constant_eval().ceil(),
-            Clamp(children) => {
+            APTNode::Tan(children) => children[0].constant_eval().tan(),
+            APTNode::Log(children) => children[0].constant_eval().log2(),
+            APTNode::Abs(children) => children[0].constant_eval().abs(),
+            APTNode::Floor(children) => children[0].constant_eval().floor(),
+            APTNode::Ceil(children) => children[0].constant_eval().ceil(),
+            APTNode::Clamp(children) => {
                 let v = children[0].constant_eval();
                 if v > 1.0 {
                     1.0
@@ -339,7 +337,7 @@ impl APTNode {
                     v
                 }
             }
-            Wrap(children) => {
+            APTNode::Wrap(children) => {
                 let v = children[0].constant_eval();
                 if v >= -1.0 && v <= 1.0 {
                     v
@@ -348,11 +346,11 @@ impl APTNode {
                     -1.0 + 2.0 * (t - t.floor())
                 }
             }
-            Square(children) => {
+            APTNode::Square(children) => {
                 let v = children[0].constant_eval();
                 v * v
             }
-            Max(children) => {
+            APTNode::Max(children) => {
                 let a = children[0].constant_eval();
                 let b = children[1].constant_eval();
                 if a >= b {
@@ -361,7 +359,7 @@ impl APTNode {
                     b
                 }
             }
-            Min(children) => {
+            APTNode::Min(children) => {
                 let a = children[0].constant_eval();
                 let b = children[1].constant_eval();
                 if a <= b {
@@ -370,71 +368,71 @@ impl APTNode {
                     b
                 }
             }
-            Mandelbrot(_children) => {
+            APTNode::Mandelbrot(_children) => {
                 //todo
                 0.0
             }
-            Picture(_name, _children) => {
+            APTNode::Picture(_name, _children) => {
                 //todo
                 0.0
             }
-            PI => std::f32::consts::PI,
-            E => std::f32::consts::E,
-            Constant(v) => *v,
+            APTNode::PI => std::f32::consts::PI,
+            APTNode::E => std::f32::consts::E,
+            APTNode::Constant(v) => *v,
             _ => panic!("invalid node passed to constant_esval"),
         }
     }
 
     fn set_children(&self, children: Vec<APTNode>) -> Self {
         match self {
-            Add(_) => Add(children),
-            Sub(_) => Sub(children),
-            Mul(_) => Mul(children),
-            Div(_) => Div(children),
-            Mod(_) => Mod(children),
-            FBM(_) => FBM(children),
-            Ridge(_) => Ridge(children),
-            Turbulence(_) => Turbulence(children),
-            Cell1(_) => Cell1(children),
-            Cell2(_) => Cell2(children),
-            Sqrt(_) => Sqrt(children),
-            Sin(_) => Sin(children),
-            Atan(_) => Atan(children),
-            Atan2(_) => Atan(children),
-            Tan(_) => Tan(children),
-            Log(_) => Log(children),
-            Abs(_) => Abs(children),
-            Floor(_) => Floor(children),
-            Ceil(_) => Ceil(children),
-            Clamp(_) => Clamp(children),
-            Wrap(_) => Wrap(children),
-            Square(_) => Square(children),
-            Max(_) => Max(children),
-            Min(_) => Min(children),
-            Mandelbrot(_) => Mandelbrot(children),
-            Picture(name, _) => Picture(name.to_string(), children[1..].to_vec()),
-            Constant(v) => Constant(*v),
-            Width => Width,
-            Height => Height,
-            PI => PI,
-            E => E,
-            X => X,
-            Y => Y,
-            T => T,
-            Empty => panic!("tried to eval an empty node"),
+            APTNode::Add(_) => APTNode::Add(children),
+            APTNode::Sub(_) => APTNode::Sub(children),
+            APTNode::Mul(_) => APTNode::Mul(children),
+            APTNode::Div(_) => APTNode::Div(children),
+            APTNode::Mod(_) => APTNode::Mod(children),
+            APTNode::FBM(_) => APTNode::FBM(children),
+            APTNode::Ridge(_) => APTNode::Ridge(children),
+            APTNode::Turbulence(_) => APTNode::Turbulence(children),
+            APTNode::Cell1(_) => APTNode::Cell1(children),
+            APTNode::Cell2(_) => APTNode::Cell2(children),
+            APTNode::Sqrt(_) => APTNode::Sqrt(children),
+            APTNode::Sin(_) => APTNode::Sin(children),
+            APTNode::Atan(_) => APTNode::Atan(children),
+            APTNode::Atan2(_) => APTNode::Atan(children),
+            APTNode::Tan(_) => APTNode::Tan(children),
+            APTNode::Log(_) => APTNode::Log(children),
+            APTNode::Abs(_) => APTNode::Abs(children),
+            APTNode::Floor(_) => APTNode::Floor(children),
+            APTNode::Ceil(_) => APTNode::Ceil(children),
+            APTNode::Clamp(_) => APTNode::Clamp(children),
+            APTNode::Wrap(_) => APTNode::Wrap(children),
+            APTNode::Square(_) => APTNode::Square(children),
+            APTNode::Max(_) => APTNode::Max(children),
+            APTNode::Min(_) => APTNode::Min(children),
+            APTNode::Mandelbrot(_) => APTNode::Mandelbrot(children),
+            APTNode::Picture(name, _) => APTNode::Picture(name.to_string(), children[1..].to_vec()),
+            APTNode::Constant(v) => APTNode::Constant(*v),
+            APTNode::Width => APTNode::Width,
+            APTNode::Height => APTNode::Height,
+            APTNode::PI => APTNode::PI,
+            APTNode::E => APTNode::E,
+            APTNode::X => APTNode::X,
+            APTNode::Y => APTNode::Y,
+            APTNode::T => APTNode::T,
+            APTNode::Empty => panic!("tried to eval an empty node"),
         }
     }
 
     fn constant_fold(&self) -> APTNode {
         match self {
-            Constant(v) => Constant(*v),
-            Width => Width,
-            Height => Height,
-            PI => PI,
-            E => E,
-            X => X,
-            Y => Y,
-            T => T,
+            APTNode::Constant(v) => APTNode::Constant(*v),
+            APTNode::Width => APTNode::Width,
+            APTNode::Height => APTNode::Height,
+            APTNode::PI => APTNode::PI,
+            APTNode::E => APTNode::E,
+            APTNode::X => APTNode::X,
+            APTNode::Y => APTNode::Y,
+            APTNode::T => APTNode::T,
             _ => {
                 let children = self.get_children().unwrap();
                 //foreach child -> constant_fold(child), if you get back all constants -> compute the new constant, and create it
@@ -476,26 +474,26 @@ impl APTNode {
 
     pub fn get_children_mut(&mut self) -> Option<&mut Vec<APTNode>> {
         match self {
-            Add(children) | Sub(children) | Mul(children) | Div(children) | Mod(children)
-            | FBM(children) | Ridge(children) | Turbulence(children) | Cell1(children)
-            | Cell2(children) | Sqrt(children) | Sin(children) | Atan(children)
-            | Atan2(children) | Tan(children) | Log(children) | Abs(children) | Floor(children)
-            | Ceil(children) | Clamp(children) | Wrap(children) | Square(children)
-            | Max(children) | Min(children) | Mandelbrot(children) => Some(children),
-            Picture(_, children) => Some(children),
+            APTNode::Add(children) | APTNode::Sub(children) | APTNode::Mul(children) | APTNode::Div(children) | APTNode::Mod(children)
+            | APTNode::FBM(children) | APTNode::Ridge(children) | APTNode::Turbulence(children) | APTNode::Cell1(children)
+            | APTNode::Cell2(children) | APTNode::Sqrt(children) | APTNode::Sin(children) | APTNode::Atan(children)
+            | APTNode::Atan2(children) | APTNode::Tan(children) | APTNode::Log(children) | APTNode::Abs(children) | APTNode::Floor(children)
+            | APTNode::Ceil(children) | APTNode::Clamp(children) | APTNode::Wrap(children) | APTNode::Square(children)
+            | APTNode::Max(children) | APTNode::Min(children) | APTNode::Mandelbrot(children) => Some(children),
+            APTNode::Picture(_, children) => Some(children),
             _ => None,
         }
     }
 
     pub fn get_children(&self) -> Option<&Vec<APTNode>> {
         match self {
-            Add(children) | Sub(children) | Mul(children) | Div(children) | Mod(children)
-            | FBM(children) | Ridge(children) | Turbulence(children) | Cell1(children)
-            | Cell2(children) | Sqrt(children) | Sin(children) | Atan(children)
-            | Atan2(children) | Tan(children) | Log(children) | Abs(children) | Floor(children)
-            | Ceil(children) | Clamp(children) | Wrap(children) | Square(children)
-            | Max(children) | Min(children) | Mandelbrot(children) => Some(children),
-            Picture(_, children) => Some(children),
+            APTNode::Add(children) | APTNode::Sub(children) | APTNode::Mul(children) | APTNode::Div(children) | APTNode::Mod(children)
+            | APTNode::FBM(children) | APTNode::Ridge(children) | APTNode::Turbulence(children) | APTNode::Cell1(children)
+            | APTNode::Cell2(children) | APTNode::Sqrt(children) | APTNode::Sin(children) | APTNode::Atan(children)
+            | APTNode::Atan2(children) | APTNode::Tan(children) | APTNode::Log(children) | APTNode::Abs(children) | APTNode::Floor(children)
+            | APTNode::Ceil(children) | APTNode::Clamp(children) | APTNode::Wrap(children) | APTNode::Square(children)
+            | APTNode::Max(children) | APTNode::Min(children) | APTNode::Mandelbrot(children) => Some(children),
+            APTNode::Picture(_, children) => Some(children),
             _ => None,
         }
     }
@@ -803,104 +801,104 @@ mod tests {
             APTNode::str_to_node("+"),
             Ok(APTNode::Add(mock::mock_params_add(false)))
         );
-        assert_eq!(APTNode::str_to_node("-"), Ok(Sub(vec![Empty, Empty])));
-        assert_eq!(APTNode::str_to_node("*"), Ok(Mul(vec![Empty, Empty])));
-        assert_eq!(APTNode::str_to_node("/"), Ok(Div(vec![Empty, Empty])));
+        assert_eq!(APTNode::str_to_node("-"), Ok(APTNode::Sub(vec![APTNode::Empty, APTNode::Empty])));
+        assert_eq!(APTNode::str_to_node("*"), Ok(APTNode::Mul(vec![APTNode::Empty, APTNode::Empty])));
+        assert_eq!(APTNode::str_to_node("/"), Ok(APTNode::Div(vec![APTNode::Empty, APTNode::Empty])));
         assert_eq!(
             APTNode::str_to_node("%"),
-            Ok(Mod(mock::mock_params_mod(false)))
+            Ok(APTNode::Mod(mock::mock_params_mod(false)))
         );
         assert_eq!(
             APTNode::str_to_node("fbm"),
-            Ok(FBM(vec![Empty, Empty, Empty, Empty, Empty, Empty]))
+            Ok(APTNode::FBM(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty]))
         );
         assert_eq!(
             APTNode::str_to_node("ridge"),
-            Ok(Ridge(vec![Empty, Empty, Empty, Empty, Empty, Empty]))
+            Ok(APTNode::Ridge(vec![APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty, APTNode::Empty]))
         );
         assert_eq!(
             APTNode::str_to_node("turbulence"),
-            Ok(Turbulence(mock::mock_params_turbulence(false)))
+            Ok(APTNode::Turbulence(mock::mock_params_turbulence(false)))
         );
         assert_eq!(
             APTNode::str_to_node("cell1"),
-            Ok(Cell1(mock::mock_params_cell1(false)))
+            Ok(APTNode::Cell1(mock::mock_params_cell1(false)))
         );
         assert_eq!(
             APTNode::str_to_node("cell2"),
-            Ok(Cell2(mock::mock_params_cell2(false)))
+            Ok(APTNode::Cell2(mock::mock_params_cell2(false)))
         );
         assert_eq!(
             APTNode::str_to_node("sqrt"),
-            Ok(Sqrt(mock::mock_params_sqrt(false)))
+            Ok(APTNode::Sqrt(mock::mock_params_sqrt(false)))
         );
         assert_eq!(
             APTNode::str_to_node("sin"),
-            Ok(Sin(mock::mock_params_sin(false)))
+            Ok(APTNode::Sin(mock::mock_params_sin(false)))
         );
         assert_eq!(
             APTNode::str_to_node("atan"),
-            Ok(Atan(mock::mock_params_atan(false)))
+            Ok(APTNode::Atan(mock::mock_params_atan(false)))
         );
         assert_eq!(
             APTNode::str_to_node("atan2"),
-            Ok(Atan2(mock::mock_params_atan2(false)))
+            Ok(APTNode::Atan2(mock::mock_params_atan2(false)))
         );
         assert_eq!(
             APTNode::str_to_node("tan"),
-            Ok(Tan(mock::mock_params_tan(false)))
+            Ok(APTNode::Tan(mock::mock_params_tan(false)))
         );
         assert_eq!(
             APTNode::str_to_node("log"),
-            Ok(Log(mock::mock_params_log(false)))
+            Ok(APTNode::Log(mock::mock_params_log(false)))
         );
         assert_eq!(
             APTNode::str_to_node("abs"),
-            Ok(Abs(mock::mock_params_abs(false)))
+            Ok(APTNode::Abs(mock::mock_params_abs(false)))
         );
-        assert_eq!(APTNode::str_to_node("floor"), Ok(Floor(vec![Empty])));
+        assert_eq!(APTNode::str_to_node("floor"), Ok(APTNode::Floor(vec![APTNode::Empty])));
         assert_eq!(
             APTNode::str_to_node("ceil"),
-            Ok(Ceil(mock::mock_params_ceil(false)))
+            Ok(APTNode::Ceil(mock::mock_params_ceil(false)))
         );
         assert_eq!(
             APTNode::str_to_node("clamp"),
-            Ok(Clamp(mock::mock_params_clamp(false)))
+            Ok(APTNode::Clamp(mock::mock_params_clamp(false)))
         );
         assert_eq!(
             APTNode::str_to_node("wrap"),
-            Ok(Wrap(mock::mock_params_wrap(false)))
+            Ok(APTNode::Wrap(mock::mock_params_wrap(false)))
         );
         assert_eq!(
             APTNode::str_to_node("square"),
-            Ok(Square(mock::mock_params_square(false)))
+            Ok(APTNode::Square(mock::mock_params_square(false)))
         );
         assert_eq!(
             APTNode::str_to_node("max"),
-            Ok(Max(mock::mock_params_max(false)))
+            Ok(APTNode::Max(mock::mock_params_max(false)))
         );
         assert_eq!(
             APTNode::str_to_node("min"),
-            Ok(Min(mock::mock_params_min(false)))
+            Ok(APTNode::Min(mock::mock_params_min(false)))
         );
         assert_eq!(
             APTNode::str_to_node("mandelbrot"),
-            Ok(Mandelbrot(mock::mock_params_mandelbrot(false)))
+            Ok(APTNode::Mandelbrot(mock::mock_params_mandelbrot(false)))
         );
         assert_eq!(
             APTNode::str_to_node("PIC-eye.jpg"),
-            Ok(Picture(
+            Ok(APTNode::Picture(
                 "eye.jpg".to_string(),
                 mock::mock_params_picture(false)
             ))
         );
-        assert_eq!(APTNode::str_to_node("Width"), Ok(Width));
-        assert_eq!(APTNode::str_to_node("Height"), Ok(Height));
-        assert_eq!(APTNode::str_to_node("Pi"), Ok(PI));
-        assert_eq!(APTNode::str_to_node("e"), Ok(E));
-        assert_eq!(APTNode::str_to_node("x"), Ok(X));
-        assert_eq!(APTNode::str_to_node("y"), Ok(Y));
-        assert_eq!(APTNode::str_to_node("t"), Ok(T));
+        assert_eq!(APTNode::str_to_node("Width"), Ok(APTNode::Width));
+        assert_eq!(APTNode::str_to_node("Height"), Ok(APTNode::Height));
+        assert_eq!(APTNode::str_to_node("Pi"), Ok(APTNode::PI));
+        assert_eq!(APTNode::str_to_node("e"), Ok(APTNode::E));
+        assert_eq!(APTNode::str_to_node("x"), Ok(APTNode::X));
+        assert_eq!(APTNode::str_to_node("y"), Ok(APTNode::Y));
+        assert_eq!(APTNode::str_to_node("t"), Ok(APTNode::T));
         assert_eq!(
             APTNode::str_to_node("pizza 60.0 \""),
             Err("Unknown operation 'pizza 60.0 \"' ".to_string())
@@ -909,7 +907,7 @@ mod tests {
 
     #[test]
     fn test_aptnode_add_leaf() {
-        let mut root = Add(vec![Empty, Empty]);
+        let mut root = APTNode::Add(vec![APTNode::Empty, APTNode::Empty]);
         assert_eq!(root.add_leaf(&APTNode::Constant(1.0)), true);
         assert_eq!(root.add_leaf(&APTNode::Constant(2.1)), true);
         assert_eq!(
@@ -1417,13 +1415,13 @@ mod tests {
         assert_eq!(APTNode::Y.constant_fold(), APTNode::Y);
         assert_eq!(APTNode::T.constant_fold(), APTNode::T);
         assert_eq!(
-            APTNode::Add(vec![Constant(1.0), APTNode::Constant(2.0)]).constant_fold(),
+            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]).constant_fold(),
             APTNode::Constant(3.0)
         );
         assert_eq!(
             APTNode::Add(vec![
-                Constant(1.0),
-                APTNode::Mul(vec![Constant(6.0), APTNode::Constant(0.5)])
+                APTNode::Constant(1.0),
+                APTNode::Mul(vec![APTNode::Constant(6.0), APTNode::Constant(0.5)])
             ])
             .constant_fold(),
             APTNode::Constant(4.0)
@@ -1925,7 +1923,7 @@ mod tests {
         let pic_names = vec![&name];
         for _i in 0..100 {
             match APTNode::get_random_node(&mut rng, &pic_names) {
-                Constant(_) | X | Y | T | Empty => {
+                APTNode::Constant(_) | APTNode::X | APTNode::Y | APTNode::T | APTNode::Empty => {
                     panic!("This APTNode was not expected");
                 }
                 _ => {}
@@ -1939,10 +1937,10 @@ mod tests {
 
         for _i in 0..100 {
             match APTNode::get_random_leaf(&mut rng) {
-                Constant(value) => {
+                APTNode::Constant(value) => {
                     assert!(value >= -1.0 && value <= 1.0);
                 }
-                X | Y | Empty => {}
+                APTNode::X | APTNode::Y | APTNode::Empty => {}
                 _ => {
                     panic!("This APTNode was not expected");
                 }
@@ -1956,10 +1954,10 @@ mod tests {
 
         for _i in 0..100 {
             match APTNode::get_random_leaf(&mut rng) {
-                Constant(value) => {
+                APTNode::Constant(value) => {
                     assert!(value >= -1.0 && value <= 1.0);
                 }
-                X | Y | T | Empty => {}
+                APTNode::X | APTNode::Y | APTNode::T | APTNode::Empty => {}
                 _ => {
                     panic!("This APTNode was not expected");
                 }
