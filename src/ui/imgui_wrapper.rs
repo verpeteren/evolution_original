@@ -10,7 +10,7 @@ use imgui_gfx_renderer::{Renderer, Shaders};
 pub const EXEC_NAME: &'static str = "Evolution";
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
-struct MouseState {
+struct MouseActionState {
     pos: (i32, i32),
     pressed: (bool, bool, bool),
     wheel: f32,
@@ -20,7 +20,7 @@ pub struct ImGuiWrapper {
     pub imgui: imgui::Context,
     pub renderer: Renderer<format::Rgba8, Resources>,
     last_frame: Instant,
-    mouse_state: MouseState,
+    mouse_state: MouseActionState,
     text_multiline: ImString,
 }
 
@@ -56,7 +56,7 @@ impl ImGuiWrapper {
             imgui,
             renderer,
             last_frame: Instant::now(),
-            mouse_state: MouseState::default(),
+            mouse_state: MouseActionState::default(),
             text_multiline: ImString::with_capacity(1024),
         }
     }
