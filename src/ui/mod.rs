@@ -4,6 +4,8 @@ use ggez::input::mouse::MouseButton;
 use ggez::mint::{Point2, Vector2};
 use ggez::Context;
 
+pub mod imgui_wrapper;
+
 pub enum MouseState {
     Up(MouseButtonState),
     Down(MouseButtonState),

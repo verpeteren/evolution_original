@@ -9,7 +9,6 @@ extern crate image;
 mod actual_picture;
 mod apt;
 mod ggez_utility;
-mod imgui_wrapper;
 mod parser;
 mod pic;
 mod stack_machine;
@@ -26,9 +25,8 @@ use std::thread::spawn;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::actual_picture::ActualPicture;
-use crate::imgui_wrapper::{ImGuiWrapper, EXEC_NAME};
 use crate::pic::{lisp_to_pic, CoordinateSystem, Pic, DEFAULT_COORDINATE_SYSTEM};
-use crate::ui::{Button, MouseButtonState, MouseState};
+use crate::ui::{Button, MouseButtonState, MouseState, imgui_wrapper::{ImGuiWrapper, EXEC_NAME}};
 
 use clap::Parser;
 use ggez::conf::{WindowMode, WindowSetup};
