@@ -1,11 +1,9 @@
 pub mod actual_picture;
 
 mod ggez_utility;
+pub mod coordinatesystem;
 
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Result as FResult};
-use std::ops::Not;
-use std::str::FromStr;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 
@@ -14,65 +12,18 @@ use crate::pic::ggez_utility::{get_random_color, lerp_color};
 use crate::parser::{Lexer, Token, APTNode};
 use crate::stack_machine::StackMachine;
 
-use clap::ArgEnum;
 use ggez::graphics::Color;
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use rayon::prelude::*;
 use simdeez::Simd;
-use variant_count::VariantCount;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
 
-use CoordinateSystem::*;
-
-#[derive(Clone, Debug, PartialEq, ArgEnum, VariantCount)]
-pub enum CoordinateSystem {
-    Polar,
-    Cartesian,
-}
-
-impl CoordinateSystem {
-    pub fn list_all<'a>() -> Vec<String> {
-        vec![Polar.to_string(), Cartesian.to_string()]
-    }
-}
-
-impl Display for CoordinateSystem {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FResult {
-        let x = match self {
-            Polar => "polar",
-            Cartesian => "cartesian",
-        };
-        write!(f, "{}", x)
-    }
-}
-
-pub const DEFAULT_COORDINATE_SYSTEM: CoordinateSystem = CoordinateSystem::Polar;
-
-impl FromStr for CoordinateSystem {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, String> {
-        match s.to_lowercase().as_ref() {
-            "polar" => Ok(Polar),
-            "cartesian" => Ok(Cartesian),
-            _ => Err(format!("Cannot parse {}. Not a known coordinate system", s)),
-        }
-    }
-}
-
-impl Not for CoordinateSystem {
-    type Output = Self;
-    fn not(self) -> Self::Output {
-        match self {
-            Polar => Cartesian,
-            Cartesian => Polar,
-        }
-    }
-}
+pub use coordinatesystem::{CoordinateSystem, DEFAULT_COORDINATE_SYSTEM};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct GradientData {
@@ -368,7 +319,7 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let v = if data.coord == Cartesian {
+                    let v = if data.coord == CoordinateSystem::Cartesian {
                         sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                     } else {
                         let (r, theta) = cartesian_to_polar::<S>(x, y);
@@ -434,7 +385,7 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let v = if data.coord == Cartesian {
+                    let v = if data.coord == CoordinateSystem::Cartesian {
                         sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                     } else {
                         let (r, theta) = cartesian_to_polar::<S>(x, y);
@@ -502,7 +453,7 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let v = if data.coord == Cartesian {
+                    let v = if data.coord == CoordinateSystem::Cartesian {
                         sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                     } else {
                         let (r, theta) = cartesian_to_polar::<S>(x, y);
@@ -572,7 +523,7 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let (rs, gs, bs) = if data.coord == Cartesian {
+                    let (rs, gs, bs) = if data.coord == CoordinateSystem::Cartesian {
                         let rs = (r_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(128.0);
@@ -660,7 +611,7 @@ impl Pic {
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
 
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
-                    let (hs, ss, vs) = if data.coord == Cartesian {
+                    let (hs, ss, vs) = if data.coord == CoordinateSystem::Cartesian {
                         let hs = (h_sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
                             + S::set1_ps(1.0))
                             * S::set1_ps(0.5);
@@ -1225,13 +1176,13 @@ mod tests {
     #[test]
     fn test_handle_width() {
         let sexpr = "(GrayScale ( / x Width ) )";
-        match lisp_to_pic(sexpr.to_string(), Polar) {
+        match lisp_to_pic(sexpr.to_string(), CoordinateSystem::Polar) {
             Ok(pic) => {
                 assert_eq!(
                     pic,
                     Pic::Grayscale(GrayscaleData {
                         c: APTNode::Div(vec![APTNode::X, APTNode::Width]),
-                        coord: Polar
+                        coord: CoordinateSystem::Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1246,13 +1197,13 @@ mod tests {
     #[test]
     fn test_handle_height() {
         let sexpr = "(GrayScale ( / y Height ) )";
-        match lisp_to_pic(sexpr.to_string(), Polar) {
+        match lisp_to_pic(sexpr.to_string(), CoordinateSystem::Polar) {
             Ok(pic) => {
                 assert_eq!(
                     pic,
                     Pic::Grayscale(GrayscaleData {
                         c: APTNode::Div(vec![APTNode::Y, APTNode::Height]),
-                        coord: Polar
+                        coord: CoordinateSystem::Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1267,13 +1218,13 @@ mod tests {
     #[test]
     fn test_handle_pi() {
         let sexpr = "(GrayScale( sin (/ x PI ) ) )";
-        match lisp_to_pic(sexpr.to_string(), Polar) {
+        match lisp_to_pic(sexpr.to_string(), CoordinateSystem::Polar) {
             Ok(pic) => {
                 assert_eq!(
                     pic,
                     Pic::Grayscale(GrayscaleData {
                         c: APTNode::Sin(vec![APTNode::Div(vec![APTNode::X, APTNode::PI,])]),
-                        coord: Polar
+                        coord: CoordinateSystem::Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1288,13 +1239,13 @@ mod tests {
     #[test]
     fn test_handle_e() {
         let sexpr = "(GrayScale( Log (/ x E ) ) )";
-        match lisp_to_pic(sexpr.to_string(), Polar) {
+        match lisp_to_pic(sexpr.to_string(), CoordinateSystem::Polar) {
             Ok(pic) => {
                 assert_eq!(
                     pic,
                     Pic::Grayscale(GrayscaleData {
                         c: APTNode::Log(vec![APTNode::Div(vec![APTNode::X, APTNode::E,])]),
-                        coord: Polar
+                        coord: CoordinateSystem::Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1315,7 +1266,7 @@ mod tests {
                     pic,
                     Pic::Mono(MonoData {
                         c: APTNode::X,
-                        coord: Polar
+                        coord: CoordinateSystem::Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1336,7 +1287,7 @@ mod tests {
                     pic,
                     Pic::Mono(MonoData {
                         c: APTNode::X,
-                        coord: Cartesian
+                        coord: CoordinateSystem::Cartesian
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1359,7 +1310,7 @@ mod tests {
                         r: APTNode::X,
                         g: APTNode::Y,
                         b: APTNode::T,
-                        coord: Cartesian
+                        coord: CoordinateSystem::Cartesian
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1383,7 +1334,7 @@ mod tests {
                         r: APTNode::X,
                         g: APTNode::Y,
                         b: APTNode::T,
-                        coord: Polar
+                        coord: CoordinateSystem::Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1406,7 +1357,7 @@ mod tests {
                         h: APTNode::X,
                         s: APTNode::Y,
                         v: APTNode::T,
-                        coord: Cartesian
+                        coord: CoordinateSystem::Cartesian
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1430,7 +1381,7 @@ mod tests {
                         h: APTNode::X,
                         s: APTNode::Y,
                         v: APTNode::T,
-                        coord: Polar
+                        coord: CoordinateSystem::Polar
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1450,7 +1401,7 @@ mod tests {
                     pic,
                     Pic::Grayscale(GrayscaleData {
                         c: APTNode::X,
-                        coord: Cartesian
+                        coord: CoordinateSystem::Cartesian
                     })
                 );
                 let resexpr = pic.to_lisp();
@@ -1460,31 +1411,5 @@ mod tests {
                 panic!("could not parse formula with E {:?}", err);
             }
         }
-    }
-
-    #[test]
-    fn test_coordsystem_parse() {
-        assert_eq!("Polar".parse(), Ok(Polar));
-        assert_eq!("PoLar".parse(), Ok(Polar));
-        assert_eq!("POLAR".parse(), Ok(Polar));
-        assert_eq!("cartesian".parse(), Ok(Cartesian));
-        assert_eq!("Cartesian".parse(), Ok(Cartesian));
-        assert_eq!("CARTESIAN".parse(), Ok(Cartesian));
-        assert_eq!(
-            "mercator".parse::<CoordinateSystem>(),
-            Err("Cannot parse mercator. Not a known coordinate system".to_string())
-        );
-    }
-
-    #[test]
-    fn test_coordsystem_not() {
-        assert_eq!(!Polar, Cartesian);
-        assert_eq!(!Cartesian, Polar);
-    }
-
-    #[test]
-    fn test_coordsystem_display() {
-        assert_eq!(&Polar.to_string(), "polar");
-        assert_eq!(&Cartesian.to_string(), "cartesian");
     }
 }
