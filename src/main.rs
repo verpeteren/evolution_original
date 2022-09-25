@@ -8,7 +8,6 @@ extern crate image;
 
 mod actual_picture;
 mod apt;
-mod ggez_utility;
 mod parser;
 mod pic;
 mod stack_machine;

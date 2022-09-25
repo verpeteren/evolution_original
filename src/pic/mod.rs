@@ -1,3 +1,5 @@
+mod ggez_utility;
+
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Result as FResult};
 use std::ops::Not;
@@ -7,7 +9,7 @@ use std::sync::Arc;
 
 use crate::actual_picture::ActualPicture;
 use crate::apt::APTNode;
-use crate::ggez_utility::{get_random_color, lerp_color};
+use crate::pic::ggez_utility::{get_random_color, lerp_color};
 use crate::parser::{Lexer, Token};
 use crate::stack_machine::StackMachine;
 
