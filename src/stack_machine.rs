@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::actual_picture::ActualPicture;
+use crate::pic::actual_picture::ActualPicture;
 use crate::apt::APTNode;
 
 use simdeez::Simd;

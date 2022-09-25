@@ -1,3 +1,5 @@
+pub mod actual_picture;
+
 mod ggez_utility;
 
 use std::collections::HashMap;
@@ -7,7 +9,7 @@ use std::str::FromStr;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 
-use crate::actual_picture::ActualPicture;
+use crate::pic::actual_picture::ActualPicture;
 use crate::apt::APTNode;
 use crate::pic::ggez_utility::{get_random_color, lerp_color};
 use crate::parser::{Lexer, Token};
