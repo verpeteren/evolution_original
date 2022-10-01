@@ -203,38 +203,45 @@ Note: These examples were created for an older version. The current parser imple
 
 ### HSV Images
 ```lisp
-( HSV    
-    ( - ( Cell2 Y X 0.84070134 ) ( - X ( Sqrt Y ) ) )     
-    ( Cell2 ( + ( - X -0.52474713 ) ( Abs X ) ) ( + Y ( Atan2 Y ( Log 0.8803401 ) ) ) ( Abs ( Sqrt ( FBM X ( Cell1 0.10496092 Y Y ) -0.10098362 ) ) ) )    
-    ( FBM ( * -0.73565507 Y ) ( Cell1 Y Y X ) ( Abs X ) ) )
+( HSV CARTESIAN
+ ( ( SQUARE ( / ( MANDELBROT X Y ) 0.7601185 ) ) )
+ ( ( + ( TAN ( TAN ( RIDGE Y ( ATAN -0.74197626 ) ( + Y Y ) Y ( CLAMP Y ) ( + X Y ) ) ) ) ( ATAN2 X Y ) ) )
+ ( ( MAX -0.9284358 Y ) ) )
  ```
 
-![Sample Image](/samples/hsv_noise.png)
+![Sample Image](/samples/hsv.png)
 
 ### Monochrome Images
 ```lisp
-( Mono    
-    ( FBM ( FBM 0.69943047 X ( Ridge -0.4082718 Y ( Abs ( Atan X ) ) ) ) ( Atan2 ( Log ( Sqrt ( Turbulence Y X X ) ) ) ( FBM ( - ( Ridge Y ( Cell2 Y X Y ) Y ) -0.7674043 ) ( Sqrt -0.81428957 ) -0.43793464 ) ) ( Cell1 ( - 0.4862821 0.66654444 ) ( Ridge Y Y Y ) ( FBM X Y X ) ) ) )
+( MONO CARTESIAN
+ ( ( ATAN ( + ( CELL1 Y Y Y X ( - Y 0.7253959 ) ) ( ATAN X ) ) ) ) )
+```
+![Sample Image](/samples/mono.png)
+
+### Grayscale Images
+```lisp
+( GRAYSCALE POLAR
+ ( ( LOG ( + ( CELL1 ( LOG ( RIDGE ( SQRT Y ) Y Y X X 0.5701809 ) ) ( ATAN Y ) ( % Y 0.12452102 ) ( FLOOR ( ATAN2 Y Y ) ) ( SIN Y ) ) ( * ( + X ( SIN ( - ( ATAN2 Y X ) X ) ) ) ( ATAN ( LOG ( FLOOR ( SIN ( TURBULENCE Y 0.91551733 ( SQRT ( SQRT X ) ) ( MIN X Y ) -0.83923936 ( MANDELBROT Y X ) ) ) ) ) ) ) ) ) ) )
 ```
 
-![Sample Image](/samples/bw_noise.png)
+![Sample Image](/samples/grayscale.png)
 
 ### RGB Images
 ```lisp
-( RGB    
-    ( Sqrt ( Sin ( Abs Y ) ) )     
-    ( Atan ( Atan2 ( + X ( / ( Ridge Y -0.30377412 Y ) -0.4523425 ) ) ( + ( Turbulence 0.95225644 ( Tan Y ) Y ) -0.46079302 ) ) )    
-    ( Cell1 ( Ridge ( Ridge Y -0.83537865 -0.50440097 ) ( Atan2 Y X ) ( Sin 0.20003605 ) ) ( Sqrt ( Cell1 ( FBM Y X 0.8879242 ) 0.23509383 -0.4539826 ) ) ( Atan2 ( * X ( Ridge 0.6816149 X Y ) ) ( Cell1 ( Sin ( Turbulence X -0.25605845 Y ) ) -0.30595016 Y ) ) ) )
+( RGB CARTESIAN
+ ( ( * ( TAN ( CLAMP ( ATAN ( SQRT ( MAX ( ABS ( FLOOR ( RIDGE 0.12349105 ( + X 0.500072 ) X X ( MAX Y Y ) 0.6249633 ) ) ) ( % ( CLAMP ( * Y ( SQUARE 0.39180493 ) ) ) ( WRAP ( CELL2 Y ( MIN -0.5756769 Y ) ( ABS 0.8329663 ) Y Y ) ) ) ) ) ) ) ) ( WRAP ( MANDELBROT ( SQRT ( TURBULENCE ( WRAP X ) 0.26766992 ( MANDELBROT -0.7147219 0.46446967 ) ( LOG 0.6340864 ) Y Y ) ) ( SQUARE ( * ( SIN ( / Y ( RIDGE X Y Y 0.49542284 X ( CEIL -0.7545812 ) ) ) ) ( CEIL ( TURBULENCE ( ATAN X ) X -0.52819157 -0.86907744 0.49089026 ( ATAN -0.5986686 ) ) ) ) ) ) ) ) )
+ ( ( / ( TURBULENCE ( FBM Y ( * ( RIDGE Y X X X X Y ) -0.98887086 ) 0.21490455 X X ( LOG X ) ) X ( % ( FLOOR X ) ( + X ( ATAN2 0.19268274 Y ) ) ) ( FBM Y -0.28251457 0.632663 X X X ) ( CEIL ( SQRT 0.8429725 ) ) ( WRAP ( MAX Y ( SQUARE ( TAN X ) ) ) ) ) ( FLOOR ( CELL1 ( + -0.5022187 ( LOG X ) ) ( RIDGE -0.8493159 Y ( TAN X ) Y Y Y ) ( ATAN ( SIN ( / ( ABS X ) ( CEIL 0.05049467 ) ) ) ) ( ATAN X ) ( TAN ( / ( FBM X X 0.802964 0.3002789 0.8905289 -0.06338668 ) ( SQUARE ( % X 0.48889422 ) ) ) ) ) ) ) )
+ ( ( ATAN ( SIN X ) ) ) )
 ```
 
-![Sample Image](/samples/rgb_noise.png)
+![Sample Image](/samples/rgb.png)
 
 
 ### Gradient Images
 ```lisp
-( Gradient
- ( Colors  ( 0.28973937 0.40621173 0.4788941 ) ( 0.88590646 0.9958223 0.6819649 ) ( 0.623574 0.39478934 0.97536874 ) ( 0.5160972 0.011721611 0.055956483 ) ( 0.88893497 0.8329935 0.587783 ) 
- ( Cell1 Y X -0.9553273 ) ) )
+( GRADIENT POLAR
+ ( COLORS  ( COLOR 0.38782334 0.18356442 0.5526812 ) ( COLOR 0.40132487 0.9418049 0.79687893 ) ( SQRT ( FBM ( WRAP ( TAN ( - -0.90357685 ( ATAN Y ) ) ) ) ( ABS X ) ( ATAN2 Y X ) ( MAX Y ( MAX X X ) ) ( SQUARE ( CELL2 ( TAN Y ) Y Y X X ) ) ( * Y 0.009492159 ) ) ) )
  ```
 
 ![Sample Image](/samples/gradient.png)
+
