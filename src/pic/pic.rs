@@ -1390,4 +1390,25 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    #[ignore]
+    fn test_crash_with_dims() {
+        let crashes_at_dim = (100, 100);
+        let pictures = Arc::new(HashMap::new());
+        let pic = Pic::RGB(RGBData {
+            r: APTNode::X,
+            g: APTNode::Y,
+            b: APTNode::T,
+            coord: CoordinateSystem::Polar,
+        });
+        let _x = pic_get_rgba8_runtime_select(
+            &pic,
+            true,
+            pictures,
+            crashes_at_dim.0,
+            crashes_at_dim.1,
+            0.0,
+        );
+    }
 }
