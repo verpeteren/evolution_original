@@ -23,6 +23,8 @@ const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
+pub const WIDTH: usize = 1920;
+pub const HEIGHT: usize = 1080;
 
 simd_runtime_generate!(
     pub fn pic_get_rgba8(

@@ -23,7 +23,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::{CoordinateSystem, DEFAULT_COORDINATE_SYSTEM};
-use crate::pic::pic::{lisp_to_pic, pic_get_rgba8_runtime_select, Pic};
+use crate::pic::pic::{lisp_to_pic, pic_get_rgba8_runtime_select, Pic, HEIGHT, WIDTH};
 use crate::ui::{
     button::Button,
     imgui_wrapper::{ImGuiWrapper, EXEC_NAME},
@@ -46,8 +46,6 @@ use rand::prelude::*;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1080;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 
 const THUMB_ROWS: u16 = 6;
