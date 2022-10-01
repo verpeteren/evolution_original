@@ -281,7 +281,7 @@ impl MainState {
                 let sexpr = self.pics[i].to_lisp();
                 //let's save this to a sexpr_file
                 //todo: make this less dumb
-                let tfn = format!("{}.sexpr", EXEC_NAME);
+                let tfn = format!("{}_{}.sexpr", EXEC_NAME, t);
                 let sexpr_filename = Path::new(&tfn);
                 let dest = filename_to_copy_to(
                     &target_dir,
@@ -294,7 +294,7 @@ impl MainState {
                     .write_all(sexpr.as_bytes())
                     .unwrap();
                 //let's save this to a png file
-                let tfn = format!("{}.png", EXEC_NAME);
+                let tfn = format!("{}_{}.png", EXEC_NAME, t);
                 let png_filename = Path::new(&tfn);
                 let dest = filename_to_copy_to(
                     &target_dir,
