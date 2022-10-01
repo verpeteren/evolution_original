@@ -62,7 +62,10 @@ mod test {
         let dummy = "This is not a file".to_string();
         let name = "fake";
         let ap = ActualPicture::new_from_bytes(dummy.as_bytes(), name, 800, 600).unwrap();
-        assert_eq!(ap.brightness, vec![-0.23398691, -0.34117645, -0.11895424, -0.3960784]);
+        assert_eq!(
+            ap.brightness,
+            vec![-0.23398691, -0.34117645, -0.11895424, -0.3960784]
+        );
         assert_eq!(ap.name, "fake");
         assert_eq!(ap.w, 800);
         assert_eq!(ap.h, 600);
