@@ -23,7 +23,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::{CoordinateSystem, DEFAULT_COORDINATE_SYSTEM};
-use crate::pic::pic::{lisp_to_pic, Pic};
+use crate::pic::pic::{lisp_to_pic, pic_get_rgba8_runtime_select, Pic};
 use crate::ui::{
     button::Button,
     imgui_wrapper::{ImGuiWrapper, EXEC_NAME},
@@ -45,10 +45,6 @@ use notify::{
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use simdeez::avx2::*;
-use simdeez::scalar::*;
-use simdeez::sse2::*;
-use simdeez::sse41::*;
 
 const WIDTH: usize = 1920;
 const HEIGHT: usize = 1080;
@@ -134,19 +130,6 @@ impl<T> RwArc<T> {
         RwArc(self.0.clone())
     }
 }
-
-simd_runtime_generate!(
-    fn pic_get_rgba8(
-        pic: &Pic,
-        threaded: bool,
-        pictures: Arc<HashMap<String, ActualPicture>>,
-        width: usize,
-        height: usize,
-        t: f32,
-    ) -> Vec<u8> {
-        pic.get_rgba8::<S>(threaded, pictures, width, height, t)
-    }
-);
 
 enum GameState {
     Select,

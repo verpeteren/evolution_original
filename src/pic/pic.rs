@@ -13,12 +13,29 @@ use ggez::graphics::Color;
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use rayon::prelude::*;
+use simdeez::avx2::*;
+use simdeez::scalar::*;
+use simdeez::sse2::*;
+use simdeez::sse41::*;
 use simdeez::Simd;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
 const MIN_GRADIENT_COUNT: usize = 2;
 pub const GRADIENT_SIZE: usize = 512;
+
+simd_runtime_generate!(
+    pub fn pic_get_rgba8(
+        pic: &Pic,
+        threaded: bool,
+        pictures: Arc<HashMap<String, ActualPicture>>,
+        width: usize,
+        height: usize,
+        t: f32,
+    ) -> Vec<u8> {
+        pic.get_rgba8::<S>(threaded, pictures, width, height, t)
+    }
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Pic {
