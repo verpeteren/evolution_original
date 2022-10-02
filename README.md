@@ -199,8 +199,6 @@ p1: Todo
 
 ## Some Possibilities
 
-Note: These examples were created for an older version. The current parser implementation will fail.
-
 ### HSV Images
 ```lisp
 ( HSV CARTESIAN
