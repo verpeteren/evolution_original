@@ -20,3 +20,4 @@ rayon="1.5.3"
 image="0.23.14"
 clap = { version = "3.2.20", features=["derive"] }
 notify = "5.0.0"
+readonly = "0.2.2"

@@ -3,11 +3,12 @@ use ggez::Context;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
 
+#[readonly::make]
 pub struct ActualPicture {
     pub brightness: Vec<f32>,
     pub w: u16,
     pub h: u16,
-    pub name: String,
+    name: String,
 }
 
 impl ActualPicture {

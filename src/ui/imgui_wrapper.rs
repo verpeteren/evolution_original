@@ -11,6 +11,7 @@ pub const EXEC_NAME: &'static str = "Evolution";
 
 use crate::ui::mouseactionstate::MouseActionState;
 
+#[readonly::make]
 pub struct ImGuiWrapper {
     pub imgui: imgui::Context,
     pub renderer: Renderer<format::Rgba8, Resources>,

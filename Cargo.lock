@@ -882,6 +882,7 @@ dependencies = [
  "notify",
  "rand 0.8.5",
  "rayon",
+ "readonly",
  "simdeez",
  "simdnoise",
  "variant_count",
@@ -2377,6 +2378,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "678054eb77286b51581ba43620cc911abf02758c91f93f479767aed0f90458b2"
 dependencies = [
  "rand_core 0.3.1",
+]
+
+[[package]]
+name = "readonly"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c0e08c3b00fcae55ee1dac341e1b9b5bc942e7e1931957436ab00b4a5e8dc18"
+dependencies = [
+ "proc-macro2 1.0.43",
+ "quote 1.0.21",
+ "syn",
 ]
 
 [[package]]
