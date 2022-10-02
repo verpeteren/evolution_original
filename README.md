@@ -118,26 +118,24 @@ Invalid Coordinate systems are ignored, the default Coordinate System (Cartesian
 
 ### Infinities and NaNs handling
 
-```text
-Positive infinity => + 1.0
-Negative infinity => - 1.0
-NaN               => 0.0
-```
+* Positive infinity => + 1.0
+* Negative infinity => - 1.0
+* NaN               => 0.0
 
 ### Operations
 
 ### Constants PI, E, Width, Height
 
-PI: std::f32::consts::PI
-E: std::f32::consts::E
-Width: the 'width' of the image; Either a default or set via the '--width' command line parameter.
-Height: the 'height' of the image; Either a default or set via the '--height' command line parameter.
+* PI: std::f32::consts::PI
+* E: std::f32::consts::E
+* Width: the 'width' of the image; Either a default or set via the '--width' command line parameter.
+* Height: the 'height' of the image; Either a default or set via the '--height' command line parameter.
 
 #### X, Y, T
 
-`X`: the X position in the image
-`Y`: the X position in the image
-`T`: the frame id (seconds)
+* `X`: the X position in the image
+* `Y`: the X position in the image
+* `T`: the frame id (seconds)
 
 #### Ugh, Math...
 
@@ -147,55 +145,55 @@ The operations (`+`, `-`, `*`, `/`, `%`, `sin`, `tan`, `atan`, `atan2`, `min`, `
 
 ##### Fractal Brownian Motion (FBM)
 
-p0: Todo
-p1: Todo
-p2: Todo
-p3: Todo
-p4: Todo
-p5: Todo
+* p0: Todo
+* p1: Todo
+* p2: Todo
+* p3: Todo
+* p4: Todo
+* p5: Todo
 
 ##### Ridge
 
-p0: Todo
-p1: Todo
-p2: Todo
-p3: Todo
-p4: Todo
-p5: Todo
+* p0: Todo
+* p1: Todo
+* p2: Todo
+* p3: Todo
+* p4: Todo
+* p5: Todo
 
 ##### Turbulence
 
-p0: Todo
-p1: Todo
-p2: Todo
-p3: Todo
-p4: Todo
-p5: Todo
+* p0: Todo
+* p1: Todo
+* p2: Todo
+* p3: Todo
+* p4: Todo
+* p5: Todo
 
 ##### Cell1
 
-p0: Todo
-p1: Todo
-p2: Todo
-p3: Todo
-p4: Todo
+* p0: Todo
+* p1: Todo
+* p2: Todo
+* p3: Todo
+* p4: Todo
 
 
 ##### Cell2
 
-p0: Todo
-p1: Todo
-p2: Todo
-p3: Todo
-p4: Todo
+* p0: Todo
+* p1: Todo
+* p2: Todo
+* p3: Todo
+* p4: Todo
 
 ##### Mandlebrot
 
 This is not implemented yet.
 Currently, it is a No-Op
 
-p0: Todo
-p1: Todo
+* p0: Todo
+* p1: Todo
 
 ## Some Possibilities
 
