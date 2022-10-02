@@ -306,9 +306,14 @@ impl<S: Simd> StackMachine<S> {
                         let index = xi + w * yi;
 
                         // println!("w:{:?} h{:?} xpct:{:?} ypct:{:?} index:{},{}",w[0],h[0],xpct[0],ypct[0],index[0],index[1]);
+                        let brightness_len = picture.brightness.len();
                         for i in 0..S::VF32_WIDTH {
-                            stack[sp - 1][i] = picture.brightness
-                                [index[i] as usize % (picture.w as usize * picture.h as usize)];
+                            let slot: usize =
+                                index[i] as usize % (picture.w as usize * picture.h as usize);
+                            if slot >= brightness_len {
+                                break;
+                            }
+                            stack[sp - 1][i] = picture.brightness[slot];
                         }
                     }
                     Instruction::Constant(v) => {
