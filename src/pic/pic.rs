@@ -5,7 +5,12 @@ use std::sync::Arc;
 use crate::parser::{aptnode::APTNode, lexer::Lexer, token::Token};
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::CoordinateSystem;
-use crate::pic::data::{GradientData, GrayscaleData, HSVData, MonoData, RGBData};
+use crate::pic::data::gradient::GradientData;
+use crate::pic::data::grayscale::GrayscaleData;
+use crate::pic::data::hsv::HSVData;
+use crate::pic::data::mono::MonoData;
+use crate::pic::data::rgb::RGBData;
+use crate::pic::data::PicData;
 use crate::pic::ggez_utility::{get_random_color, lerp_color};
 use crate::vm::stackmachine::StackMachine;
 
@@ -56,7 +61,7 @@ impl Pic {
         let pic_type = rng.gen_range(0..5);
 
         let pic = match pic_type {
-            0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            0 => MonoData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
             1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, rng, pic_names),
             2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, rng, pic_names),
             3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, rng, pic_names),
@@ -64,16 +69,6 @@ impl Pic {
             _ => panic!("invalid"),
         };
         pic
-    }
-    pub fn new_mono(
-        min: usize,
-        max: usize,
-        video: bool,
-        rng: &mut StdRng,
-        pic_names: &Vec<&String>,
-    ) -> Pic {
-        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::Mono(MonoData { c: tree, coord })
     }
 
     pub fn new_grayscale(
@@ -997,7 +992,7 @@ mod tests {
     #[test]
     fn test_pic_new_mono() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-        let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = MonoData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
             Pic::Mono(MonoData { c, coord: _coord }) => {
                 let len = c.get_children().unwrap().len();
@@ -1091,7 +1086,7 @@ mod tests {
     fn test_pic_to_lisp() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
 
-        let pic = Pic::new_mono(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = MonoData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
 
         assert!(sexpr.starts_with("( MONO POLAR\n (") || sexpr.starts_with("( MONO CARTESIAN\n ("));
@@ -1414,6 +1409,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_crash_with_dims() {
         let crashes_at_dim = (100, 100);
         let pictures = Arc::new(HashMap::new());
