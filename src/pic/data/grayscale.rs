@@ -71,9 +71,9 @@ impl PicData for GrayscaleData {
                     let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);
 
                     for j in 0..S::VF32_WIDTH {
-                        let c = (cs[j] as i32 % 256) as u8;
                         let j4 = j * 4;
                         let ij4 = i + j4;
+                        let c = (cs[j] as i32 % 256) as u8;
                         chunk[ij4] = c;
                         chunk[ij4 + 1] = c;
                         chunk[ij4 + 2] = c;

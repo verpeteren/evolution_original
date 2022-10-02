@@ -95,11 +95,11 @@ impl PicData for RGBData {
                     };
 
                     for j in 0..S::VF32_WIDTH {
+                        let j4 = j * 4;
+                        let ij4 = i + j4;
                         let r = (rs[j] as i32 % 255) as u8;
                         let g = (gs[j] as i32 % 255) as u8;
                         let b = (bs[j] as i32 % 255) as u8;
-                        let j4 = j * 4;
-                        let ij4 = i + j4;
                         chunk[ij4] = r;
                         chunk[ij4 + 1] = g;
                         chunk[ij4 + 2] = b;

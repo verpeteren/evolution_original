@@ -127,9 +127,9 @@ impl PicData for GradientData {
                     let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
 
                     for j in 0..S::VF32_WIDTH {
-                        let c = gradient[index[j] as usize % GRADIENT_SIZE];
                         let j4 = j * 4;
                         let ij4 = i + j4;
+                        let c = gradient[index[j] as usize % GRADIENT_SIZE];
                         chunk[ij4] = (c.r * 255.0) as u8;
                         chunk[ij4 + 1] = (c.g * 255.0) as u8;
                         chunk[ij4 + 2] = (c.b * 255.0) as u8;
