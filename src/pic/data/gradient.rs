@@ -1,13 +1,19 @@
 use rand::prelude::*;
 use rand::rngs::StdRng;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::parser::aptnode::APTNode;
+use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::CoordinateSystem;
 use crate::pic::data::PicData;
 use crate::pic::ggez_utility::get_random_color;
 use crate::pic::pic::Pic;
+use crate::vm::stackmachine::StackMachine;
 
 use ggez::graphics::Color;
+use rayon::prelude::*;
+use simdeez::Simd;
 
 const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
 const MAX_GRADIENT_COUNT: usize = 10;
@@ -43,5 +49,15 @@ impl PicData for GradientData {
             index: tree,
             coord,
         })
+    }
+    fn get_rgba8<S: Simd>(
+        &self,
+        threaded: bool,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) -> Vec<u8> {
+        unimplemented!();
     }
 }
