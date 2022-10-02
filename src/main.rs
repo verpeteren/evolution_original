@@ -42,7 +42,6 @@ use notify::{
     event::{AccessKind, AccessMode},
     Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher,
 };
-use rand::prelude::*;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
@@ -52,9 +51,6 @@ const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
 const THUMB_WIDTH: u16 = 128;
 const THUMB_HEIGHT: u16 = 128;
-
-const TREE_MIN: usize = 1;
-const TREE_MAX: usize = 40;
 
 const STD_PATH: &'static str = "pictures";
 const STD_FILE_OUT: &'static str = "out.png";
@@ -192,23 +188,11 @@ impl MainState {
             let width = 1.0 / (THUMB_COLS as f32 * 1.01);
             let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
             let mut y_pct = 0.01;
-            let pic_names = &self.pictures.keys().collect();
+            let pic_names: Vec<&String> = self.pictures.keys().collect();
             for _ in 0..THUMB_ROWS {
                 let mut x_pct = 0.01;
                 for _ in 0..THUMB_COLS {
-                    let pic_type = self.rng.gen_range(0..5);
-
-                    let pic = match pic_type {
-                        0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                        1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                        2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                        3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                        4 => {
-                            Pic::new_grayscale(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names)
-                        }
-                        _ => panic!("invalid"),
-                    };
-
+                    let pic = Pic::new(&mut self.rng, &pic_names);
                     let img = Image::from_rgba8(
                         ctx,
                         THUMB_WIDTH,

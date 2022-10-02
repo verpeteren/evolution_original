@@ -26,6 +26,9 @@ pub const GRADIENT_SIZE: usize = 512;
 pub const WIDTH: usize = 1920;
 pub const HEIGHT: usize = 1080;
 
+const TREE_MIN: usize = 1;
+const TREE_MAX: usize = 40;
+
 simd_runtime_generate!(
     pub fn pic_get_rgba8(
         pic: &Pic,
@@ -49,6 +52,19 @@ pub enum Pic {
 }
 
 impl Pic {
+    pub fn new(rng: &mut StdRng, pic_names: &Vec<&String>) -> Self {
+        let pic_type = rng.gen_range(0..5);
+
+        let pic = match pic_type {
+            0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            _ => panic!("invalid"),
+        };
+        pic
+    }
     pub fn new_mono(
         min: usize,
         max: usize,
@@ -1398,7 +1414,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_crash_with_dims() {
         let crashes_at_dim = (100, 100);
         let pictures = Arc::new(HashMap::new());
