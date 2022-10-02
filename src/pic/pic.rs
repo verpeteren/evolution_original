@@ -59,7 +59,7 @@ impl Pic {
         let pic = match pic_type {
             0 => MonoData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
             1 => GradientData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
-            2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            2 => RGBData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
             3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, rng, pic_names),
             4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, rng, pic_names),
             _ => panic!("invalid"),
@@ -76,19 +76,6 @@ impl Pic {
     ) -> Pic {
         let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::Grayscale(GrayscaleData { c: tree, coord })
-    }
-
-    pub fn new_rgb(
-        min: usize,
-        max: usize,
-        video: bool,
-        rng: &mut StdRng,
-        pic_names: &Vec<&String>,
-    ) -> Pic {
-        let (r, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let (g, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let (b, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::RGB(RGBData { r, g, b, coord })
     }
 
     pub fn new_hsv(
@@ -1010,7 +997,7 @@ mod tests {
     #[test]
     fn test_pic_new_rgb() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-        let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = RGBData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
             Pic::RGB(RGBData { r, g, b, coord: _ }) => {
                 let len = r.get_children().unwrap().len();
@@ -1080,7 +1067,7 @@ mod tests {
         assert!(sexpr.contains(" ( COLOR "));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 0);
 
-        let pic = Pic::new_rgb(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = RGBData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(sexpr.starts_with("( RGB POLAR\n (") || sexpr.starts_with("( RGB CARTESIAN\n ("));
         assert!(sexpr.ends_with(" )"));
