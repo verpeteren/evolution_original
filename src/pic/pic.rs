@@ -61,21 +61,10 @@ impl Pic {
             1 => GradientData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
             2 => RGBData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
             3 => HSVData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
-            4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            4 => GrayscaleData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
             _ => panic!("invalid"),
         };
         pic
-    }
-
-    pub fn new_grayscale(
-        min: usize,
-        max: usize,
-        video: bool,
-        rng: &mut StdRng,
-        pic_names: &Vec<&String>,
-    ) -> Pic {
-        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::Grayscale(GrayscaleData { c: tree, coord })
     }
 
     pub fn to_tree(&self) -> Vec<&APTNode> {
@@ -948,7 +937,7 @@ mod tests {
     #[test]
     fn test_pic_new_grayscale() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-        let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = GrayscaleData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
             Pic::Grayscale(GrayscaleData { c, coord: _coord }) => {
                 let len = c.get_children().unwrap().len();
@@ -1034,7 +1023,7 @@ mod tests {
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
-        let pic = Pic::new_grayscale(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = GrayscaleData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(
             sexpr.starts_with("( GRAYSCALE POLAR\n (")
