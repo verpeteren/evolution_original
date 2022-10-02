@@ -129,10 +129,11 @@ impl PicData for GradientData {
                     for j in 0..S::VF32_WIDTH {
                         let c = gradient[index[j] as usize % GRADIENT_SIZE];
                         let j4 = j * 4;
-                        chunk[i + j4] = (c.r * 255.0) as u8;
-                        chunk[i + 1 + j4] = (c.g * 255.0) as u8;
-                        chunk[i + 2 + j4] = (c.b * 255.0) as u8;
-                        chunk[i + 3 + j4] = 255 as u8;
+                        let ij4 = i + j4;
+                        chunk[ij4] = (c.r * 255.0) as u8;
+                        chunk[ij4 + 1] = (c.g * 255.0) as u8;
+                        chunk[ij4 + 2] = (c.b * 255.0) as u8;
+                        chunk[ij4 + 3] = 255 as u8;
                     }
                     x = x + x_step;
                 }

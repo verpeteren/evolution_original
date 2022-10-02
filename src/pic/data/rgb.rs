@@ -99,10 +99,11 @@ impl PicData for RGBData {
                         let g = (gs[j] as i32 % 255) as u8;
                         let b = (bs[j] as i32 % 255) as u8;
                         let j4 = j * 4;
-                        chunk[i + j4] = r;
-                        chunk[i + 1 + j4] = g;
-                        chunk[i + 2 + j4] = b;
-                        chunk[i + 3 + j4] = 255 as u8;
+                        let ij4 = i + j4;
+                        chunk[ij4] = r;
+                        chunk[ij4 + 1] = g;
+                        chunk[ij4 + 2] = b;
+                        chunk[ij4 + 3] = 255 as u8;
                     }
                     x = x + x_step;
                 }

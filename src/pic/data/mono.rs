@@ -68,10 +68,11 @@ impl PicData for MonoData {
                     for j in 0..S::VF32_WIDTH {
                         let c = if v[j] >= 0.0 { 255 } else { 0 };
                         let j4 = j * 4;
-                        chunk[i + j4] = c;
-                        chunk[i + 1 + j4] = c;
-                        chunk[i + 2 + j4] = c;
-                        chunk[i + 3 + j4] = 255 as u8;
+                        let ij4 = i + j4;
+                        chunk[ij4] = c;
+                        chunk[ij4 + 1] = c;
+                        chunk[ij4 + 2] = c;
+                        chunk[ij4 + 3] = 255 as u8;
                     }
                     x = x + x_step;
                 }
