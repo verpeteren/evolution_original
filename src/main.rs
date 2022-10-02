@@ -643,3 +643,33 @@ pub fn main() {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filename_to_copy_to() {
+        assert_eq!(
+            filename_to_copy_to(&Path::new("./somedir"), 1100, "somefile.png"),
+            Path::new("./somedir/1100_somefile.png").to_path_buf()
+        );
+    }
+
+    #[test]
+    fn test_get_picture_path() {
+        let args = Args {
+            pictures_path: "pictures".to_string(),
+            width: WIDTH,
+            height: HEIGHT,
+            time: 0.0,
+            input: None,
+            output: None,
+            copy_path: None,
+            coordinate_system: DEFAULT_COORDINATE_SYSTEM,
+        };
+        assert!(get_picture_path(&args)
+            .to_string_lossy()
+            .ends_with("/pictures"));
+    }
+}
