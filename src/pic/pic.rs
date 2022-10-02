@@ -746,8 +746,101 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn test_crash_with_dims() {
+    fn test_crash_with_dims_mono() {
+        let crashes_at_dim = (100, 100);
+        let pictures = Arc::new(HashMap::new());
+        let pic = Pic::Mono(MonoData {
+            c: APTNode::X,
+            coord: CoordinateSystem::Polar,
+        });
+        let _x = pic_get_rgba8_runtime_select(
+            &pic,
+            true,
+            pictures,
+            crashes_at_dim.0,
+            crashes_at_dim.1,
+            0.0,
+        );
+    }
+
+    #[test]
+    fn test_crash_with_dims_grayscale() {
+        let crashes_at_dim = (100, 100);
+        let pictures = Arc::new(HashMap::new());
+        let pic = Pic::Grayscale(GrayscaleData {
+            c: APTNode::X,
+            coord: CoordinateSystem::Polar,
+        });
+        let _x = pic_get_rgba8_runtime_select(
+            &pic,
+            true,
+            pictures,
+            crashes_at_dim.0,
+            crashes_at_dim.1,
+            0.0,
+        );
+    }
+
+    #[test]
+    fn test_crash_with_dims_gradient() {
+        let crashes_at_dim = (100, 100);
+        let pictures = Arc::new(HashMap::new());
+        let pic = Pic::Gradient(GradientData {
+            colors: vec![
+                (
+                    Color {
+                        r: 0.3690771,
+                        g: 0.7165854,
+                        b: 0.075644374,
+                        a: 1.0,
+                    },
+                    false,
+                ),
+                (
+                    Color {
+                        r: 0.39675784,
+                        g: 0.10509944,
+                        b: 0.82246256,
+                        a: 1.0,
+                    },
+                    false,
+                ),
+            ],
+            index: APTNode::X,
+            coord: CoordinateSystem::Polar,
+        });
+        let _x = pic_get_rgba8_runtime_select(
+            &pic,
+            true,
+            pictures,
+            crashes_at_dim.0,
+            crashes_at_dim.1,
+            0.0,
+        );
+    }
+
+    #[test]
+    fn test_crash_with_dims_hsv() {
+        let crashes_at_dim = (100, 100);
+        let pictures = Arc::new(HashMap::new());
+        let pic = Pic::HSV(HSVData {
+            h: APTNode::X,
+            s: APTNode::Y,
+            v: APTNode::T,
+            coord: CoordinateSystem::Polar,
+        });
+        let _x = pic_get_rgba8_runtime_select(
+            &pic,
+            true,
+            pictures,
+            crashes_at_dim.0,
+            crashes_at_dim.1,
+            0.0,
+        );
+    }
+
+    #[test]
+    fn test_crash_with_dims_rgb() {
         let crashes_at_dim = (100, 100);
         let pictures = Arc::new(HashMap::new());
         let pic = Pic::RGB(RGBData {

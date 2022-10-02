@@ -56,7 +56,7 @@ impl PicData for GrayscaleData {
                     x[i] = -1.0 + (x_step * i as f32);
                 }
                 let x_step = S::set1_ps(x_step * S::VF32_WIDTH as f32);
-
+                let chunk_len = chunk.len();
                 for i in (0..w * 4).step_by(S::VF32_WIDTH * 4) {
                     let v = if self.coord == CoordinateSystem::Cartesian {
                         sm.execute(&mut stack, pics.clone(), x, y, ts, wf, hf)
@@ -73,6 +73,9 @@ impl PicData for GrayscaleData {
                     for j in 0..S::VF32_WIDTH {
                         let j4 = j * 4;
                         let ij4 = i + j4;
+                        if ij4 >= chunk_len {
+                            break;
+                        }
                         let c = (cs[j] as i32 % 256) as u8;
                         chunk[ij4] = c;
                         chunk[ij4 + 1] = c;
