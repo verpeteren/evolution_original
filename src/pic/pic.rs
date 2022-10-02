@@ -5,13 +5,13 @@ use std::sync::Arc;
 use crate::parser::{aptnode::APTNode, lexer::Lexer, token::Token};
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::CoordinateSystem;
-use crate::pic::data::gradient::GradientData;
+use crate::pic::data::gradient::{GradientData, GRADIENT_SIZE};
 use crate::pic::data::grayscale::GrayscaleData;
 use crate::pic::data::hsv::HSVData;
 use crate::pic::data::mono::MonoData;
 use crate::pic::data::rgb::RGBData;
 use crate::pic::data::PicData;
-use crate::pic::ggez_utility::{get_random_color, lerp_color};
+use crate::pic::ggez_utility::lerp_color;
 use crate::vm::stackmachine::StackMachine;
 
 use ggez::graphics::Color;
@@ -24,10 +24,6 @@ use simdeez::sse2::*;
 use simdeez::sse41::*;
 use simdeez::Simd;
 
-const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
-const MAX_GRADIENT_COUNT: usize = 10;
-const MIN_GRADIENT_COUNT: usize = 2;
-pub const GRADIENT_SIZE: usize = 512;
 pub const WIDTH: usize = 1920;
 pub const HEIGHT: usize = 1080;
 
@@ -62,7 +58,7 @@ impl Pic {
 
         let pic = match pic_type {
             0 => MonoData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
-            1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            1 => GradientData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
             2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, rng, pic_names),
             3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, rng, pic_names),
             4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, rng, pic_names),
@@ -80,35 +76,6 @@ impl Pic {
     ) -> Pic {
         let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::Grayscale(GrayscaleData { c: tree, coord })
-    }
-
-    pub fn new_gradient(
-        min: usize,
-        max: usize,
-        video: bool,
-        rng: &mut StdRng,
-        pic_names: &Vec<&String>,
-    ) -> Pic {
-        //todo cleanup
-        //color theory?
-        let num_colors = rng.gen_range(MIN_GRADIENT_COUNT..MAX_GRADIENT_COUNT);
-        let mut colors = Vec::with_capacity(num_colors);
-
-        for _ in 0..num_colors {
-            let stop = rng.gen_range(0..GRADIENT_STOP_CHANCE);
-            if stop == 0 {
-                colors.push((get_random_color(rng), true));
-            } else {
-                colors.push((get_random_color(rng), false));
-            }
-        }
-
-        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        Pic::Gradient(GradientData {
-            colors: colors,
-            index: tree,
-            coord,
-        })
     }
 
     pub fn new_rgb(
@@ -1022,7 +989,7 @@ mod tests {
     #[test]
     fn test_pic_new_gradient() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-        let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = GradientData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         match &pic {
             Pic::Gradient(GradientData {
                 colors,
@@ -1102,7 +1069,7 @@ mod tests {
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
 
-        let pic = Pic::new_gradient(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        let pic = GradientData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(
             sexpr.starts_with("( GRADIENT POLAR\n (")
