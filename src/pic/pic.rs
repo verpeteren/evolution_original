@@ -417,7 +417,10 @@ mod tests {
     use crate::parser::token::Token;
     use crate::pic::coordinatesystem::DEFAULT_COORDINATE_SYSTEM;
     use image::io::Reader as ImageReader;
-    use image::{DynamicImage, GenericImageView, ImageBuffer};
+    use image::{
+        save_buffer_with_format, ColorType, DynamicImage, GenericImageView, ImageBuffer,
+        ImageFormat,
+    };
 
     #[test]
     fn test_pic_to_lisp() {
@@ -862,10 +865,22 @@ mod tests {
     fn render_source_and_read_sample_file<'a>(
         source: String,
         sample_file: &'a str,
+        overwrite: bool,
     ) -> (DynamicImage, DynamicImage) {
         let pictures = Arc::new(HashMap::new());
         let pic = lisp_to_pic(source, DEFAULT_COORDINATE_SYSTEM).unwrap();
         let gen_rgba8 = pic_get_rgba8_runtime_select(&pic, true, pictures, WIDTH, HEIGHT, 0.0);
+        if overwrite {
+            save_buffer_with_format(
+                sample_file,
+                gen_rgba8.as_slice(),
+                WIDTH as u32,
+                HEIGHT as u32,
+                ColorType::Rgba8,
+                ImageFormat::Png,
+            )
+            .unwrap();
+        }
         let gen_buf = ImageBuffer::from_raw(WIDTH as u32, HEIGHT as u32, gen_rgba8).unwrap();
         let generated = DynamicImage::ImageRgba8(gen_buf);
 
@@ -881,7 +896,8 @@ mod tests {
         let source = r#"( MONO CARTESIAN
          ( ( ATAN ( + ( CELL1 Y Y Y X ( - Y 0.7253959 ) ) ( ATAN X ) ) ) ) )
          "#;
-        let (generated, read) = render_source_and_read_sample_file(source.to_string(), img_file);
+        let (generated, read) =
+            render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
         assert_eq!(generated.as_bytes(), read.as_bytes());
     }
@@ -892,7 +908,8 @@ mod tests {
         let source = r#"( GRAYSCALE POLAR
  ( ( LOG ( + ( CELL1 ( LOG ( RIDGE ( SQRT Y ) Y Y X X 0.5701809 ) ) ( ATAN Y ) ( % Y 0.12452102 ) ( FLOOR ( ATAN2 Y Y ) ) ( SIN Y ) ) ( * ( + X ( SIN ( - ( ATAN2 Y X ) X ) ) ) ( ATAN ( LOG ( FLOOR ( SIN ( TURBULENCE Y 0.91551733 ( SQRT ( SQRT X ) ) ( MIN X Y ) -0.83923936 ( MANDELBROT Y X ) ) ) ) ) ) ) ) ) ) )
          "#;
-        let (generated, read) = render_source_and_read_sample_file(source.to_string(), img_file);
+        let (generated, read) =
+            render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
         assert_eq!(generated.as_bytes(), read.as_bytes());
     }
@@ -904,7 +921,8 @@ mod tests {
  ( ( SQUARE ( / ( MANDELBROT X Y ) 0.7601185 ) ) )
  ( ( + ( TAN ( TAN ( RIDGE Y ( ATAN -0.74197626 ) ( + Y Y ) Y ( CLAMP Y ) ( + X Y ) ) ) ) ( ATAN2 X Y ) ) )
  ( ( MAX -0.9284358 Y ) ) )"#;
-        let (generated, read) = render_source_and_read_sample_file(source.to_string(), img_file);
+        let (generated, read) =
+            render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
         assert_eq!(generated.as_bytes(), read.as_bytes());
     }
@@ -916,7 +934,8 @@ mod tests {
   ( ( * ( TAN ( CLAMP ( ATAN ( SQRT ( MAX ( ABS ( FLOOR ( RIDGE 0.12349105 ( + X 0.500072 ) X X ( MAX Y Y ) 0.6249633 ) ) ) ( % ( CLAMP ( * Y ( SQUARE 0.39180493 ) ) ) ( WRAP ( CELL2 Y ( MIN -0.5756769 Y ) ( ABS 0.8329663 ) Y Y ) ) ) ) ) ) ) ) ( WRAP ( MANDELBROT ( SQRT ( TURBULENCE ( WRAP X ) 0.26766992 ( MANDELBROT -0.7147219 0.46446967 ) ( LOG 0.6340864 ) Y Y ) ) ( SQUARE ( * ( SIN ( / Y ( RIDGE X Y Y 0.49542284 X ( CEIL -0.7545812 ) ) ) ) ( CEIL ( TURBULENCE ( ATAN X ) X -0.52819157 -0.86907744 0.49089026 ( ATAN -0.5986686 ) ) ) ) ) ) ) ) )
   ( ( / ( TURBULENCE ( FBM Y ( * ( RIDGE Y X X X X Y ) -0.98887086 ) 0.21490455 X X ( LOG X ) ) X ( % ( FLOOR X ) ( + X ( ATAN2 0.19268274 Y ) ) ) ( FBM Y -0.28251457 0.632663 X X X ) ( CEIL ( SQRT 0.8429725 ) ) ( WRAP ( MAX Y ( SQUARE ( TAN X ) ) ) ) ) ( FLOOR ( CELL1 ( + -0.5022187 ( LOG X ) ) ( RIDGE -0.8493159 Y ( TAN X ) Y Y Y ) ( ATAN ( SIN ( / ( ABS X ) ( CEIL 0.05049467 ) ) ) ) ( ATAN X ) ( TAN ( / ( FBM X X 0.802964 0.3002789 0.8905289 -0.06338668 ) ( SQUARE ( % X 0.48889422 ) ) ) ) ) ) ) )
   ( ( ATAN ( SIN X ) ) ) )"#;
-        let (generated, read) = render_source_and_read_sample_file(source.to_string(), img_file);
+        let (generated, read) =
+            render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
         assert_eq!(generated.as_bytes(), read.as_bytes());
     }
@@ -926,7 +945,8 @@ mod tests {
         let img_file = "./samples/gradient.png";
         let source = r#"( GRADIENT POLAR
  ( COLORS  ( COLOR 0.38782334 0.18356442 0.5526812 ) ( COLOR 0.40132487 0.9418049 0.79687893 ) ( SQRT ( FBM ( WRAP ( TAN ( - -0.90357685 ( ATAN Y ) ) ) ) ( ABS X ) ( ATAN2 Y X ) ( MAX Y ( MAX X X ) ) ( SQUARE ( CELL2 ( TAN Y ) Y Y X X ) ) ( * Y 0.009492159 ) ) ) )"#;
-        let (generated, read) = render_source_and_read_sample_file(source.to_string(), img_file);
+        let (generated, read) =
+            render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
         assert_eq!(generated.as_bytes(), read.as_bytes());
     }
