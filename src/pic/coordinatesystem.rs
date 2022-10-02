@@ -58,8 +58,8 @@ impl Not for CoordinateSystem {
 pub fn cartesian_to_polar<S: Simd>(x: S::Vf32, y: S::Vf32) -> (S::Vf32, S::Vf32) {
     unsafe {
         let zero = S::set1_ps(0.0);
-        let pi = S::set1_ps(3.14159);
-        let pix2 = S::set1_ps(3.14159 * 2.0);
+        let pi = S::set1_ps(std::f32::consts::PI);
+        let pix2 = S::set1_ps(std::f32::consts::PI * 2.0);
 
         let mask = S::cmpge_ps(x, zero);
         let adjust = S::blendv_ps(pi, zero, mask);

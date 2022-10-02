@@ -215,7 +215,8 @@ impl<S: Simd> StackMachine<S> {
                         stack[sp - 1] = S::blendv_ps(negative, positive, mask);
                     }
                     Instruction::Sin => {
-                        stack[sp - 1] = S::fast_sin_ps(stack[sp - 1] * S::set1_ps(3.14159));
+                        stack[sp - 1] =
+                            S::fast_sin_ps(stack[sp - 1] * S::set1_ps(std::f32::consts::PI));
                     }
                     Instruction::Atan => {
                         stack[sp - 1] = S::fast_atan_ps(stack[sp - 1] * S::set1_ps(4.0))
@@ -225,18 +226,20 @@ impl<S: Simd> StackMachine<S> {
                         sp -= 1;
                         let x = stack[sp - 1];
                         let y = stack[sp] * S::set1_ps(4.0);
-                        stack[sp - 1] = S::fast_atan2_ps(y, x) * S::set1_ps(0.318309);
+                        stack[sp - 1] =
+                            S::fast_atan2_ps(y, x) * S::set1_ps(std::f32::consts::FRAC_1_PI);
                     }
                     Instruction::Tan => {
-                        stack[sp - 1] = S::fast_tan_ps(stack[sp - 1] * S::set1_ps(1.57079632679));
+                        stack[sp - 1] =
+                            S::fast_tan_ps(stack[sp - 1] * S::set1_ps(std::f32::consts::FRAC_PI_2));
                     }
                     Instruction::Log => {
                         let v = stack[sp - 1] * S::set1_ps(4.0);
                         let positive = S::fast_ln_ps(v);
                         let negative = S::mul_ps(S::set1_ps(-1.0), S::fast_ln_ps(S::abs_ps(v)));
                         let mask = S::cmpge_ps(v, S::setzero_ps());
-                        stack[sp - 1] =
-                            S::blendv_ps(negative, positive, mask) * S::set1_ps(0.367879);
+                        stack[sp - 1] = S::blendv_ps(negative, positive, mask)
+                            * S::set1_ps(1.0 / std::f32::consts::E);
                     }
                     Instruction::Abs => {
                         stack[sp - 1] = S::abs_ps(stack[sp - 1]);
