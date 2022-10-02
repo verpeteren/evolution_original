@@ -149,3 +149,29 @@ impl PicData for GradientData {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pic_new_gradient() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = GradientData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match &pic {
+            Pic::Gradient(GradientData {
+                colors,
+                index,
+                coord: _coord,
+            }) => {
+                let len = colors.len();
+                assert!(len > 1 && len < 10);
+                let len = index.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+            }
+            _ => {
+                panic!("wrong type");
+            }
+        };
+    }
+}

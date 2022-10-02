@@ -186,3 +186,29 @@ fn hsv_to_rgb<S: Simd>(h: S::Vf32, s: S::Vf32, v: S::Vf32) -> (S::Vf32, S::Vf32,
         (r, g, b)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pic_new_hsv() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = HSVData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match &pic {
+            Pic::HSV(HSVData { h, s, v, coord: _ }) => {
+                let len = h.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+
+                let len = s.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+
+                let len = v.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+            }
+            _ => {
+                panic!("wrong type");
+            }
+        };
+    }
+}

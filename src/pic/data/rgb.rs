@@ -117,3 +117,29 @@ impl PicData for RGBData {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pic_new_rgb() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = RGBData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match &pic {
+            Pic::RGB(RGBData { r, g, b, coord: _ }) => {
+                let len = r.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+
+                let len = g.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+
+                let len = b.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+            }
+            _ => {
+                panic!("wrong type");
+            }
+        };
+    }
+}

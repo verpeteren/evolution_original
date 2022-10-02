@@ -87,3 +87,23 @@ impl PicData for MonoData {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pic_new_mono() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
+        let pic = MonoData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
+        match &pic {
+            Pic::Mono(MonoData { c, coord: _coord }) => {
+                let len = c.get_children().unwrap().len();
+                assert!(len > 0 && len < 60);
+            }
+            _ => {
+                panic!("wrong type");
+            }
+        };
+    }
+}
