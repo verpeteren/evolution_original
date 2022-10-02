@@ -21,9 +21,10 @@ use std::sync::{Arc, RwLock};
 use std::thread::spawn;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::parser::lexer::lisp_to_pic;
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::{CoordinateSystem, DEFAULT_COORDINATE_SYSTEM};
-use crate::pic::pic::{lisp_to_pic, pic_get_rgba8_runtime_select, Pic, HEIGHT, WIDTH};
+use crate::pic::pic::{pic_get_rgba8_runtime_select, Pic, HEIGHT, WIDTH};
 use crate::ui::{
     button::Button,
     imgui_wrapper::{ImGuiWrapper, EXEC_NAME},
