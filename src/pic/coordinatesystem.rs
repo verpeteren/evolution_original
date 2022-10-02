@@ -3,6 +3,7 @@ use std::ops::Not;
 use std::str::FromStr;
 
 use clap::ArgEnum;
+use simdeez::Simd;
 use variant_count::VariantCount;
 
 #[derive(Clone, Debug, PartialEq, ArgEnum, VariantCount)]
@@ -50,6 +51,24 @@ impl Not for CoordinateSystem {
             CoordinateSystem::Polar => CoordinateSystem::Cartesian,
             CoordinateSystem::Cartesian => CoordinateSystem::Polar,
         }
+    }
+}
+
+#[inline(always)]
+pub fn cartesian_to_polar<S: Simd>(x: S::Vf32, y: S::Vf32) -> (S::Vf32, S::Vf32) {
+    unsafe {
+        let zero = S::set1_ps(0.0);
+        let pi = S::set1_ps(3.14159);
+        let pix2 = S::set1_ps(3.14159 * 2.0);
+
+        let mask = S::cmpge_ps(x, zero);
+        let adjust = S::blendv_ps(pi, zero, mask);
+        let mask = S::cmplt_ps(y, zero) & mask;
+        let adjust = S::blendv_ps(adjust, pix2, mask);
+
+        let r = S::sqrt_ps(x * x + y * y);
+        let theta = S::fast_atan_ps(y / x) + adjust;
+        (r, theta)
     }
 }
 

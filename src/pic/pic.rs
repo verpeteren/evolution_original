@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::parser::{aptnode::APTNode, lexer::Lexer, token::Token};
 use crate::pic::actual_picture::ActualPicture;
-use crate::pic::coordinatesystem::CoordinateSystem;
+use crate::pic::coordinatesystem::{cartesian_to_polar, CoordinateSystem};
 use crate::pic::data::gradient::{GradientData, GRADIENT_SIZE};
 use crate::pic::data::grayscale::GrayscaleData;
 use crate::pic::data::hsv::HSVData;
@@ -835,24 +835,6 @@ fn wrap_0_1<S: Simd>(v: S::Vf32) -> S::Vf32 {
             r[i] = v[i] % 1.0001;
         }
         r
-    }
-}
-
-#[inline(always)]
-fn cartesian_to_polar<S: Simd>(x: S::Vf32, y: S::Vf32) -> (S::Vf32, S::Vf32) {
-    unsafe {
-        let zero = S::set1_ps(0.0);
-        let pi = S::set1_ps(3.14159);
-        let pix2 = S::set1_ps(3.14159 * 2.0);
-
-        let mask = S::cmpge_ps(x, zero);
-        let adjust = S::blendv_ps(pi, zero, mask);
-        let mask = S::cmplt_ps(y, zero) & mask;
-        let adjust = S::blendv_ps(adjust, pix2, mask);
-
-        let r = S::sqrt_ps(x * x + y * y);
-        let theta = S::fast_atan_ps(y / x) + adjust;
-        (r, theta)
     }
 }
 
