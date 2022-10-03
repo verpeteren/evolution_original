@@ -45,10 +45,17 @@ OPTIONS:
 ```
 
 When the `--input` parameter is not set a Ui will start with several random generated examples
-When the '--input` parameter is set, that will be used as a input.
-When the '--input` parameter is not "-" and the `--copy-path' parameter is set, the application will create a new image file if the input file changed. On success, the input and output files will be written (with timestamp prefix) in the copy-path directory.
+When the `--input` parameter is set, that will be used as a input.
+When the `--input` parameter is not "-" and the `--copy-path` parameter is set, the application will create a new image file if the input file changed. On success, the input and output files will be written (with timestamp prefix) in the copy-path directory.
 
-### Ui modes
+### Animations
+It is possible to create an animation by using the `--output` parameter:
+
+- the `--output` parameter needs to be set to an animation filename (e.g. `.gif` extension)
+- the 'DSL' needs to contain at least 1 `T` Operation
+When the `--time` parameter is set, the file will contain frames between t=0.0 and that end time.
+
+### Ui mode
 
 | Action | Select mode | Zoom Mode |
 | ------ | ----------- | --------- |
@@ -103,7 +110,7 @@ EXPR         = '(' EXPR ')';
              | 'E' ;
              | 'x' ;
              | 'y' ;
-             | 'x' ;
+             | 't' ;
              | CONSTANT ;
 CONSTANT     = [NEGATE] DIGIT ;
              | [NEGATE] DIGIT* '.' DIGIT DIGIT* ;
@@ -128,8 +135,8 @@ Invalid Coordinate systems are ignored, the default Coordinate System (Cartesian
 
 * PI: std::f32::consts::PI
 * E: std::f32::consts::E
-* Width: the 'width' of the image; Either a default or set via the '--width' command line parameter.
-* Height: the 'height' of the image; Either a default or set via the '--height' command line parameter.
+* Width: the `width` of the image; Either a default or set via the `--width` command line parameter.
+* Height: the `height` of the image; Either a default or set via the `--height` command line parameter.
 
 #### X, Y, T
 
@@ -139,7 +146,7 @@ Invalid Coordinate systems are ignored, the default Coordinate System (Cartesian
 
 #### Ugh, Math...
 
-The operations (`+`, `-`, `*`, `/`, `%`, `sin`, `tan`, `atan`, `atan2`, `min`, `max`, `square`, `wrap`, `clap`, `ceil`, `floor`, `abs`, `log`, `sqrt`) work as expected [citation needed].
+The math operations (`+`, `-`, `*`, `/`, `%`, `sin`, `tan`, `atan`, `atan2`, `min`, `max`, `square`, `wrap`, `clap`, `ceil`, `floor`, `abs`, `log`, `sqrt`) work as expected [citation needed].
 
 #### Noise
 
