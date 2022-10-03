@@ -219,14 +219,15 @@ Currently, it is a No-Op
  ( ( MAX -0.9284358 Y ) ) )
  ```
 
-![Sample Image](/samples/hsv.png)
+![HSV Sample Image](/samples/hsv.png)
 
 ### Monochrome Images
 ```lisp
 ( MONO CARTESIAN
  ( ( ATAN ( + ( CELL1 Y Y Y X ( - Y 0.7253959 ) ) ( ATAN X ) ) ) ) )
 ```
-![Sample Image](/samples/mono.png)
+
+![Monochrome Sample Image](/samples/mono.png)
 
 ### Grayscale Images
 ```lisp
@@ -234,7 +235,7 @@ Currently, it is a No-Op
  ( ( LOG ( + ( CELL1 ( LOG ( RIDGE ( SQRT Y ) Y Y X X 0.5701809 ) ) ( ATAN Y ) ( % Y 0.12452102 ) ( FLOOR ( ATAN2 Y Y ) ) ( SIN Y ) ) ( * ( + X ( SIN ( - ( ATAN2 Y X ) X ) ) ) ( ATAN ( LOG ( FLOOR ( SIN ( TURBULENCE Y 0.91551733 ( SQRT ( SQRT X ) ) ( MIN X Y ) -0.83923936 ( MANDELBROT Y X ) ) ) ) ) ) ) ) ) ) )
 ```
 
-![Sample Image](/samples/grayscale.png)
+![Grayscale Sample Image](/samples/grayscale.png)
 
 ### RGB Images
 ```lisp
@@ -244,7 +245,7 @@ Currently, it is a No-Op
  ( ( ATAN ( SIN X ) ) ) )
 ```
 
-![Sample Image](/samples/rgb.png)
+![RGB Sample Image](/samples/rgb.png)
 
 
 ### Gradient Images
@@ -253,5 +254,5 @@ Currently, it is a No-Op
  ( COLORS  ( COLOR 0.38782334 0.18356442 0.5526812 ) ( COLOR 0.40132487 0.9418049 0.79687893 ) ( SQRT ( FBM ( WRAP ( TAN ( - -0.90357685 ( ATAN Y ) ) ) ) ( ABS X ) ( ATAN2 Y X ) ( MAX Y ( MAX X X ) ) ( SQUARE ( CELL2 ( TAN Y ) Y Y X X ) ) ( * Y 0.009492159 ) ) ) )
  ```
 
-![Sample Image](/samples/gradient.png)
+![Gradient Sample Image](/samples/gradient.png)
 
