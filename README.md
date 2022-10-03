@@ -51,9 +51,16 @@ When the `--input` parameter is not "-" and the `--copy-path` parameter is set, 
 ### Animations
 It is possible to create an animation by using the `--output` parameter:
 
+```lisp
+(RGB POLAR ( X ) (Y ) (* t X ) )
+```
+![Animated Image](/samples/animation.gif)
+
+
 - the `--output` parameter needs to be set to an animation filename (e.g. `.gif` extension)
 - the 'DSL' needs to contain at least 1 `T` Operation
 When the `--time` parameter is set, the file will contain frames between t=0.0 and that end time.
+
 
 ### Ui mode
 
