@@ -125,14 +125,14 @@ impl Pic {
         w: usize,
         h: usize,
         fps: u16,
-        d: f32,
+        d_ms: f32,
     ) -> Vec<Vec<u8>> {
-        let frames = (fps as f32 * (d / 1000.0)) as i32;
+        // todo investigate if we can return an iterator instead of a vec
+        let frames = (fps as f32 * (d_ms / 1000.0)) as i32;
         let frame_dt = 2.0 / frames as f32;
-
         let mut t = -1.0;
         let mut result = Vec::new();
-        for _ in 0..frames {
+        for _i in 0..frames {
             let frame_buffer = self.get_rgba8::<S>(true, pics.clone(), w, h, t);
             result.push(frame_buffer);
             t += frame_dt;

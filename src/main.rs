@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::env::var;
 use std::fs::{copy, create_dir_all, read_dir, File};
 use std::io::prelude::*;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::sync::{Arc, RwLock};
@@ -36,13 +37,15 @@ use ggez::event::{run, EventHandler, KeyCode, KeyMods, MouseButton};
 use ggez::graphics::{clear, draw, present, window, Color, DrawParam, Image};
 use ggez::timer::delta;
 use ggez::{Context, ContextBuilder, GameError, GameResult};
-use image::{save_buffer_with_format, ColorType, ImageFormat};
+use image::gif::{GifEncoder, Repeat};
+use image::{save_buffer_with_format, ColorType, Frame, ImageBuffer, ImageFormat};
 use notify::{
     event::{AccessKind, AccessMode},
     Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher,
 };
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use simdeez::avx2::Avx2;
 
 const FPS: u16 = 15;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
@@ -72,7 +75,7 @@ struct Args {
         long,
         value_parser,
         default_value_t = 0.0,
-        help = "set the T variable"
+        help = "set the T variable (ms)"
     )]
     time: f32,
 
@@ -492,7 +495,7 @@ fn select_image_format(out_file: &Path) -> (ImageFormat, bool) {
                 "farb" => (ImageFormat::Farbfeld, false),
                 // these do imply video!
                 "gif" => (ImageFormat::Gif, true),
-                "avi" => (ImageFormat::Avif, true),
+                "avi" => (ImageFormat::Avif, false), // Todo: find out how to create avi writer
                 // commodity
                 "bmp" => (ImageFormat::Bmp, false),
                 "ico" => (ImageFormat::Ico, false),
@@ -531,18 +534,31 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
     }
     let pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
     let out_file = Path::new(out_filename);
-    let (format, is_video) = select_image_format(out_file);
-    if is_video && pic.can_animate() {
-        let duration = if t == 0.0 { VIDEO_DURATION } else { t };
-        /*
-        for frame in pic.get_video::<S>(pictures, width, height, FPS, duration) {
-            //todo get_.._runtime_select
-            //grab rgb frame
-            //store in gif
-            //save gif to file
-            unimplemented!();
+    let (format, mut is_video) = select_image_format(out_file);
+    if is_video {
+        if !pic.can_animate() {
+            println!("warning: the T Operator is needed to make an animation");
+            is_video = false;
         }
-        */
+    }
+    if is_video {
+        assert_eq!(format, ImageFormat::Gif);
+        let duration = if t == 0.0 { VIDEO_DURATION } else { t };
+        //TODO: runtime_select
+        let raw_frames = pic.get_video::<Avx2>(pictures, width, height, FPS, duration);
+        if raw_frames.len() == 0 {
+            println!("warning: not enough frames to make a usefull gif");
+        } else {
+            let file_out = File::create(out_file).unwrap();
+            let mut encoder = GifEncoder::new(&file_out);
+            encoder.set_repeat(Repeat::Infinite).unwrap();
+            for rgba8 in raw_frames {
+                let gen_buf = ImageBuffer::from_raw(width as u32, height as u32, rgba8).unwrap();
+                let rgba_img = gen_buf.into();
+                let frame = Frame::new(rgba_img);
+                encoder.encode_frame(frame).unwrap();
+            }
+        }
     } else {
         let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
         save_buffer_with_format(
@@ -689,7 +705,7 @@ mod tests {
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.avi")),
-            (ImageFormat::Avif, true)
+            (ImageFormat::Avif, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.bmp")),
