@@ -528,22 +528,26 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
             .map_err(|e| format!("Cannot read input filename. {}", e))?;
     }
     let pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
-    let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
     let out_file = Path::new(out_filename);
-    let (format, _is_video) = select_image_format(out_file);
-    save_buffer_with_format(
-        out_file,
-        &rgba8[0..],
-        width as u32,
-        height as u32,
-        ColorType::Rgba8,
-        format,
-    )
-    .map_err(|e| format!("Could not save {}", e))?;
-    Ok((
-        Path::new(input_filename).to_path_buf(),
-        out_file.to_path_buf(),
-    ))
+    let (format, is_video) = select_image_format(out_file);
+    if is_video && pic.can_animate() {
+        unimplemented!();
+    } else {
+        let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
+        save_buffer_with_format(
+            out_file,
+            &rgba8[0..],
+            width as u32,
+            height as u32,
+            ColorType::Rgba8,
+            format,
+        )
+        .map_err(|e| format!("Could not save {}", e))?;
+        Ok((
+            Path::new(input_filename).to_path_buf(),
+            out_file.to_path_buf(),
+        ))
+    }
 }
 
 fn filename_to_copy_to(target_dir: &Path, now: u64, filename: &str) -> PathBuf {
