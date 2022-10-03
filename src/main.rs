@@ -27,8 +27,8 @@ use crate::ui::{
     mousestate::MouseState,
 };
 use evolution::{
-    lisp_to_pic, pic_get_rgba8_runtime_select, ActualPicture, CoordinateSystem, Pic,
-    DEFAULT_COORDINATE_SYSTEM, DEFAULT_HEIGHT, DEFAULT_WIDTH,
+    lisp_to_pic, pic_get_rgba8_runtime_select, pic_get_video_runtime_select, ActualPicture,
+    CoordinateSystem, Pic, DEFAULT_COORDINATE_SYSTEM, DEFAULT_HEIGHT, DEFAULT_WIDTH,
 };
 
 use clap::Parser;
@@ -45,7 +45,6 @@ use notify::{
 };
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use simdeez::avx2::Avx2;
 
 const FPS: u16 = 15;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
@@ -545,7 +544,7 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
         assert_eq!(format, ImageFormat::Gif);
         let duration = if t == 0.0 { VIDEO_DURATION } else { t };
         //TODO: runtime_select
-        let raw_frames = pic.get_video::<Avx2>(pictures, width, height, FPS, duration);
+        let raw_frames = pic_get_video_runtime_select(&pic, pictures, width, height, FPS, duration);
         if raw_frames.len() == 0 {
             println!("warning: not enough frames to make a usefull gif");
         } else {

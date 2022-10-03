@@ -38,6 +38,19 @@ simd_runtime_generate!(
     }
 );
 
+simd_runtime_generate!(
+    pub fn pic_get_video(
+        pic: &Pic,
+        pictures: Arc<HashMap<String, ActualPicture>>,
+        width: usize,
+        height: usize,
+        fps: u16,
+        duration_ms: f32,
+    ) -> Vec<Vec<u8>> {
+        pic.get_video::<S>(pictures, width, height, fps, duration_ms)
+    }
+);
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Pic {
     Mono(MonoData),
