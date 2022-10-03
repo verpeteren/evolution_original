@@ -23,9 +23,12 @@ pub struct HSVData {
 
 impl PicData for HSVData {
     fn new(min: usize, max: usize, video: bool, rng: &mut StdRng, pic_names: &Vec<&String>) -> Pic {
-        let (h, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let (s, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let (v, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (h, coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (s, _coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (v, _coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::HSV(HSVData { h, s, v, coord })
     }
     fn get_rgba8<S: Simd>(

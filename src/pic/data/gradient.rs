@@ -43,7 +43,8 @@ impl PicData for GradientData {
             }
         }
 
-        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (tree, coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::Gradient(GradientData {
             colors: colors,
             index: tree,

@@ -23,9 +23,12 @@ pub struct RGBData {
 
 impl PicData for RGBData {
     fn new(min: usize, max: usize, video: bool, rng: &mut StdRng, pic_names: &Vec<&String>) -> Pic {
-        let (r, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let (g, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
-        let (b, _coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (r, coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (g, _coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (b, _coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::RGB(RGBData { r, g, b, coord })
     }
     fn get_rgba8<S: Simd>(

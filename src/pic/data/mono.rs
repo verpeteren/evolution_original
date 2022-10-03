@@ -21,7 +21,8 @@ pub struct MonoData {
 
 impl PicData for MonoData {
     fn new(min: usize, max: usize, video: bool, rng: &mut StdRng, pic_names: &Vec<&String>) -> Pic {
-        let (tree, coord) = APTNode::generate_tree(rng.gen_range(min..max), video, rng, pic_names);
+        let (tree, coord) =
+            APTNode::create_random_tree(rng.gen_range(min..max), video, rng, pic_names);
         Pic::Mono(MonoData { c: tree, coord })
     }
     fn get_rgba8<S: Simd>(

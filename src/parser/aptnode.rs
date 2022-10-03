@@ -534,7 +534,7 @@ impl APTNode {
         }
     }
 
-    pub fn generate_tree(
+    pub fn create_random_tree(
         count: usize,
         video: bool,
         rng: &mut StdRng,
