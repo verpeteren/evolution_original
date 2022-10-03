@@ -44,6 +44,7 @@ use notify::{
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
+const FPS: u16 = 15;
 const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 
 const THUMB_ROWS: u16 = 6;
@@ -511,6 +512,7 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
     let out_filename = args.output.as_ref().expect("Invalid filename");
     let input_filename = args.input.as_ref().expect("Invalid filename");
     let (width, height, t) = (args.width, args.height, args.time);
+    assert!(t >= 0.0);
     let pic_path = get_picture_path(&args);
     let pictures = Arc::new(
         load_pictures(None, pic_path.as_path())
@@ -531,7 +533,16 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
     let out_file = Path::new(out_filename);
     let (format, is_video) = select_image_format(out_file);
     if is_video && pic.can_animate() {
-        unimplemented!();
+        let duration = if t == 0.0 { VIDEO_DURATION } else { t };
+        /*
+        for frame in pic.get_video::<S>(pictures, width, height, FPS, duration) {
+            //todo get_.._runtime_select
+            //grab rgb frame
+            //store in gif
+            //save gif to file
+            unimplemented!();
+        }
+        */
     } else {
         let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
         save_buffer_with_format(
@@ -543,11 +554,11 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
             format,
         )
         .map_err(|e| format!("Could not save {}", e))?;
-        Ok((
-            Path::new(input_filename).to_path_buf(),
-            out_file.to_path_buf(),
-        ))
     }
+    Ok((
+        Path::new(input_filename).to_path_buf(),
+        out_file.to_path_buf(),
+    ))
 }
 
 fn filename_to_copy_to(target_dir: &Path, now: u64, filename: &str) -> PathBuf {
