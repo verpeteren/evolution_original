@@ -475,30 +475,8 @@ fn main_gui(args: &Args) -> GameResult {
     run(ctx, event_loop, state)
 }
 
-fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
-    let out_filename = args.output.as_ref().expect("Invalid filename");
-    let input_filename = args.input.as_ref().expect("Invalid filename");
-    let (width, height, t) = (args.width, args.height, args.time);
-    let pic_path = get_picture_path(&args);
-    let pictures = Arc::new(
-        load_pictures(None, pic_path.as_path())
-            .map_err(|e| format!("Cannot load picture folder. {:?}", e))?,
-    );
-    let mut contents = String::new();
-    if input_filename == "-" {
-        let _bytes = std::io::stdin()
-            .read_to_string(&mut contents)
-            .map_err(|e| format!("Cannot read from stdin. {}", e));
-    } else {
-        let mut file =
-            File::open(input_filename).map_err(|e| format!("Cannot open input filename. {}", e))?;
-        file.read_to_string(&mut contents)
-            .map_err(|e| format!("Cannot read input filename. {}", e))?;
-    }
-    let pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
-    let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
-    let out_file = Path::new(out_filename);
-    let format = match out_file.extension() {
+fn select_image_format(out_file: &Path) -> ImageFormat {
+    match out_file.extension() {
         Some(ext) => {
             match ext
                 .to_str()
@@ -526,8 +504,33 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
             }
         }
         None => ImageFormat::Png,
-    };
+    }
+}
 
+fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
+    let out_filename = args.output.as_ref().expect("Invalid filename");
+    let input_filename = args.input.as_ref().expect("Invalid filename");
+    let (width, height, t) = (args.width, args.height, args.time);
+    let pic_path = get_picture_path(&args);
+    let pictures = Arc::new(
+        load_pictures(None, pic_path.as_path())
+            .map_err(|e| format!("Cannot load picture folder. {:?}", e))?,
+    );
+    let mut contents = String::new();
+    if input_filename == "-" {
+        let _bytes = std::io::stdin()
+            .read_to_string(&mut contents)
+            .map_err(|e| format!("Cannot read from stdin. {}", e));
+    } else {
+        let mut file =
+            File::open(input_filename).map_err(|e| format!("Cannot open input filename. {}", e))?;
+        file.read_to_string(&mut contents)
+            .map_err(|e| format!("Cannot read input filename. {}", e))?;
+    }
+    let pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
+    let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
+    let out_file = Path::new(out_filename);
+    let format = select_image_format(out_file);
     save_buffer_with_format(
         out_file,
         &rgba8[0..],
@@ -646,6 +649,82 @@ pub fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_select_image_format() {
+        assert_eq!(
+            select_image_format(&Path::new("somefile.tga")),
+            ImageFormat::Tga
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.dds")),
+            ImageFormat::Dds
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.hdr")),
+            ImageFormat::Hdr
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.farb")),
+            ImageFormat::Farbfeld
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.gif")),
+            ImageFormat::Gif
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.avi")),
+            ImageFormat::Avif
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.bmp")),
+            ImageFormat::Bmp
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.ico")),
+            ImageFormat::Ico
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.webp")),
+            ImageFormat::WebP
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.pnm")),
+            ImageFormat::Pnm
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.tiff")),
+            ImageFormat::Tiff
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.tif")),
+            ImageFormat::Tiff
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.jpeg")),
+            ImageFormat::Jpeg
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.jpg")),
+            ImageFormat::Jpeg
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.png")),
+            ImageFormat::Png
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.Png")),
+            ImageFormat::Png
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.PNG")),
+            ImageFormat::Png
+        );
+        assert_eq!(
+            select_image_format(&Path::new("./somedir")),
+            ImageFormat::Png
+        );
+    }
 
     #[test]
     fn test_filename_to_copy_to() {
