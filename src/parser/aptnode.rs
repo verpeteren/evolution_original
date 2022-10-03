@@ -2099,7 +2099,7 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
 
         for _i in 0..100 {
-            match APTNode::get_random_leaf(&mut rng) {
+            match APTNode::get_random_leaf_video(&mut rng) {
                 APTNode::Constant(value) => {
                     assert!(value >= -1.0 && value <= 1.0);
                 }
