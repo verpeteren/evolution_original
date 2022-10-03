@@ -27,7 +27,7 @@ use crate::ui::{
 };
 use evolution::{
     lisp_to_pic, pic_get_rgba8_runtime_select, ActualPicture, CoordinateSystem, Pic,
-    DEFAULT_COORDINATE_SYSTEM, HEIGHT, WIDTH,
+    DEFAULT_COORDINATE_SYSTEM, DEFAULT_HEIGHT, DEFAULT_WIDTH,
 };
 
 use clap::Parser;
@@ -60,10 +60,10 @@ struct Args {
     #[clap(short, long, value_parser, default_value = STD_PATH, help="The path to images that can be loaded via the Pic- operation")]
     pictures_path: String,
 
-    #[clap(short, long, value_parser, default_value_t = WIDTH, help="The width of the generated image")]
+    #[clap(short, long, value_parser, default_value_t = DEFAULT_WIDTH, help="The width of the generated image")]
     width: usize,
 
-    #[clap(short, long, value_parser, default_value_t = HEIGHT, help="The height of the generated image")]
+    #[clap(short, long, value_parser, default_value_t = DEFAULT_HEIGHT, help="The height of the generated image")]
     height: usize,
 
     #[clap(
@@ -659,8 +659,8 @@ mod tests {
     fn test_get_picture_path() {
         let args = Args {
             pictures_path: "pictures".to_string(),
-            width: WIDTH,
-            height: HEIGHT,
+            width: DEFAULT_WIDTH,
+            height: DEFAULT_HEIGHT,
             time: 0.0,
             input: None,
             output: None,

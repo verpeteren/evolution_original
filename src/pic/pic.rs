@@ -19,8 +19,8 @@ use simdeez::sse2::*;
 use simdeez::sse41::*;
 use simdeez::Simd;
 
-pub const WIDTH: usize = 1920;
-pub const HEIGHT: usize = 1080;
+pub const DEFAULT_WIDTH: usize = 1920;
+pub const DEFAULT_HEIGHT: usize = 1080;
 
 const TREE_MIN: usize = 1;
 const TREE_MAX: usize = 40;
@@ -623,19 +623,19 @@ mod tests {
     ) -> (DynamicImage, DynamicImage) {
         let pictures = Arc::new(HashMap::new());
         let pic = lisp_to_pic(source, DEFAULT_COORDINATE_SYSTEM).unwrap();
-        let gen_rgba8 = pic_get_rgba8_runtime_select(&pic, true, pictures, WIDTH, HEIGHT, 0.0);
+        let gen_rgba8 = pic_get_rgba8_runtime_select(&pic, true, pictures, DEFAULT_WIDTH, DEFAULT_HEIGHT, 0.0);
         if overwrite {
             save_buffer_with_format(
                 sample_file,
                 gen_rgba8.as_slice(),
-                WIDTH as u32,
-                HEIGHT as u32,
+                DEFAULT_WIDTH as u32,
+                DEFAULT_HEIGHT as u32,
                 ColorType::Rgba8,
                 ImageFormat::Png,
             )
             .unwrap();
         }
-        let gen_buf = ImageBuffer::from_raw(WIDTH as u32, HEIGHT as u32, gen_rgba8).unwrap();
+        let gen_buf = ImageBuffer::from_raw(DEFAULT_WIDTH as u32, DEFAULT_HEIGHT as u32, gen_rgba8).unwrap();
         let generated = DynamicImage::ImageRgba8(gen_buf);
 
         let read_img = ImageReader::open(sample_file).unwrap().decode().unwrap();
