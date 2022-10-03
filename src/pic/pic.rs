@@ -11,7 +11,6 @@ use crate::pic::data::mono::MonoData;
 use crate::pic::data::rgb::RGBData;
 use crate::pic::data::PicData;
 
-use ggez::graphics::Color;
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use simdeez::avx2::*;
@@ -174,6 +173,7 @@ mod tests {
     use super::*;
     use crate::parser::lexer::lisp_to_pic;
     use crate::pic::coordinatesystem::DEFAULT_COORDINATE_SYSTEM;
+    use ggez::graphics::Color;
     use image::io::Reader as ImageReader;
     use image::{
         save_buffer_with_format, ColorType, DynamicImage, GenericImageView, ImageBuffer,
