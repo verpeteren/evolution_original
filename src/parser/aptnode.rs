@@ -252,7 +252,9 @@ impl APTNode {
     }
 
     pub fn get_random_node(rng: &mut StdRng, pic_names: &Vec<&String>) -> APTNode {
-        let r = rng.gen_range(0..APTNode::VARIANT_COUNT - 9);
+        let ignore_variant_count = 9;
+        let ignore_pictures = if pic_names.len() == 0 { 1 } else { 0 };
+        let r = rng.gen_range(0..APTNode::VARIANT_COUNT - ignore_variant_count - ignore_pictures);
 
         match r {
             0 => APTNode::Add(vec![APTNode::Empty, APTNode::Empty]),
@@ -313,6 +315,7 @@ impl APTNode {
             22 => APTNode::Max(vec![APTNode::Empty, APTNode::Empty]),
             23 => APTNode::Min(vec![APTNode::Empty, APTNode::Empty]),
             24 => APTNode::Mandelbrot(vec![APTNode::Empty, APTNode::Empty]),
+            // Pictures should be the last one (see _ignore_pictures variable)
             25 => {
                 let r = rng.gen_range(0..pic_names.len()) as usize;
                 APTNode::Picture(
