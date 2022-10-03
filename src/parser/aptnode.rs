@@ -332,7 +332,6 @@ impl APTNode {
         match r {
             0 => APTNode::X,
             1 => APTNode::Y,
-            2 => APTNode::T,
             3 => APTNode::Constant(rng.gen_range(-1.0..1.0)),
             _ => panic!("pick_random_leaf generated unhandled r:{}", r),
         }
