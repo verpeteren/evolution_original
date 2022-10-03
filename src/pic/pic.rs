@@ -166,6 +166,11 @@ impl Pic {
             Pic::HSV(data) => data.get_rgba8::<S>(threaded, pics, w, h, t),
         }
     }
+
+    pub fn can_animate(&self) -> bool {
+        let mut has_t = false;
+        unimplemented!()
+    }
 }
 
 #[cfg(test)]
@@ -698,5 +703,21 @@ mod tests {
             render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
         assert_eq!(generated.as_bytes(), read.as_bytes());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_has_t_apt() {
+        let source = r#"( MONO POLAR ( MAX X Y ) )"#;
+        let pic = lisp_to_pic(source.to_string(), DEFAULT_COORDINATE_SYSTEM).unwrap();
+        assert_eq!(pic.can_animate(), false);
+
+        let source = r#"( GRAYSCALE POLAR ( MAX T Y ) )"#;
+        let pic = lisp_to_pic(source.to_string(), DEFAULT_COORDINATE_SYSTEM).unwrap();
+        assert_eq!(pic.can_animate(), true);
+
+        let source = r#"( RGB CARTESIAN ( ( x ) ( Y )  ( T ) ) )"#;
+        let pic = lisp_to_pic(source.to_string(), DEFAULT_COORDINATE_SYSTEM).unwrap();
+        assert_eq!(pic.can_animate(), true);
     }
 }
