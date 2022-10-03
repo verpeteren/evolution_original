@@ -475,7 +475,7 @@ fn main_gui(args: &Args) -> GameResult {
     run(ctx, event_loop, state)
 }
 
-fn select_image_format(out_file: &Path) -> ImageFormat {
+fn select_image_format(out_file: &Path) -> (ImageFormat, bool) {
     match out_file.extension() {
         Some(ext) => {
             match ext
@@ -485,25 +485,25 @@ fn select_image_format(out_file: &Path) -> ImageFormat {
                 .as_str()
             {
                 // support these?
-                "tga" => ImageFormat::Tga,
-                "dds" => ImageFormat::Dds,
-                "hdr" => ImageFormat::Hdr,
-                "farb" => ImageFormat::Farbfeld,
-                // do these imply video?
-                "gif" => ImageFormat::Gif,
-                "avi" => ImageFormat::Avif,
+                "tga" => (ImageFormat::Tga, false),
+                "dds" => (ImageFormat::Dds, false),
+                "hdr" => (ImageFormat::Hdr, false),
+                "farb" => (ImageFormat::Farbfeld, false),
+                // these do imply video!
+                "gif" => (ImageFormat::Gif, true),
+                "avi" => (ImageFormat::Avif, true),
                 // commodity
-                "bmp" => ImageFormat::Bmp,
-                "ico" => ImageFormat::Ico,
-                "webp" => ImageFormat::WebP,
-                "pnm" => ImageFormat::Pnm,
-                "tif" | "tiff" => ImageFormat::Tiff,
-                "jpg" | "jpeg" => ImageFormat::Jpeg,
-                "png" => ImageFormat::Png,
-                _ => ImageFormat::Png,
+                "bmp" => (ImageFormat::Bmp, false),
+                "ico" => (ImageFormat::Ico, false),
+                "webp" => (ImageFormat::WebP, false),
+                "pnm" => (ImageFormat::Pnm, false),
+                "tif" | "tiff" => (ImageFormat::Tiff, false),
+                "jpg" | "jpeg" => (ImageFormat::Jpeg, false),
+                "png" => (ImageFormat::Png, false),
+                _ => (ImageFormat::Png, false),
             }
         }
-        None => ImageFormat::Png,
+        None => (ImageFormat::Png, false),
     }
 }
 
@@ -530,7 +530,7 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
     let pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
     let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
     let out_file = Path::new(out_filename);
-    let format = select_image_format(out_file);
+    let (format, _is_video) = select_image_format(out_file);
     save_buffer_with_format(
         out_file,
         &rgba8[0..],
@@ -654,75 +654,75 @@ mod tests {
     fn test_select_image_format() {
         assert_eq!(
             select_image_format(&Path::new("somefile.tga")),
-            ImageFormat::Tga
+            (ImageFormat::Tga, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.dds")),
-            ImageFormat::Dds
+            (ImageFormat::Dds, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.hdr")),
-            ImageFormat::Hdr
+            (ImageFormat::Hdr, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.farb")),
-            ImageFormat::Farbfeld
+            (ImageFormat::Farbfeld, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.gif")),
-            ImageFormat::Gif
+            (ImageFormat::Gif, true)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.avi")),
-            ImageFormat::Avif
+            (ImageFormat::Avif, true)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.bmp")),
-            ImageFormat::Bmp
+            (ImageFormat::Bmp, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.ico")),
-            ImageFormat::Ico
+            (ImageFormat::Ico, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.webp")),
-            ImageFormat::WebP
+            (ImageFormat::WebP, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.pnm")),
-            ImageFormat::Pnm
+            (ImageFormat::Pnm, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.tiff")),
-            ImageFormat::Tiff
+            (ImageFormat::Tiff, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.tif")),
-            ImageFormat::Tiff
+            (ImageFormat::Tiff, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.jpeg")),
-            ImageFormat::Jpeg
+            (ImageFormat::Jpeg, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.jpg")),
-            ImageFormat::Jpeg
+            (ImageFormat::Jpeg, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.png")),
-            ImageFormat::Png
+            (ImageFormat::Png, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.Png")),
-            ImageFormat::Png
+            (ImageFormat::Png, false)
         );
         assert_eq!(
             select_image_format(&Path::new("somefile.PNG")),
-            ImageFormat::Png
+            (ImageFormat::Png, false)
         );
         assert_eq!(
             select_image_format(&Path::new("./somedir")),
-            ImageFormat::Png
+            (ImageFormat::Png, false)
         );
     }
 
