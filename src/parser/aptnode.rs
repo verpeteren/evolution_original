@@ -241,17 +241,17 @@ impl APTNode {
             }
         }
     }
-    pub fn get_random_coord(rng: &mut StdRng) -> CoordinateSystem {
+    pub fn pick_random_coord(rng: &mut StdRng) -> CoordinateSystem {
         let r = rng.gen_range(0..CoordinateSystem::VARIANT_COUNT);
 
         match r {
             0 => CoordinateSystem::Polar,
             1 => CoordinateSystem::Cartesian,
-            _ => panic!("get_random_coord generated unhandled r:{}", r),
+            _ => panic!("pick_random_coord generated unhandled r:{}", r),
         }
     }
 
-    pub fn get_random_node(rng: &mut StdRng, pic_names: &Vec<&String>) -> APTNode {
+    pub fn pick_random_node(rng: &mut StdRng, pic_names: &Vec<&String>) -> APTNode {
         let ignore_variant_count = 9;
         let ignore_pictures = if pic_names.len() == 0 { 1 } else { 0 };
         let r = rng.gen_range(0..APTNode::VARIANT_COUNT - ignore_variant_count - ignore_pictures);
@@ -323,28 +323,28 @@ impl APTNode {
                     vec![APTNode::Empty, APTNode::Empty],
                 )
             }
-            _ => panic!("get_random_node generated unhandled r:{}", r),
+            _ => panic!("pick_random_node generated unhandled r:{}", r),
         }
     }
 
-    pub fn get_random_leaf(rng: &mut StdRng) -> APTNode {
+    pub fn pick_random_leaf(rng: &mut StdRng) -> APTNode {
         let r = rng.gen_range(0..3);
         match r {
             0 => APTNode::X,
             1 => APTNode::Y,
             2 => APTNode::Constant(rng.gen_range(-1.0..1.0)),
-            _ => panic!("get_random_leaf generated unhandled r:{}", r),
+            _ => panic!("pick_random_leaf generated unhandled r:{}", r),
         }
     }
 
-    pub fn get_random_leaf_video(rng: &mut StdRng) -> APTNode {
+    pub fn pick_random_leaf_video(rng: &mut StdRng) -> APTNode {
         let r = rng.gen_range(0..4);
         match r {
             0 => APTNode::X,
             1 => APTNode::Y,
             2 => APTNode::T,
             3 => APTNode::Constant(rng.gen_range(-1.0..1.0)),
-            _ => panic!("get_random_leaf generated unhandled r:{}", r),
+            _ => panic!("pick_random_leaf generated unhandled r:{}", r),
         }
     }
 
@@ -540,15 +540,15 @@ impl APTNode {
         rng: &mut StdRng,
         pic_names: &Vec<&String>,
     ) -> (APTNode, CoordinateSystem) {
-        let coord = APTNode::get_random_coord(rng);
+        let coord = APTNode::pick_random_coord(rng);
         let leaf_func = if video {
-            APTNode::get_random_leaf_video
+            APTNode::pick_random_leaf_video
         } else {
-            APTNode::get_random_leaf
+            APTNode::pick_random_leaf
         };
-        let mut first = APTNode::get_random_node(rng, pic_names);
+        let mut first = APTNode::pick_random_node(rng, pic_names);
         for _ in 1..count {
-            first.add_random(APTNode::get_random_node(rng, pic_names), rng);
+            first.add_random(APTNode::pick_random_node(rng, pic_names), rng);
         }
         while first.add_leaf(&leaf_func(rng)) {}
         (first, coord)
@@ -2062,13 +2062,13 @@ mod tests {
     }
 
     #[test]
-    fn test_aptnode_get_random_node() {
+    fn test_aptnode_pick_random_node() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let name = "eye.jpg".to_string();
 
         let pic_names = vec![&name];
         for _i in 0..100 {
-            match APTNode::get_random_node(&mut rng, &pic_names) {
+            match APTNode::pick_random_node(&mut rng, &pic_names) {
                 APTNode::Constant(_) | APTNode::X | APTNode::Y | APTNode::T | APTNode::Empty => {
                     panic!("This APTNode was not expected");
                 }
@@ -2078,11 +2078,11 @@ mod tests {
     }
 
     #[test]
-    fn test_aptnode_get_random_leaf() {
+    fn test_aptnode_pick_random_leaf() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
 
         for _i in 0..100 {
-            match APTNode::get_random_leaf(&mut rng) {
+            match APTNode::pick_random_leaf(&mut rng) {
                 APTNode::Constant(value) => {
                     assert!(value >= -1.0 && value <= 1.0);
                 }
@@ -2095,11 +2095,11 @@ mod tests {
     }
 
     #[test]
-    fn test_aptnode_get_random_leaf_video() {
+    fn test_aptnode_pick_random_leaf_video() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
 
         for _i in 0..100 {
-            match APTNode::get_random_leaf_video(&mut rng) {
+            match APTNode::pick_random_leaf_video(&mut rng) {
                 APTNode::Constant(value) => {
                     assert!(value >= -1.0 && value <= 1.0);
                 }
