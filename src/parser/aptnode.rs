@@ -328,11 +328,12 @@ impl APTNode {
     }
 
     pub fn pick_random_leaf(rng: &mut StdRng) -> APTNode {
-        let r = rng.gen_range(0..3);
+        let r = rng.gen_range(0..4);
         match r {
             0 => APTNode::X,
             1 => APTNode::Y,
-            2 => APTNode::Constant(rng.gen_range(-1.0..1.0)),
+            2 => APTNode::T,
+            3 => APTNode::Constant(rng.gen_range(-1.0..1.0)),
             _ => panic!("pick_random_leaf generated unhandled r:{}", r),
         }
     }

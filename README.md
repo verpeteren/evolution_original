@@ -27,7 +27,7 @@ OPTIONS:
     -p, --pictures-path <PICTURES_PATH>
             The path to images that can be loaded via the Pic- operation [default: pictures]
     -t, --time <TIME>
-            set the T variable [default: 0]
+            set the T variable (ms) [default: 0]
     -w, --width <WIDTH>
             The width of the generated image [default: 1920]
     -h, --height <HEIGHT>
@@ -56,18 +56,17 @@ It is possible to create an animation by using the `--output` parameter:
 ```
 ![Animated Image](/samples/animation.gif)
 
-
-- the `--output` parameter needs to be set to an animation filename (e.g. `.gif` extension)
-- the 'DSL' needs to contain at least 1 `T` Operation
-When the `--time` parameter is set, the file will contain frames between t=0.0 and that end time.
+- The `--output` parameter needs to be set to an animation filename (e.g. `.gif` extension).
+- The source needs to contain at least 1 `T` Operation.
+- When the `--time` parameter is set, the file will contain frames between t=0.0 and that end time.
 
 
 ### Ui mode
 
 | Action | Select mode | Zoom Mode |
 | ------ | ----------- | --------- |
-| Right mouse click | thumbnail is opened in Zoom mode | Go back to select mode |
-| spacebar | generate population | |
+| Right mouse click | Thumbnail is opened in Zoom mode | Go back to select mode |
+| Spacebar | Generate population | |
 
 ### Input DSL
 
@@ -140,16 +139,16 @@ Invalid Coordinate systems are ignored, the default Coordinate System (Cartesian
 
 ### Constants PI, E, Width, Height
 
-* PI: std::f32::consts::PI
-* E: std::f32::consts::E
-* Width: the `width` of the image; Either a default or set via the `--width` command line parameter.
-* Height: the `height` of the image; Either a default or set via the `--height` command line parameter.
+* `PI`: [std::f32::consts::PI](https://doc.rust-lang.org/nightly/std/f32/consts/constant.PI.html)
+* `E`: [std::f32::consts::E](https://doc.rust-lang.org/nightly/std/f32/consts/constant.E.html)
+* `WIDTH`: the `width` of the image; Either a default or set via the `--width` command line parameter.
+* `HEIGHT`: the `height` of the image; Either a default or set via the `--height` command line parameter.
 
 #### X, Y, T
 
-* `X`: the X position in the image
-* `Y`: the X position in the image
-* `T`: the frame id (seconds)
+* `X`: the `X` position in the image
+* `Y`: the `Y` position in the image
+* `T`: the frame id (milliseconds)
 
 #### Ugh, Math...
 
