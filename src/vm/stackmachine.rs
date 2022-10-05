@@ -129,7 +129,7 @@ impl<S: Simd> StackMachine<S> {
                         for i in 0..S::VF32_WIDTH {
                             r[i] = a[i] % b[i];
                         }
-                        stack[sp - 1] = r;
+                        stack[sp - 1] = StackMachine::<S>::deal_with_nan(r);
                     }
                     Instruction::FBM => {
                         sp -= 5;
