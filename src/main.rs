@@ -191,20 +191,21 @@ impl MainState {
             let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
             let mut y_pct = 0.01;
             let pic_names: Vec<&String> = self.pictures.keys().collect();
+            let (twidth, theight) = (THUMB_WIDTH, THUMB_HEIGHT);
             for _ in 0..THUMB_ROWS {
                 let mut x_pct = 0.01;
                 for _ in 0..THUMB_COLS {
                     let pic = Pic::new(&mut self.rng, &pic_names);
                     let img = Image::from_rgba8(
                         ctx,
-                        THUMB_WIDTH,
-                        THUMB_HEIGHT,
+                        twidth,
+                        theight,
                         &pic_get_rgba8_runtime_select(
                             &pic,
                             false,
                             self.pictures.clone(),
-                            THUMB_WIDTH as usize,
-                            THUMB_HEIGHT as usize,
+                            twidth as usize,
+                            theight as usize,
                             self.frame_elapsed,
                         )[0..],
                     )
@@ -238,6 +239,7 @@ impl MainState {
         let (width, height) = self.dimensions;
         let t = self.frame_elapsed;
         let target_dir = Path::new(".");
+        let (twidth, theight) = (THUMB_WIDTH, THUMB_HEIGHT);
         for (i, img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx, &self.mouse_state) {
                 let now = SystemTime::now()
@@ -272,8 +274,8 @@ impl MainState {
                 save_buffer_with_format(
                     dest,
                     &bytes,
-                    THUMB_WIDTH as u32,
-                    THUMB_HEIGHT as u32,
+                    twidth as u32,
+                    theight as u32,
                     ColorType::Rgba8,
                     ImageFormat::Png,
                 )
