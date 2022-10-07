@@ -66,7 +66,9 @@ impl<S: Simd> StackMachine<S> {
             }
             None => (),
         }
-        self.instructions.push(StackMachine::get_instruction(node));
+        let instruction = StackMachine::get_instruction(node);
+        println!("pushing {:?}", node);
+        self.instructions.push(instruction)
     }
 
     pub fn build(node: &APTNode) -> StackMachine<S> {
@@ -605,8 +607,17 @@ mod tests {
 
     simd_runtime_generate!(
         fn impl_stackmachine_build() {
-            let sm = StackMachine::<S>::build(&APTNode::Add(mock::mock_params_sub(true)));
-            assert_eq!(sm.instructions.len(), 3);
+            let sm = StackMachine::<S>::build(&APTNode::Add(vec![
+                APTNode::Constant(2.0),
+                APTNode::Cell1(vec![
+                    APTNode::Constant(1.2),
+                    APTNode::X,
+                    APTNode::Y,
+                    APTNode::T,
+                ]),
+            ]));
+            assert_eq!(sm.instructions.len(), 7);
+            //assert_eq!(sm.instructions.get(0).unwrap(), &Instruction::T);
         }
     );
 
