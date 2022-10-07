@@ -191,21 +191,21 @@ impl MainState {
             let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
             let mut y_pct = 0.01;
             let pic_names: Vec<&String> = self.pictures.keys().collect();
-            let (twidth, theight) = (THUMB_WIDTH, THUMB_HEIGHT);
+            let (twidth, theight) = keep_aspect_ratio(self.dimensions, (THUMB_WIDTH, THUMB_HEIGHT));
             for _ in 0..THUMB_ROWS {
                 let mut x_pct = 0.01;
                 for _ in 0..THUMB_COLS {
                     let pic = Pic::new(&mut self.rng, &pic_names);
                     let img = Image::from_rgba8(
                         ctx,
-                        twidth,
-                        theight,
+                        twidth as u16,
+                        theight as u16,
                         &pic_get_rgba8_runtime_select(
                             &pic,
                             false,
                             self.pictures.clone(),
-                            twidth as usize,
-                            theight as usize,
+                            twidth,
+                            theight,
                             self.frame_elapsed,
                         )[0..],
                     )
@@ -239,7 +239,7 @@ impl MainState {
         let (width, height) = self.dimensions;
         let t = self.frame_elapsed;
         let target_dir = Path::new(".");
-        let (twidth, theight) = (THUMB_WIDTH, THUMB_HEIGHT);
+        let (twidth, theight) = keep_aspect_ratio((width, height), (THUMB_WIDTH, THUMB_HEIGHT));
         for (i, img_button) in self.img_buttons.iter().enumerate() {
             if img_button.left_clicked(ctx, &self.mouse_state) {
                 let now = SystemTime::now()
@@ -678,6 +678,19 @@ pub fn main() {
     }
 }
 
+fn keep_aspect_ratio(output: (usize, usize), thumb: (u16, u16)) -> (usize, usize) {
+    // todo make this function signature type generic
+    let (ow, oh) = (output.0 as f32, output.1 as f32);
+    let (tw, th) = thumb;
+    assert!(ow > 0.0);
+    assert!(oh > 0.0);
+    assert!(tw > 0);
+    assert!(th > 0);
+    let ratio: f32 = ow / oh;
+    let nth = tw as f32 / ratio;
+    (tw.into(), nth.floor() as usize)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -781,5 +794,10 @@ mod tests {
         assert!(get_picture_path(&args)
             .to_string_lossy()
             .ends_with("/pictures"));
+    }
+
+    #[test]
+    fn test_main_aspect_ratio() {
+        assert_eq!(keep_aspect_ratio((800, 600), (128, 128)), (128, 96));
     }
 }
