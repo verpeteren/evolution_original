@@ -369,7 +369,7 @@ pub fn parse_pic(
                             let r = expect_constant(receiver)?;
                             let g = expect_constant(receiver)?;
                             let b = expect_constant(receiver)?;
-                            if color_type == "color" {
+                            if color_type.to_lowercase() == "color" {
                                 colors.push((Color::new(r, g, b, 1.0), false));
                             } else {
                                 colors.push((Color::new(r, g, b, 1.0), true));
