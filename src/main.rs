@@ -52,7 +52,7 @@ const VIDEO_DURATION: f32 = 5000.0; //milliseconds
 const THUMB_ROWS: u16 = 6;
 const THUMB_COLS: u16 = 7;
 const THUMB_WIDTH: u16 = 128;
-const THUMB_HEIGHT: u16 = 128;
+const THUMB_HEIGHT: u16 = 72;
 
 const STD_PATH: &'static str = "pictures";
 const STD_FILE_OUT: &'static str = "out.png";
