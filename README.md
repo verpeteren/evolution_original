@@ -52,7 +52,11 @@ When the `--input` parameter is not "-" and the `--copy-path` parameter is set, 
 It is possible to create an animation by using the `--output` parameter:
 
 ```lisp
-(RGB POLAR ( X ) (Y ) (* t X ) )
+(RGB POLAR
+	( X )
+	( Y )
+	(* T X )
+)
 ```
 ![Animated Image](/samples/animation.gif)
 
