@@ -100,16 +100,17 @@ impl Pic {
                 )
             }
             Pic::Gradient(data) => {
-                let mut colors = "( COLORS ".to_string();
+                let mut colors = String::new();
                 for (color, stop) in &data.colors {
                     if *stop {
-                        colors += &format!(" ( STOPCOLOR {} {} {} )", color.r, color.g, color.b);
+                        colors +=
+                            &format!("   ( STOPCOLOR {} {} {} )\n", color.r, color.g, color.b);
                     } else {
-                        colors += &format!(" ( COLOR {} {} {} )", color.r, color.g, color.b);
+                        colors += &format!("   ( COLOR {} {} {} )\n", color.r, color.g, color.b);
                     }
                 }
                 format!(
-                    "( GRADIENT {}\n {} {} )",
+                    "( GRADIENT {}\n ( COLORS\n{} )\n {}\n)",
                     data.coord.to_string().to_uppercase(),
                     colors,
                     data.index.to_lisp()
