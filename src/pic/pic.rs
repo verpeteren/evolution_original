@@ -251,7 +251,7 @@ mod tests {
             sexpr.starts_with("( GRADIENT POLAR\n (")
                 || sexpr.starts_with("( GRADIENT CARTESIAN\n (")
         );
-        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.ends_with(")"));
         assert!(sexpr.contains("( COLORS ") || sexpr.contains(" ( STOPCOLOR "));
         assert!(sexpr.contains(" ( COLOR "));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 0);
