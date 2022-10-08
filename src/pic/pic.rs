@@ -219,16 +219,19 @@ mod tests {
     };
 
     #[test]
-    fn test_pic_to_lisp() {
+    fn test_pic_to_lisp_mono() {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
-
         let pic = MonoData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
 
         assert!(sexpr.starts_with("( MONO POLAR\n (") || sexpr.starts_with("( MONO CARTESIAN\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
+    }
 
+    #[test]
+    fn test_pic_to_lisp_grayscale() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = GrayscaleData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(
@@ -237,7 +240,11 @@ mod tests {
         );
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
+    }
 
+    #[test]
+    fn test_pic_to_lisp_gradient() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = GradientData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(
@@ -248,13 +255,21 @@ mod tests {
         assert!(sexpr.contains("( COLORS ") || sexpr.contains(" ( STOPCOLOR "));
         assert!(sexpr.contains(" ( COLOR "));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 0);
+    }
 
+    #[test]
+    fn test_pic_to_lisp_rgb() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = RGBData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(sexpr.starts_with("( RGB POLAR\n (") || sexpr.starts_with("( RGB CARTESIAN\n ("));
         assert!(sexpr.ends_with(" )"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 3);
+    }
 
+    #[test]
+    fn test_pic_to_lisp_hsv() {
+        let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = HSVData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(sexpr.starts_with("( HSV POLAR\n (") || sexpr.starts_with("( HSV CARTESIAN\n ("));
