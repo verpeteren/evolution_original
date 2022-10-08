@@ -44,9 +44,9 @@ OPTIONS:
 
 ```
 
-When the `--input` parameter is not set a Ui will start with several random generated examples
-When the `--input` parameter is set, that will be used as a input.
-When the `--input` parameter is not "-" and the `--copy-path` parameter is set, the application will create a new image file if the input file changed. On success, the input and output files will be written (with timestamp prefix) in the copy-path directory.
+* When the `--input` parameter is not set a Ui will start with several random generated examples.
+* When the `--input` parameter is set, that will be used as a input.
+* When the `--input` parameter is not "-" and the `--copy-path` parameter is set, the application will create a new image file if the input file changed. On success, the input and output files will be written (with timestamp prefix) in the copy-path directory.
 
 ### Animations
 It is possible to create an animation by using the `--output` parameter:
