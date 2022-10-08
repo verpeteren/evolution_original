@@ -430,17 +430,20 @@ pub fn load_pictures(
             .file_name()
             .into_string()
             .expect("Cannot convert file's name ");
-        let pic = match o_ctx.as_mut() {
+        match o_ctx.as_mut() {
             Some(ctx) => {
-                ActualPicture::new_via_ctx(ctx, &short_file_name).expect("Cannot open file")
+                if let Ok(pic) = ActualPicture::new_via_ctx(ctx, &short_file_name) {
+                    pictures.insert(short_file_name, pic);
+                }
             }
             None => {
                 let path = file.as_ref().unwrap().path();
                 let full_file_name = path.to_string_lossy();
-                ActualPicture::new_via_file(&full_file_name.to_owned())?
+                if let Ok(pic) = ActualPicture::new_via_file(&full_file_name.to_owned()) {
+                    pictures.insert(short_file_name, pic);
+                }
             }
         };
-        pictures.insert(short_file_name, pic);
     }
     Ok(pictures)
 }
