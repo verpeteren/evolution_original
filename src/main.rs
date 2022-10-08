@@ -545,7 +545,6 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
     if is_video {
         assert_eq!(format, ImageFormat::Gif);
         let duration = if t == 0.0 { VIDEO_DURATION } else { t };
-        //TODO: runtime_select
         let raw_frames = pic_get_video_runtime_select(&pic, pictures, width, height, FPS, duration);
         if raw_frames.len() == 0 {
             println!("warning: not enough frames to make a usefull gif");
