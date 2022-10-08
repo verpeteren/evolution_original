@@ -88,13 +88,13 @@ impl Pic {
     pub fn to_lisp(&self) -> String {
         match self {
             Pic::Mono(data) => format!(
-                "( MONO {}\n ( {} ) )",
+                "( MONO {}\n\t( {} )\n)",
                 data.coord.to_string().to_uppercase(),
                 data.c.to_lisp()
             ),
             Pic::Grayscale(data) => {
                 format!(
-                    "( GRAYSCALE {}\n ( {} ) )",
+                    "( GRAYSCALE {}\n\t( {} )\n)",
                     data.coord.to_string().to_uppercase(),
                     data.c.to_lisp()
                 )
@@ -104,27 +104,27 @@ impl Pic {
                 for (color, stop) in &data.colors {
                     if *stop {
                         colors +=
-                            &format!("   ( STOPCOLOR {} {} {} )\n", color.r, color.g, color.b);
+                            &format!("\n\t\t( STOPCOLOR {} {} {} )", color.r, color.g, color.b);
                     } else {
-                        colors += &format!("   ( COLOR {} {} {} )\n", color.r, color.g, color.b);
+                        colors += &format!("\n\t\t( COLOR {} {} {} )", color.r, color.g, color.b);
                     }
                 }
                 format!(
-                    "( GRADIENT {}\n ( COLORS\n{} )\n {}\n)",
+                    "( GRADIENT {}\n\t( COLORS{}\n\t)\n\t{}\n)",
                     data.coord.to_string().to_uppercase(),
                     colors,
                     data.index.to_lisp()
                 )
             }
             Pic::RGB(data) => format!(
-                "( RGB {}\n ( {} )\n ( {} )\n ( {} ) )",
+                "( RGB {}\n\t( {} )\n\t( {} )\n\t( {} )\n)",
                 data.coord.to_string().to_uppercase(),
                 data.r.to_lisp(),
                 data.g.to_lisp(),
                 data.b.to_lisp()
             ),
             Pic::HSV(data) => format!(
-                "( HSV {}\n ( {} )\n ( {} )\n ( {} ) )",
+                "( HSV {}\n\t( {} )\n\t( {} )\n\t( {} )\n)",
                 data.coord.to_string().to_uppercase(),
                 data.h.to_lisp(),
                 data.s.to_lisp(),
@@ -224,8 +224,10 @@ mod tests {
         let pic = MonoData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
 
-        assert!(sexpr.starts_with("( MONO POLAR\n (") || sexpr.starts_with("( MONO CARTESIAN\n ("));
-        assert!(sexpr.ends_with(" )"));
+        assert!(
+            sexpr.starts_with("( MONO POLAR\n\t(") || sexpr.starts_with("( MONO CARTESIAN\n\t(")
+        );
+        assert!(sexpr.ends_with("\n)"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
     }
 
@@ -235,10 +237,10 @@ mod tests {
         let pic = GrayscaleData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(
-            sexpr.starts_with("( GRAYSCALE POLAR\n (")
-                || sexpr.starts_with("( GRAYSCALE CARTESIAN\n (")
+            sexpr.starts_with("( GRAYSCALE POLAR\n\t(")
+                || sexpr.starts_with("( GRAYSCALE CARTESIAN\n\t(")
         );
-        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.ends_with("\n)"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
     }
 
@@ -248,12 +250,13 @@ mod tests {
         let pic = GradientData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
         assert!(
-            sexpr.starts_with("( GRADIENT POLAR\n (")
-                || sexpr.starts_with("( GRADIENT CARTESIAN\n (")
+            sexpr.starts_with("( GRADIENT POLAR\n\t(")
+                || sexpr.starts_with("( GRADIENT CARTESIAN\n\t(")
         );
-        assert!(sexpr.ends_with(")"));
-        assert!(sexpr.contains("( COLORS ") || sexpr.contains(" ( STOPCOLOR "));
-        assert!(sexpr.contains(" ( COLOR "));
+        assert!(sexpr.ends_with("\n)"));
+        assert!(sexpr.contains("\n\t( COLORS\n\t"));
+        assert!(sexpr.contains("\n\t)\n\t"));
+        assert!(sexpr.contains("\n\t\t( COLOR ") || sexpr.contains("\n\t\t( STOPCOLOR "));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 0);
     }
 
@@ -262,8 +265,8 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = RGBData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( RGB POLAR\n (") || sexpr.starts_with("( RGB CARTESIAN\n ("));
-        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.starts_with("( RGB POLAR\n\t(") || sexpr.starts_with("( RGB CARTESIAN\n\t("));
+        assert!(sexpr.ends_with("\n)"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 3);
     }
 
@@ -272,8 +275,8 @@ mod tests {
         let mut rng = StdRng::from_rng(rand::thread_rng()).unwrap();
         let pic = HSVData::new(0, 60, false, &mut rng, &vec![&"eye.jpg".to_string()]);
         let sexpr = pic.to_lisp();
-        assert!(sexpr.starts_with("( HSV POLAR\n (") || sexpr.starts_with("( HSV CARTESIAN\n ("));
-        assert!(sexpr.ends_with(" )"));
+        assert!(sexpr.starts_with("( HSV POLAR\n\t(") || sexpr.starts_with("( HSV CARTESIAN\n\t("));
+        assert!(sexpr.ends_with("\n)"));
         assert!(sexpr.lines().collect::<Vec<_>>().len() > 1);
     }
 
@@ -323,7 +326,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( / X WIDTH ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n\t( ( / X WIDTH ) )\n)");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -344,7 +347,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( / Y HEIGHT ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n\t( ( / Y HEIGHT ) )\n)");
             }
             Err(err) => {
                 panic!("could not parse formula with width {:?}", err);
@@ -365,7 +368,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( SIN ( / X PI ) ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n\t( ( SIN ( / X PI ) ) )\n)");
             }
             Err(err) => {
                 panic!("could not parse formula with PI {:?}", err);
@@ -386,7 +389,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( GRAYSCALE POLAR\n ( ( LOG ( / X E ) ) ) )");
+                assert_eq!(resexpr, "( GRAYSCALE POLAR\n\t( ( LOG ( / X E ) ) )\n)");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -396,7 +399,7 @@ mod tests {
 
     #[test]
     fn test_handle_mono_coord_system_polar() {
-        let sexpr = "(Mono POLAR ( X ) )";
+        let sexpr = "(Mono POLAR ( X ))";
         match lisp_to_pic(sexpr.to_string(), DEFAULT_COORDINATE_SYSTEM) {
             Ok(pic) => {
                 assert_eq!(
@@ -407,7 +410,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( MONO POLAR\n ( X ) )");
+                assert_eq!(resexpr, "( MONO POLAR\n\t( X )\n)");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -428,7 +431,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( MONO CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( MONO CARTESIAN\n\t( X )\n)"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -451,7 +454,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( RGB CARTESIAN\n ( X )\n ( Y )\n ( T ) )");
+                assert_eq!(resexpr, "( RGB CARTESIAN\n\t( X )\n\t( Y )\n\t( T )\n)");
                 //todo if coord != DEFAULT print
             }
             Err(err) => {
@@ -475,7 +478,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( RGB POLAR\n ( X )\n ( Y )\n ( T ) )");
+                assert_eq!(resexpr, "( RGB POLAR\n\t( X )\n\t( Y )\n\t( T )\n)");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -498,7 +501,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( HSV CARTESIAN\n ( X )\n ( Y )\n ( T ) )");
+                assert_eq!(resexpr, "( HSV CARTESIAN\n\t( X )\n\t( Y )\n\t( T )\n)");
                 //todo if coord != DEFAULT print
             }
             Err(err) => {
@@ -522,7 +525,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( HSV POLAR\n ( X )\n ( Y )\n ( T ) )");
+                assert_eq!(resexpr, "( HSV POLAR\n\t( X )\n\t( Y )\n\t( T )\n)");
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -542,7 +545,7 @@ mod tests {
                     })
                 );
                 let resexpr = pic.to_lisp();
-                assert_eq!(resexpr, "( GRAYSCALE CARTESIAN\n ( X ) )"); //todo if coord != DEFAULT print
+                assert_eq!(resexpr, "( GRAYSCALE CARTESIAN\n\t( X )\n)"); //todo if coord != DEFAULT print
             }
             Err(err) => {
                 panic!("could not parse formula with E {:?}", err);
@@ -697,9 +700,11 @@ mod tests {
     #[test]
     fn test_parse_and_render_mono() {
         let img_file = "./samples/mono.png";
-        let source = r#"( MONO CARTESIAN
-         ( ( ATAN ( + ( CELL1 Y Y Y X ( - Y 0.7253959 ) ) ( ATAN X ) ) ) ) )
-         "#;
+        let source = r#"
+( MONO CARTESIAN
+	( ( ATAN ( + ( CELL1 Y Y Y X ( - Y 0.7253959 ) ) ( ATAN X ) ) ) )
+)
+        "#;
         let (generated, read) =
             render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
@@ -709,9 +714,11 @@ mod tests {
     #[test]
     fn test_parse_and_render_grayscale() {
         let img_file = "./samples/grayscale.png";
-        let source = r#"( GRAYSCALE POLAR
- ( ( LOG ( + ( CELL1 ( LOG ( RIDGE ( SQRT Y ) Y Y X X 0.5701809 ) ) ( ATAN Y ) ( % Y 0.12452102 ) ( FLOOR ( ATAN2 Y Y ) ) ( SIN Y ) ) ( * ( + X ( SIN ( - ( ATAN2 Y X ) X ) ) ) ( ATAN ( LOG ( FLOOR ( SIN ( TURBULENCE Y 0.91551733 ( SQRT ( SQRT X ) ) ( MIN X Y ) -0.83923936 ( MANDELBROT Y X ) ) ) ) ) ) ) ) ) ) )
-         "#;
+        let source = r#"
+( GRAYSCALE POLAR
+	( ( LOG ( + ( CELL1 ( LOG ( RIDGE ( SQRT Y ) Y Y X X 0.5701809 ) ) ( ATAN Y ) ( % Y 0.12452102 ) ( FLOOR ( ATAN2 Y Y ) ) ( SIN Y ) ) ( * ( + X ( SIN ( - ( ATAN2 Y X ) X ) ) ) ( ATAN ( LOG ( FLOOR ( SIN ( TURBULENCE Y 0.91551733 ( SQRT ( SQRT X ) ) ( MIN X Y ) -0.83923936 ( MANDELBROT Y X ) ) ) ) ) ) ) ) ) )
+)
+        "#;
         let (generated, read) =
             render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
@@ -721,10 +728,13 @@ mod tests {
     #[test]
     fn test_parse_and_render_hsv() {
         let img_file = "./samples/hsv.png";
-        let source = r#"( HSV CARTESIAN
- ( ( SQUARE ( / ( MANDELBROT X Y ) 0.7601185 ) ) )
- ( ( + ( TAN ( TAN ( RIDGE Y ( ATAN -0.74197626 ) ( + Y Y ) Y ( CLAMP Y ) ( + X Y ) ) ) ) ( ATAN2 X Y ) ) )
- ( ( MAX -0.9284358 Y ) ) )"#;
+        let source = r#"
+( HSV CARTESIAN
+	( ( SQUARE ( / ( MANDELBROT X Y ) 0.7601185 ) ) )
+	( ( + ( TAN ( TAN ( RIDGE Y ( ATAN -0.74197626 ) ( + Y Y ) Y ( CLAMP Y ) ( + X Y ) ) ) ) ( ATAN2 X Y ) ) )
+	( ( MAX -0.9284358 Y ) )
+)
+        "#;
         let (generated, read) =
             render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
@@ -734,10 +744,13 @@ mod tests {
     #[test]
     fn test_parse_and_render_rgb() {
         let img_file = "./samples/rgb.png";
-        let source = r#"( RGB CARTESIAN
-  ( ( * ( TAN ( CLAMP ( ATAN ( SQRT ( MAX ( ABS ( FLOOR ( RIDGE 0.12349105 ( + X 0.500072 ) X X ( MAX Y Y ) 0.6249633 ) ) ) ( % ( CLAMP ( * Y ( SQUARE 0.39180493 ) ) ) ( WRAP ( CELL2 Y ( MIN -0.5756769 Y ) ( ABS 0.8329663 ) Y Y ) ) ) ) ) ) ) ) ( WRAP ( MANDELBROT ( SQRT ( TURBULENCE ( WRAP X ) 0.26766992 ( MANDELBROT -0.7147219 0.46446967 ) ( LOG 0.6340864 ) Y Y ) ) ( SQUARE ( * ( SIN ( / Y ( RIDGE X Y Y 0.49542284 X ( CEIL -0.7545812 ) ) ) ) ( CEIL ( TURBULENCE ( ATAN X ) X -0.52819157 -0.86907744 0.49089026 ( ATAN -0.5986686 ) ) ) ) ) ) ) ) )
-  ( ( / ( TURBULENCE ( FBM Y ( * ( RIDGE Y X X X X Y ) -0.98887086 ) 0.21490455 X X ( LOG X ) ) X ( % ( FLOOR X ) ( + X ( ATAN2 0.19268274 Y ) ) ) ( FBM Y -0.28251457 0.632663 X X X ) ( CEIL ( SQRT 0.8429725 ) ) ( WRAP ( MAX Y ( SQUARE ( TAN X ) ) ) ) ) ( FLOOR ( CELL1 ( + -0.5022187 ( LOG X ) ) ( RIDGE -0.8493159 Y ( TAN X ) Y Y Y ) ( ATAN ( SIN ( / ( ABS X ) ( CEIL 0.05049467 ) ) ) ) ( ATAN X ) ( TAN ( / ( FBM X X 0.802964 0.3002789 0.8905289 -0.06338668 ) ( SQUARE ( % X 0.48889422 ) ) ) ) ) ) ) )
-  ( ( ATAN ( SIN X ) ) ) )"#;
+        let source = r#"
+( RGB CARTESIAN
+	( ( * ( TAN ( CLAMP ( ATAN ( SQRT ( MAX ( ABS ( FLOOR ( RIDGE 0.12349105 ( + X 0.500072 ) X X ( MAX Y Y ) 0.6249633 ) ) ) ( % ( CLAMP ( * Y ( SQUARE 0.39180493 ) ) ) ( WRAP ( CELL2 Y ( MIN -0.5756769 Y ) ( ABS 0.8329663 ) Y Y ) ) ) ) ) ) ) ) ( WRAP ( MANDELBROT ( SQRT ( TURBULENCE ( WRAP X ) 0.26766992 ( MANDELBROT -0.7147219 0.46446967 ) ( LOG 0.6340864 ) Y Y ) ) ( SQUARE ( * ( SIN ( / Y ( RIDGE X Y Y 0.49542284 X ( CEIL -0.7545812 ) ) ) ) ( CEIL ( TURBULENCE ( ATAN X ) X -0.52819157 -0.86907744 0.49089026 ( ATAN -0.5986686 ) ) ) ) ) ) ) ) )
+	( ( / ( TURBULENCE ( FBM Y ( * ( RIDGE Y X X X X Y ) -0.98887086 ) 0.21490455 X X ( LOG X ) ) X ( % ( FLOOR X ) ( + X ( ATAN2 0.19268274 Y ) ) ) ( FBM Y -0.28251457 0.632663 X X X ) ( CEIL ( SQRT 0.8429725 ) ) ( WRAP ( MAX Y ( SQUARE ( TAN X ) ) ) ) ) ( FLOOR ( CELL1 ( + -0.5022187 ( LOG X ) ) ( RIDGE -0.8493159 Y ( TAN X ) Y Y Y ) ( ATAN ( SIN ( / ( ABS X ) ( CEIL 0.05049467 ) ) ) ) ( ATAN X ) ( TAN ( / ( FBM X X 0.802964 0.3002789 0.8905289 -0.06338668 ) ( SQUARE ( % X 0.48889422 ) ) ) ) ) ) ) )
+	( ( ATAN ( SIN X ) ) )
+)
+        "#;
         let (generated, read) =
             render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
@@ -747,8 +760,15 @@ mod tests {
     #[test]
     fn test_parse_and_render_gradient() {
         let img_file = "./samples/gradient.png";
-        let source = r#"( GRADIENT POLAR
- ( COLORS  ( COLOR 0.38782334 0.18356442 0.5526812 ) ( COLOR 0.40132487 0.9418049 0.79687893 ) ( SQRT ( FBM ( WRAP ( TAN ( - -0.90357685 ( ATAN Y ) ) ) ) ( ABS X ) ( ATAN2 Y X ) ( MAX Y ( MAX X X ) ) ( SQUARE ( CELL2 ( TAN Y ) Y Y X X ) ) ( * Y 0.009492159 ) ) ) )"#;
+        let source = r#"
+( GRADIENT POLAR
+	( COLORS
+		( COLOR 0.38782334 0.18356442 0.5526812 )
+		( COLOR 0.40132487 0.9418049 0.79687893 )
+	)
+	( FBM ( WRAP ( TAN ( - -0.90357685 ( ATAN Y ) ) ) ) ( ABS X ) ( ATAN2 Y X ) ( MAX Y ( MAX X X ) ) ( SQUARE ( CELL2 ( TAN Y ) Y Y X X ) ) ( * Y 0.009492159 ) )
+)
+        "#;
         let (generated, read) =
             render_source_and_read_sample_file(source.to_string(), img_file, false);
         assert_eq!(generated.dimensions(), read.dimensions());
