@@ -10,6 +10,12 @@ sudo apt-get install build-essential cmake libclang1 libclang-common-11-dev
 rustup install nightly
 ```
 
+## running
+
+```bash
+export LD_LIBRARY_PATH=$(dirname $(locate libsleef.so.3 |grep release|head -n 1)
+cargo run --bin main --features="ui-components"
+```
 ## Documentation
 
 ### Command line input
