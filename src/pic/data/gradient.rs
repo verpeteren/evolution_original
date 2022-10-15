@@ -153,6 +153,17 @@ impl PicData for GradientData {
             result
         }
     }
+    fn simplify<S: Simd>(
+        &mut self,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) {
+        self.index =
+            self.index
+                .constant_fold::<S>(&self.coord, pics, None, None, Some(w), Some(h), Some(t));
+    }
 }
 
 #[cfg(test)]

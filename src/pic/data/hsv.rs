@@ -128,6 +128,17 @@ impl PicData for HSVData {
             result
         }
     }
+    fn simplify<S: Simd>(
+        &mut self,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) {
+        self.h = self.h.constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
+        self.s = self.s.constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
+        self.v = self.v.constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
+    }
 }
 
 #[inline(always)]

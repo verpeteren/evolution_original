@@ -28,4 +28,11 @@ pub trait PicData {
         h: usize,
         t: f32,
     ) -> Vec<u8>;
+    fn simplify<S: Simd>(
+        &mut self,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    );
 }

@@ -123,6 +123,23 @@ impl PicData for RGBData {
             result
         }
     }
+    fn simplify<S: Simd>(
+        &mut self,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) {
+        self.r = self
+            .r
+            .constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
+        self.g = self
+            .g
+            .constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
+        self.b = self
+            .b
+            .constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
+    }
 }
 
 #[cfg(test)]

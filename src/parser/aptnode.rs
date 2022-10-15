@@ -1,9 +1,14 @@
+use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
+use std::sync::Arc;
 
 use crate::parser::token::Token;
-use crate::pic::coordinatesystem::CoordinateSystem;
+use crate::pic::actual_picture::ActualPicture;
+use crate::pic::coordinatesystem::{cartesian_to_polar, CoordinateSystem};
+use crate::vm::stackmachine::StackMachine;
 
 use rand::prelude::*;
+use simdeez::Simd;
 use variant_count::VariantCount;
 
 #[derive(VariantCount, Clone, Debug, PartialEq)]
@@ -382,85 +387,116 @@ impl APTNode {
         }
     }
 
-    fn constant_eval(&self) -> f32 {
+    fn constant_eval<S: Simd>(
+        &self,
+        coord: &CoordinateSystem,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        x: Option<usize>,
+        y: Option<usize>,
+        w: Option<usize>,
+        h: Option<usize>,
+        t: Option<f32>,
+    ) -> f32 {
         match self {
-            APTNode::Add(children) => children[0].constant_eval() + children[1].constant_eval(),
-            APTNode::Sub(children) => children[0].constant_eval() - children[1].constant_eval(),
-            APTNode::Mul(children) => children[0].constant_eval() * children[1].constant_eval(),
-            APTNode::Div(children) => children[0].constant_eval() / children[1].constant_eval(),
-            APTNode::Mod(children) => {
-                let a = children[0].constant_eval();
-                let b = children[1].constant_eval();
-                a % b
-            }
-            APTNode::FBM(_) => 0.0,
-            APTNode::Ridge(_) => 0.0,
-            APTNode::Turbulence(_) => 0.0, // if the noise functions all have constants it isn't worth bothering maybe?
-            APTNode::Cell1(_) => 0.0,
-            APTNode::Cell2(_) => 0.0,
-            APTNode::Sqrt(children) => children[0].constant_eval().sqrt(),
-            APTNode::Sin(children) => children[0].constant_eval().sin(),
-            APTNode::Atan(children) => children[0].constant_eval().atan(),
-            APTNode::Atan2(children) => children[0]
-                .constant_eval()
-                .atan2(children[1].constant_eval()),
-            APTNode::Tan(children) => children[0].constant_eval().tan(),
-            APTNode::Log(children) => children[0].constant_eval().log2(),
-            APTNode::Abs(children) => children[0].constant_eval().abs(),
-            APTNode::Floor(children) => children[0].constant_eval().floor(),
-            APTNode::Ceil(children) => children[0].constant_eval().ceil(),
-            APTNode::Clamp(children) => {
-                let v = children[0].constant_eval();
-                if v > 1.0 {
-                    1.0
-                } else if v < -1.0 {
-                    -1.0
-                } else {
-                    v
+            APTNode::Width => match w {
+                Some(value) => value as f32,
+                None => {
+                    panic!("invalid node passed to constant_esval")
                 }
-            }
-            APTNode::Wrap(children) => {
-                let v = children[0].constant_eval();
-                if v >= -1.0 && v <= 1.0 {
-                    v
-                } else {
-                    let t = (v + 1.0) / 2.0;
-                    -1.0 + 2.0 * (t - t.floor())
+            },
+            APTNode::Height => match h {
+                Some(value) => value as f32,
+                None => {
+                    panic!("invalid node passed to constant_esval")
                 }
-            }
-            APTNode::Square(children) => {
-                let v = children[0].constant_eval();
-                v * v
-            }
-            APTNode::Max(children) => {
-                let a = children[0].constant_eval();
-                let b = children[1].constant_eval();
-                if a >= b {
-                    a
-                } else {
-                    b
+            },
+            APTNode::T => match t {
+                Some(value) => value,
+                None => {
+                    panic!("invalid node passed to constant_esval")
                 }
-            }
-            APTNode::Min(children) => {
-                let a = children[0].constant_eval();
-                let b = children[1].constant_eval();
-                if a <= b {
-                    a
-                } else {
-                    b
+            },
+            APTNode::X => match x {
+                Some(value) => value as f32,
+                None => {
+                    panic!("invalid node passed to constant_esval")
                 }
-            }
-            APTNode::Mandelbrot(_children) => {
-                //todo
-                0.0
-            }
-            APTNode::Picture(_name, _children) => {
-                //todo
-                0.0
-            }
+            },
+            APTNode::Y => match y {
+                Some(value) => value as f32,
+                None => {
+                    panic!("invalid node passed to constant_esval")
+                }
+            },
             APTNode::PI => std::f32::consts::PI,
             APTNode::E => std::f32::consts::E,
             APTNode::Constant(v) => *v,
+            APTNode::Add(children)
+            | APTNode::Sub(children)
+            | APTNode::Mul(children)
+            | APTNode::Div(children)
+            | APTNode::Mod(children)
+            | APTNode::FBM(children)
+            | APTNode::Ridge(children)
+            | APTNode::Turbulence(children)
+            | APTNode::Cell1(children)
+            | APTNode::Cell2(children)
+            | APTNode::Sqrt(children)
+            | APTNode::Sin(children)
+            | APTNode::Atan(children)
+            | APTNode::Atan2(children)
+            | APTNode::Tan(children)
+            | APTNode::Log(children)
+            | APTNode::Abs(children)
+            | APTNode::Floor(children)
+            | APTNode::Ceil(children)
+            | APTNode::Clamp(children)
+            | APTNode::Wrap(children)
+            | APTNode::Square(children)
+            | APTNode::Max(children)
+            | APTNode::Min(children)
+            | APTNode::Mandelbrot(children)
+            | APTNode::Picture(_, children) => unsafe {
+                let mut sx = S::set1_ps(0.0);
+                let mut sy = S::set1_ps(0.0);
+                let mut st = S::set1_ps(0.0);
+                let mut sw = S::set1_ps(0.0);
+                let mut sh = S::set1_ps(0.0);
+                children.iter().for_each(|a| match a {
+                    APTNode::Width => match w {
+                        None => panic!("invalid node passed to constant_esval"),
+                        Some(value) => sw = S::set1_ps(value as f32),
+                    },
+                    APTNode::Height => match h {
+                        None => panic!("invalid node passed to constant_esval"),
+                        Some(value) => sh = S::set1_ps(value as f32),
+                    },
+                    APTNode::T => match t {
+                        None => panic!("invalid node passed to constant_esval"),
+                        Some(value) => st = S::set1_ps(value as f32),
+                    },
+                    APTNode::X => match x {
+                        None => panic!("invalid node passed to constant_esval"),
+                        Some(value) => sx = S::set1_ps(value as f32),
+                    },
+                    APTNode::Y => match y {
+                        None => panic!("invalid node passed to constant_esval"),
+                        Some(value) => sy = S::set1_ps(value as f32),
+                    },
+                    _ => {}
+                });
+                let sm = StackMachine::<S>::build(self);
+                let mut stack = Vec::with_capacity(sm.instructions.len());
+                stack.set_len(sm.instructions.len());
+
+                let v = if coord == &CoordinateSystem::Cartesian {
+                    sm.execute(&mut stack, pics, sx, sy, st, sw, sh)
+                } else {
+                    let (r, theta) = cartesian_to_polar::<S>(sx, sy);
+                    sm.execute(&mut stack, pics, r, theta, st, sw, sh)
+                };
+                v[0] as f32
+            },
             _ => panic!("invalid node passed to constant_esval"),
         }
     }
@@ -505,27 +541,46 @@ impl APTNode {
         }
     }
 
-    fn constant_fold(&self) -> APTNode {
-        match self {
-            APTNode::Constant(v) => APTNode::Constant(*v),
-            APTNode::Width => APTNode::Width,
-            APTNode::Height => APTNode::Height,
-            APTNode::PI => APTNode::PI,
-            APTNode::E => APTNode::E,
-            APTNode::X => APTNode::X,
-            APTNode::Y => APTNode::Y,
-            APTNode::T => APTNode::T,
+    pub fn constant_fold<S: Simd>(
+        &self,
+        coord: &CoordinateSystem,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        x: Option<usize>,
+        y: Option<usize>,
+        w: Option<usize>,
+        h: Option<usize>,
+        t: Option<f32>,
+    ) -> APTNode {
+        match (self, x, y, w, h, t) {
+            (APTNode::Constant(v), _, _, _, _, _) => APTNode::Constant(*v),
+            (APTNode::E, _, _, _, _, _) => APTNode::Constant(std::f32::consts::E),
+            (APTNode::PI, _, _, _, _, _) => APTNode::Constant(std::f32::consts::PI),
+            (APTNode::X, None, _, _, _, _) => APTNode::X,
+            (APTNode::Y, _, None, _, _, _) => APTNode::Y,
+            (APTNode::Width, _, _, None, _, _) => APTNode::Width,
+            (APTNode::Height, _, _, _, None, _) => APTNode::Height,
+            (APTNode::T, _, _, _, _, None) => APTNode::T,
+            (APTNode::X, Some(v), _, _, _, _) => APTNode::Constant(v as f32),
+            (APTNode::Y, _, Some(v), _, _, _) => APTNode::Constant(v as f32),
+            (APTNode::Width, _, _, Some(v), _, _) => APTNode::Constant(v as f32),
+            (APTNode::Height, _, _, _, Some(v), _) => APTNode::Constant(v as f32),
+            (APTNode::T, _, _, _, _, Some(v)) => APTNode::Constant(v),
+            (APTNode::Picture(name, children), _, _, _, _, _) => {
+                APTNode::Picture(name.to_string(), children.clone())
+            }
             _ => {
                 let children = self.get_children().unwrap();
                 //foreach child -> constant_fold(child), if you get back all constants -> compute the new constant, and create it
-                let folded_children: Vec<APTNode> =
-                    children.iter().map(|child| child.constant_fold()).collect();
+                let folded_children: Vec<APTNode> = children
+                    .iter()
+                    .map(|child| child.constant_fold::<S>(coord, pics.clone(), x, y, w, h, t))
+                    .collect();
                 if folded_children.iter().all(|child| match child {
                     APTNode::Constant(_) => true,
                     _ => false,
                 }) {
                     let clone = self.set_children(folded_children);
-                    APTNode::Constant(clone.constant_eval())
+                    APTNode::Constant(clone.constant_eval::<S>(coord, pics.clone(), x, y, w, h, t))
                 } else {
                     let clone = self.set_children(folded_children);
                     clone
@@ -671,6 +726,9 @@ impl APTNode {
 #[cfg(test)]
 pub mod mock {
     use super::*;
+    pub fn mock_pics() -> Arc<HashMap<String, ActualPicture>> {
+        Arc::new(HashMap::new())
+    }
 
     fn mock_params(count: usize, filled: bool) -> Vec<APTNode> {
         let mut params = Vec::with_capacity(count);
@@ -773,6 +831,7 @@ pub mod mock {
 mod tests {
     use super::*;
     use rand::rngs::StdRng;
+    use simdeez::avx2::Avx2;
 
     #[test]
     fn test_aptnode_to_lisp() {
@@ -1069,24 +1128,59 @@ mod tests {
 
     #[test]
     fn test_aptnode_constant_eval() {
+        let pics = mock::mock_pics();
         assert_eq!(
-            APTNode::Add(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            APTNode::Add(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)])
+                .constant_eval::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
             11.02
         );
         assert_eq!(
-            APTNode::Sub(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            APTNode::Sub(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)])
+                .constant_eval::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
             8.98
         );
         assert_eq!(
-            APTNode::Mul(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            APTNode::Mul(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)])
+                .constant_eval::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
             10.2
         );
         assert_eq!(
-            APTNode::Div(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)]).constant_eval(),
+            APTNode::Div(vec![APTNode::Constant(10.0), APTNode::Constant(1.02)])
+                .constant_eval::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
             9.803922
         );
-        // @todo: should panic
-        //APTNode::Div(vec![APTNode::Constant(10.0), APTNode::Constant(0.0)]).constant_eval();
         assert_eq!(
             APTNode::FBM(vec![
                 APTNode::Constant(0.0),
@@ -1096,223 +1190,682 @@ mod tests {
                 APTNode::Constant(4.4),
                 APTNode::Constant(5.5)
             ])
-            .constant_eval(),
-            0.0
+            .constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            0.7229582
         );
         assert_eq!(
-            APTNode::Ridge(mock::mock_params_ridge(true)).constant_eval(),
-            0.0
+            APTNode::Ridge(mock::mock_params_ridge(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            1.5054044
         );
         assert_eq!(
-            APTNode::Cell1(mock::mock_params_cell1(true)).constant_eval(),
-            0.0
+            APTNode::Cell1(mock::mock_params_cell1(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            0.8158007
         );
         assert_eq!(
-            APTNode::Cell2(mock::mock_params_cell2(true)).constant_eval(),
-            0.0
+            APTNode::Cell2(mock::mock_params_cell2(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            -0.25962472
         );
         assert_eq!(
-            APTNode::Turbulence(mock::mock_params_turbulence(true)).constant_eval(),
-            0.0
+            APTNode::Turbulence(mock::mock_params_turbulence(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            1.4945955
         );
         assert_eq!(
-            APTNode::Sqrt(vec![APTNode::Constant(16.0)]).constant_eval(),
+            APTNode::Sqrt(vec![APTNode::Constant(16.0)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             4.0
         );
         assert_eq!(
-            APTNode::Sin(mock::mock_params_sin(true)).constant_eval(),
-            0.84147096
+            APTNode::Sin(mock::mock_params_sin(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            -8.742278e-8
         );
         assert_eq!(
-            APTNode::Atan(mock::mock_params_atan(true)).constant_eval(),
-            0.7853982
+            APTNode::Atan(mock::mock_params_atan(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            0.88387847
         );
         assert_eq!(
-            APTNode::Atan2(mock::mock_params_atan2(true)).constant_eval(),
-            0.44441923
+            APTNode::Atan2(mock::mock_params_atan2(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            0.34611407
         );
         assert_eq!(
-            APTNode::Tan(mock::mock_params_tan(true)).constant_eval(),
-            1.5574077
+            APTNode::Tan(mock::mock_params_tan(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            -22877334.0
         );
         assert_eq!(
-            APTNode::Log(mock::mock_params_log(true)).constant_eval(),
-            0.0
+            APTNode::Log(mock::mock_params_log(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            0.5099892
         );
         assert_eq!(
-            APTNode::Log(vec![APTNode::Constant(10000.5)]).constant_eval(),
-            13.287785
+            APTNode::Log(vec![APTNode::Constant(10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            3.8983026
         );
         assert_eq!(
-            APTNode::Abs(mock::mock_params_abs(true)).constant_eval(),
+            APTNode::Abs(mock::mock_params_abs(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Abs(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            APTNode::Abs(vec![APTNode::Constant(10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             10000.5
         );
         assert_eq!(
-            APTNode::Floor(mock::mock_params_floor(true)).constant_eval(),
+            APTNode::Floor(mock::mock_params_floor(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Floor(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            APTNode::Floor(vec![APTNode::Constant(-10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -10001.0
         );
         assert_eq!(
-            APTNode::Floor(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            APTNode::Floor(vec![APTNode::Constant(10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             10000.0
         );
         assert_eq!(
-            APTNode::Ceil(mock::mock_params_ceil(true)).constant_eval(),
+            APTNode::Ceil(mock::mock_params_ceil(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Ceil(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            APTNode::Ceil(vec![APTNode::Constant(10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             10001.0
         );
         assert_eq!(
-            APTNode::Ceil(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            APTNode::Ceil(vec![APTNode::Constant(-10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -10000.0
         );
         assert_eq!(
-            APTNode::Clamp(mock::mock_params_clamp(true)).constant_eval(),
+            APTNode::Clamp(mock::mock_params_clamp(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Clamp(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            APTNode::Clamp(vec![APTNode::Constant(10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Clamp(vec![APTNode::Constant(1.0)]).constant_eval(),
+            APTNode::Clamp(vec![APTNode::Constant(1.0)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Clamp(vec![APTNode::Constant(0.8)]).constant_eval(),
+            APTNode::Clamp(vec![APTNode::Constant(0.8)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             0.8
         );
         assert_eq!(
-            APTNode::Clamp(vec![APTNode::Constant(-0.8)]).constant_eval(),
+            APTNode::Clamp(vec![APTNode::Constant(-0.8)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -0.8
         );
         assert_eq!(
-            APTNode::Clamp(vec![APTNode::Constant(-1.0)]).constant_eval(),
+            APTNode::Clamp(vec![APTNode::Constant(-1.0)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -1.0
         );
         assert_eq!(
-            APTNode::Clamp(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            APTNode::Clamp(vec![APTNode::Constant(-10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -1.0
         );
         assert_eq!(
-            APTNode::Wrap(mock::mock_params_wrap(true)).constant_eval(),
+            APTNode::Wrap(mock::mock_params_wrap(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Wrap(vec![APTNode::Constant(10000.5)]).constant_eval(),
+            APTNode::Wrap(vec![APTNode::Constant(10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             0.5
         );
         assert_eq!(
-            APTNode::Wrap(vec![APTNode::Constant(1.0)]).constant_eval(),
+            APTNode::Wrap(vec![APTNode::Constant(1.0)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Wrap(vec![APTNode::Constant(0.8)]).constant_eval(),
+            APTNode::Wrap(vec![APTNode::Constant(0.8)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             0.8
         );
         assert_eq!(
-            APTNode::Wrap(vec![APTNode::Constant(-0.8)]).constant_eval(),
+            APTNode::Wrap(vec![APTNode::Constant(-0.8)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -0.8
         );
         assert_eq!(
-            APTNode::Wrap(vec![APTNode::Constant(-1.0)]).constant_eval(),
+            APTNode::Wrap(vec![APTNode::Constant(-1.0)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -1.0
         );
         assert_eq!(
-            APTNode::Wrap(vec![APTNode::Constant(-10000.5)]).constant_eval(),
+            APTNode::Wrap(vec![APTNode::Constant(-10000.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             -0.5
         );
         assert_eq!(
-            APTNode::Square(mock::mock_params_square(true)).constant_eval(),
+            APTNode::Square(mock::mock_params_square(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Square(vec![APTNode::Constant(4.5)]).constant_eval(),
+            APTNode::Square(vec![APTNode::Constant(4.5)]).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             20.25
         );
         assert_eq!(
-            APTNode::Max(mock::mock_params_max(true)).constant_eval(),
+            APTNode::Max(mock::mock_params_max(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             2.1
         );
         assert_eq!(
-            APTNode::Max(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)]).constant_eval(),
+            APTNode::Max(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)])
+                .constant_eval::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
             1.0
         );
         assert_eq!(
-            APTNode::Min(mock::mock_params_min(true)).constant_eval(),
+            APTNode::Min(mock::mock_params_min(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             1.0
         );
         assert_eq!(
-            APTNode::Min(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)]).constant_eval(),
+            APTNode::Min(vec![APTNode::Constant(1.0), APTNode::Constant(-2.1)])
+                .constant_eval::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
             -2.1
         );
         assert_eq!(
-            APTNode::Mod(mock::mock_params_mod(true)).constant_eval(),
-            1.0
-        );
-        assert_eq!(
-            APTNode::Mod(vec![APTNode::Constant(2.1), APTNode::Constant(1.0)]).constant_eval(),
+            APTNode::Mod(mock::mock_params_mod(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             0.099999905
         );
         assert_eq!(
-            APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).constant_eval(),
+            APTNode::Mod(vec![APTNode::Constant(2.1), APTNode::Constant(1.0)])
+                .constant_eval::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
+            1.0
+        );
+        assert_eq!(
+            APTNode::Mandelbrot(mock::mock_params_mandelbrot(true)).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            2.1
+        );
+        /*
+        @todo
+        assert_eq!(
+            APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true))
+                .constant_eval::<Avx2>(CoordinateSystem::Polar, pics.clone(), None, None, None, None, None),
+            0.0
+        );
+        */
+        assert_eq!(
+            APTNode::PI.constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            std::f32::consts::PI
+        );
+        assert_eq!(
+            APTNode::E.constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            std::f32::consts::E
+        );
+        assert_eq!(
+            APTNode::Constant(123.456).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            123.456
+        );
+        assert_eq!(
+            APTNode::Constant(0.0).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             0.0
         );
         assert_eq!(
-            APTNode::Picture("eye.jpg".to_string(), mock::mock_params_picture(true))
-                .constant_eval(),
-            0.0
+            APTNode::Constant(1.0).constant_eval::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            1.0
         );
-        assert_eq!(APTNode::PI.constant_eval(), std::f32::consts::PI);
-        assert_eq!(APTNode::E.constant_eval(), std::f32::consts::E);
-        assert_eq!(APTNode::Constant(123.456).constant_eval(), 123.456);
-        assert_eq!(APTNode::Constant(0.0).constant_eval(), 0.0);
-        assert_eq!(APTNode::Constant(1.0).constant_eval(), 1.0);
     }
 
     #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_width() {
-        APTNode::Width.constant_eval();
+        let pics = mock::mock_pics();
+        APTNode::Width.constant_eval::<Avx2>(
+            &CoordinateSystem::Polar,
+            pics,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
     }
 
     #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_height() {
-        APTNode::Height.constant_eval();
+        let pics = mock::mock_pics();
+        APTNode::Height.constant_eval::<Avx2>(
+            &CoordinateSystem::Polar,
+            pics,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
     }
 
     #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_x() {
-        APTNode::X.constant_eval();
+        let pics = mock::mock_pics();
+        APTNode::X.constant_eval::<Avx2>(
+            &CoordinateSystem::Polar,
+            pics,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
     }
 
     #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_y() {
-        APTNode::Y.constant_eval();
+        let pics = mock::mock_pics();
+        APTNode::Y.constant_eval::<Avx2>(
+            &CoordinateSystem::Polar,
+            pics,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
     }
 
     #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_t() {
-        APTNode::T.constant_eval();
+        let pics = mock::mock_pics();
+        APTNode::T.constant_eval::<Avx2>(
+            &CoordinateSystem::Polar,
+            pics,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
     }
 
     #[should_panic(expected = "invalid node passed to constant_esval")]
     #[test]
     fn test_aptnode_constant_eval_eval() {
-        APTNode::Empty.constant_eval();
+        let pics = mock::mock_pics();
+        APTNode::Empty.constant_eval::<Avx2>(
+            &CoordinateSystem::Polar,
+            pics,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
     }
 
     #[test]
@@ -1553,15 +2106,102 @@ mod tests {
 
     #[test]
     fn test_aptnode_constant_fold() {
-        assert_eq!(APTNode::Width.constant_fold(), APTNode::Width);
-        assert_eq!(APTNode::Height.constant_fold(), APTNode::Height);
-        assert_eq!(APTNode::PI.constant_fold(), APTNode::PI);
-        assert_eq!(APTNode::E.constant_fold(), APTNode::E);
-        assert_eq!(APTNode::X.constant_fold(), APTNode::X);
-        assert_eq!(APTNode::Y.constant_fold(), APTNode::Y);
-        assert_eq!(APTNode::T.constant_fold(), APTNode::T);
+        let pics = mock::mock_pics();
         assert_eq!(
-            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)]).constant_fold(),
+            APTNode::Width.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Width
+        );
+        assert_eq!(
+            APTNode::Height.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Height
+        );
+        assert_eq!(
+            APTNode::PI.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Constant(std::f32::consts::PI)
+        );
+        assert_eq!(
+            APTNode::E.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Constant(std::f32::consts::E)
+        );
+        assert_eq!(
+            APTNode::X.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::X
+        );
+        assert_eq!(
+            APTNode::Y.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Y
+        );
+        assert_eq!(
+            APTNode::T.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::T
+        );
+        assert_eq!(
+            APTNode::Add(vec![APTNode::Constant(1.0), APTNode::Constant(2.0)])
+                .constant_fold::<Avx2>(
+                    &CoordinateSystem::Polar,
+                    pics.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                ),
             APTNode::Constant(3.0)
         );
         assert_eq!(
@@ -1569,8 +2209,44 @@ mod tests {
                 APTNode::Constant(1.0),
                 APTNode::Mul(vec![APTNode::Constant(6.0), APTNode::Constant(0.5)])
             ])
-            .constant_fold(),
+            .constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
             APTNode::Constant(4.0)
+        );
+        assert_eq!(
+            APTNode::Add(vec![APTNode::Width, APTNode::Height]).constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                Some(800),
+                Some(600),
+                None,
+            ),
+            APTNode::Constant(1400.0)
+        );
+        assert_eq!(
+            APTNode::Min(vec![
+                APTNode::Mul(vec![APTNode::X, APTNode::Y]),
+                APTNode::Add(vec![APTNode::Width, APTNode::Height])
+            ])
+            .constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(12),
+                Some(20),
+                Some(800),
+                Some(600),
+                None,
+            ),
+            APTNode::Constant(240.0)
         );
     }
 
@@ -2129,5 +2805,388 @@ mod tests {
         this_node.add_random(that_node.clone(), &mut rng);
         let kids = this_node.get_children().unwrap();
         assert!(kids.get(0).unwrap() == &that_node || kids.get(1).unwrap() == &that_node);
+    }
+
+    #[test]
+    fn test_apt_node_simplify_vars() {
+        let pics = mock::mock_pics();
+        let apt = APTNode::X;
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::X
+        );
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(80),
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Constant(80.0)
+        );
+
+        let apt = APTNode::Y;
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Y
+        );
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                Some(60),
+                None,
+                None,
+                None
+            ),
+            APTNode::Constant(60.0)
+        );
+
+        let apt = APTNode::T;
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::T
+        );
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                Some(2.0)
+            ),
+            APTNode::Constant(2.0)
+        );
+
+        let apt = APTNode::Width;
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Width
+        );
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                Some(800),
+                None,
+                None
+            ),
+            APTNode::Constant(800.0)
+        );
+
+        let apt = APTNode::Height;
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Height
+        );
+        assert_eq!(
+            apt.constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                Some(600),
+                None
+            ),
+            APTNode::Constant(600.0)
+        );
+    }
+
+    #[test]
+    fn test_apt_node_simplify_noise() {
+        let pics = mock::mock_pics();
+        let apt = APTNode::Turbulence(vec![
+            APTNode::X,
+            APTNode::Y,
+            APTNode::Constant(2.2),
+            APTNode::T,
+            APTNode::E,
+            APTNode::Height,
+        ]);
+
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(12),
+                Some(55),
+                Some(800),
+                Some(600),
+                Some(1.2)
+            ),
+            APTNode::Constant(462.72632)
+        );
+
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(12),
+                Some(55),
+                None,
+                Some(600),
+                Some(1.2)
+            ),
+            APTNode::Constant(462.72632)
+        );
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                Some(55),
+                None,
+                None,
+                Some(1.2)
+            ),
+            APTNode::Turbulence(vec![
+                APTNode::X,
+                APTNode::Constant(55.0),
+                APTNode::Constant(2.2),
+                APTNode::Constant(1.2),
+                APTNode::Constant(std::f32::consts::E),
+                APTNode::Height,
+            ])
+        );
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                Some(55),
+                None,
+                None,
+                None
+            ),
+            APTNode::Turbulence(vec![
+                APTNode::X,
+                APTNode::Constant(55.0),
+                APTNode::Constant(2.2),
+                APTNode::T,
+                APTNode::Constant(std::f32::consts::E),
+                APTNode::Height,
+            ])
+        );
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Turbulence(vec![
+                APTNode::X,
+                APTNode::Y,
+                APTNode::Constant(2.2),
+                APTNode::T,
+                APTNode::Constant(std::f32::consts::E),
+                APTNode::Height,
+            ])
+        );
+
+        let apt = APTNode::Mul(vec![APTNode::Constant(2.2), APTNode::T]);
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(12),
+                Some(55),
+                Some(800),
+                Some(600),
+                Some(1.2)
+            ),
+            APTNode::Constant(2.2 * 1. * 1.2)
+        );
+
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                Some(1.2)
+            ),
+            APTNode::Constant(2.2 * 1. * 1.2)
+        );
+
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Mul(vec![APTNode::Constant(2.2), APTNode::T])
+        );
+
+        let apt = APTNode::Min(vec![APTNode::E, APTNode::Height]);
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(12),
+                Some(55),
+                Some(800),
+                Some(600),
+                Some(1.2)
+            ),
+            APTNode::Constant(std::f32::consts::E)
+        );
+
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                Some(600),
+                None
+            ),
+            APTNode::Constant(std::f32::consts::E)
+        );
+
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Min(vec![
+                APTNode::Constant(std::f32::consts::E),
+                APTNode::Height
+            ])
+        );
+
+        let apt = APTNode::Add(vec![APTNode::PI, APTNode::Width]);
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(12),
+                Some(55),
+                Some(800),
+                Some(600),
+                Some(1.2)
+            ),
+            APTNode::Constant(std::f32::consts::PI + 800.0)
+        );
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                Some(800),
+                None,
+                None
+            ),
+            APTNode::Constant(std::f32::consts::PI + 800.0)
+        );
+        assert_eq!(
+            apt.clone().constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            APTNode::Add(vec![
+                APTNode::Constant(std::f32::consts::PI),
+                APTNode::Width
+            ])
+        );
+    }
+
+    #[test]
+    fn test_aptnode_constant_fold_coordinate_system() {
+        let pics = mock::mock_pics();
+        assert_eq!(
+            APTNode::Mul(vec![APTNode::X, APTNode::Y]).constant_fold::<Avx2>(
+                &CoordinateSystem::Polar,
+                pics.clone(),
+                Some(200),
+                Some(150),
+                None,
+                None,
+                None
+            ),
+            APTNode::Constant(200.0 * 150.)
+        );
+        assert_eq!(
+            APTNode::Mul(vec![APTNode::X, APTNode::Y]).constant_fold::<Avx2>(
+                &CoordinateSystem::Cartesian,
+                pics.clone(),
+                Some(200),
+                Some(150),
+                None,
+                None,
+                None
+            ),
+            APTNode::Constant(200.0 * 150.)
+        );
     }
 }
