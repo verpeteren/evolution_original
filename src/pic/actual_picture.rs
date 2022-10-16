@@ -17,7 +17,7 @@ impl ActualPicture {
         relative_file_name: &str,
     ) -> Result<ActualPicture, String> {
         let img = Image::new(ctx, "/".to_string() + &relative_file_name)
-            .map_err(|err| format!("Cannot load image {}", relative_file_name))?;
+            .map_err(|_err| format!("Cannot load image {}", relative_file_name))?;
         let raw_bytes = img.to_rgba8(ctx).unwrap();
         Self::new_from_bytes(
             &raw_bytes[0..],
