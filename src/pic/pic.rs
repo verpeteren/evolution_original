@@ -51,6 +51,18 @@ simd_runtime_generate!(
     }
 );
 
+simd_runtime_generate!(
+    pub fn pic_simplify(
+        pic: &mut Pic,
+        pictures: Arc<HashMap<String, ActualPicture>>,
+        width: usize,
+        height: usize,
+        t: f32,
+    ) {
+        pic.simplify::<S>(pictures, width, height, t)
+    }
+);
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Pic {
     Mono(MonoData),
@@ -73,6 +85,22 @@ impl Pic {
             _ => panic!("invalid"),
         };
         pic
+    }
+
+    pub fn simplify<S: Simd>(
+        &mut self,
+        pics: Arc<HashMap<String, ActualPicture>>,
+        w: usize,
+        h: usize,
+        t: f32,
+    ) {
+        match self {
+            Pic::Grayscale(data) => data.simplify::<S>(pics, w, h, t),
+            Pic::Mono(data) => data.simplify::<S>(pics, w, h, t),
+            Pic::Gradient(data) => data.simplify::<S>(pics, w, h, t),
+            Pic::RGB(data) => data.simplify::<S>(pics, w, h, t),
+            Pic::HSV(data) => data.simplify::<S>(pics, w, h, t),
+        }
     }
 
     pub fn to_tree(&self) -> Vec<&APTNode> {

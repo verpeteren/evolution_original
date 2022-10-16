@@ -27,8 +27,9 @@ use crate::ui::{
     mousestate::MouseState,
 };
 use evolution::{
-    lisp_to_pic, pic_get_rgba8_runtime_select, pic_get_video_runtime_select, ActualPicture,
-    CoordinateSystem, Pic, DEFAULT_COORDINATE_SYSTEM, DEFAULT_HEIGHT, DEFAULT_WIDTH,
+    lisp_to_pic, pic_get_rgba8_runtime_select, pic_get_video_runtime_select,
+    pic_simplify_runtime_select, ActualPicture, CoordinateSystem, Pic, DEFAULT_COORDINATE_SYSTEM,
+    DEFAULT_HEIGHT, DEFAULT_WIDTH,
 };
 
 use clap::Parser;
@@ -192,10 +193,17 @@ impl MainState {
             let mut y_pct = 0.01;
             let pic_names: Vec<&String> = self.pictures.keys().collect();
             let (twidth, theight) = keep_aspect_ratio(self.dimensions, (THUMB_WIDTH, THUMB_HEIGHT));
-            for _ in 0..THUMB_ROWS {
+            for _i in 0..THUMB_ROWS {
                 let mut x_pct = 0.01;
-                for _ in 0..THUMB_COLS {
-                    let pic = Pic::new(&mut self.rng, &pic_names);
+                for _j in 0..THUMB_COLS {
+                    let mut pic = Pic::new(&mut self.rng, &pic_names);
+                    pic_simplify_runtime_select(
+                        &mut pic,
+                        self.pictures.clone(),
+                        twidth,
+                        theight,
+                        self.frame_elapsed,
+                    );
                     let img = Image::from_rgba8(
                         ctx,
                         twidth as u16,
@@ -536,7 +544,8 @@ fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
         file.read_to_string(&mut contents)
             .map_err(|e| format!("Cannot read input filename. {}", e))?;
     }
-    let pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
+    let mut pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
+    pic_simplify_runtime_select(&mut pic, pictures.clone(), width, height, t);
     let out_file = Path::new(out_filename);
     let (format, mut is_video) = select_image_format(out_file);
     if is_video {
