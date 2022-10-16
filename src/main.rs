@@ -402,7 +402,7 @@ impl EventHandler<GameError> for MainState {
         _repeat: bool,
     ) {
         match keycode {
-            KeyCode::P => (),
+            KeyCode::Escape => exit(0),
             _ => (),
         }
     }
