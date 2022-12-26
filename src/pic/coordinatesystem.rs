@@ -11,7 +11,6 @@ pub enum CoordinateSystem {
     Polar,
     Cartesian,
 }
-
 impl CoordinateSystem {
     pub fn list_all<'a>() -> Vec<String> {
         vec![
@@ -30,8 +29,6 @@ impl Display for CoordinateSystem {
         write!(f, "{}", x)
     }
 }
-
-pub const DEFAULT_COORDINATE_SYSTEM: CoordinateSystem = CoordinateSystem::Polar;
 
 impl FromStr for CoordinateSystem {
     type Err = String;

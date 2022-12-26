@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::constants::{PIC_RANDOM_TREE_MAX, PIC_RANDOM_TREE_MIN};
 use crate::parser::aptnode::APTNode;
 use crate::pic::actual_picture::ActualPicture;
 use crate::pic::coordinatesystem::CoordinateSystem;
@@ -19,19 +20,13 @@ use simdeez::sse2::*;
 use simdeez::sse41::*;
 use simdeez::Simd;
 
-pub const DEFAULT_WIDTH: usize = 1920;
-pub const DEFAULT_HEIGHT: usize = 1080;
-
-const TREE_MIN: usize = 1;
-const TREE_MAX: usize = 40;
-
 simd_runtime_generate!(
     pub fn pic_get_rgba8(
         pic: &Pic,
         threaded: bool,
         pictures: Arc<HashMap<String, ActualPicture>>,
-        width: usize,
-        height: usize,
+        width: u32,
+        height: u32,
         t: f32,
     ) -> Vec<u8> {
         pic.get_rgba8::<S>(threaded, pictures, width, height, t)
@@ -42,8 +37,8 @@ simd_runtime_generate!(
     pub fn pic_get_video(
         pic: &Pic,
         pictures: Arc<HashMap<String, ActualPicture>>,
-        width: usize,
-        height: usize,
+        width: u32,
+        height: u32,
         fps: u16,
         duration_ms: f32,
     ) -> Vec<Vec<u8>> {
@@ -55,8 +50,8 @@ simd_runtime_generate!(
     pub fn pic_simplify(
         pic: &mut Pic,
         pictures: Arc<HashMap<String, ActualPicture>>,
-        width: usize,
-        height: usize,
+        width: u32,
+        height: u32,
         t: f32,
     ) {
         pic.simplify::<S>(pictures, width, height, t)
@@ -77,11 +72,41 @@ impl Pic {
         let pic_type = rng.gen_range(0..5);
 
         let pic = match pic_type {
-            0 => MonoData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
-            1 => GradientData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
-            2 => RGBData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
-            3 => HSVData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
-            4 => GrayscaleData::new(TREE_MIN, TREE_MAX, false, rng, pic_names),
+            0 => MonoData::new(
+                PIC_RANDOM_TREE_MIN,
+                PIC_RANDOM_TREE_MAX,
+                false,
+                rng,
+                pic_names,
+            ),
+            1 => GradientData::new(
+                PIC_RANDOM_TREE_MIN,
+                PIC_RANDOM_TREE_MAX,
+                false,
+                rng,
+                pic_names,
+            ),
+            2 => RGBData::new(
+                PIC_RANDOM_TREE_MIN,
+                PIC_RANDOM_TREE_MAX,
+                false,
+                rng,
+                pic_names,
+            ),
+            3 => HSVData::new(
+                PIC_RANDOM_TREE_MIN,
+                PIC_RANDOM_TREE_MAX,
+                false,
+                rng,
+                pic_names,
+            ),
+            4 => GrayscaleData::new(
+                PIC_RANDOM_TREE_MIN,
+                PIC_RANDOM_TREE_MAX,
+                false,
+                rng,
+                pic_names,
+            ),
             _ => panic!("invalid"),
         };
         pic
@@ -90,8 +115,8 @@ impl Pic {
     pub fn simplify<S: Simd>(
         &mut self,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) {
         match self {
@@ -164,8 +189,8 @@ impl Pic {
     pub fn get_video<S: Simd>(
         &self,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         fps: u16,
         d_ms: f32,
     ) -> Vec<Vec<u8>> {
@@ -196,8 +221,8 @@ impl Pic {
         &self,
         threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) -> Vec<u8> {
         match self {
@@ -237,9 +262,9 @@ impl Pic {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::constants::{DEFAULT_COORDINATE_SYSTEM, DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH};
     use crate::parser::lexer::lisp_to_pic;
-    use crate::pic::coordinatesystem::DEFAULT_COORDINATE_SYSTEM;
-    use ggez::graphics::Color;
+    use crate::pic::color::Color;
     use image::io::Reader as ImageReader;
     use image::{
         save_buffer_with_format, ColorType, DynamicImage, GenericImageView, ImageBuffer,
@@ -702,21 +727,27 @@ mod tests {
     ) -> (DynamicImage, DynamicImage) {
         let pictures = Arc::new(HashMap::new());
         let pic = lisp_to_pic(source, DEFAULT_COORDINATE_SYSTEM).unwrap();
-        let gen_rgba8 =
-            pic_get_rgba8_runtime_select(&pic, true, pictures, DEFAULT_WIDTH, DEFAULT_HEIGHT, 0.0);
+        let gen_rgba8 = pic_get_rgba8_runtime_select(
+            &pic,
+            true,
+            pictures,
+            DEFAULT_IMAGE_WIDTH,
+            DEFAULT_IMAGE_HEIGHT,
+            0.0,
+        );
         if overwrite {
             save_buffer_with_format(
                 sample_file,
                 gen_rgba8.as_slice(),
-                DEFAULT_WIDTH as u32,
-                DEFAULT_HEIGHT as u32,
+                DEFAULT_IMAGE_WIDTH,
+                DEFAULT_IMAGE_HEIGHT,
                 ColorType::Rgba8,
                 ImageFormat::Png,
             )
             .unwrap();
         }
         let gen_buf =
-            ImageBuffer::from_raw(DEFAULT_WIDTH as u32, DEFAULT_HEIGHT as u32, gen_rgba8).unwrap();
+            ImageBuffer::from_raw(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, gen_rgba8).unwrap();
         let generated = DynamicImage::ImageRgba8(gen_buf);
 
         let read_img = ImageReader::open(sample_file).unwrap().decode().unwrap();

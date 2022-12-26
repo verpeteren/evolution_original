@@ -4,6 +4,20 @@ version = "0.0.1"
 authors = [ "Jack" ]
 edition="2018"
 
+[features]
+ui = [ "minifb"]
+
+[lib]
+crate-type = ["lib"]
+bench = false
+
+[[bin]]
+name = "evolution"
+test = true
+bench = false
+path = "src/main.rs"
+required-features = ["ui"]
+
 [dependencies]
 rand = "0.8.5"
 simdeez = { features = ["sleef"], path = "../simdeez" }
@@ -14,22 +28,4 @@ image="0.23.14"
 notify = "5.0.0"
 readonly = "0.2.2"
 clap = { version = "3.2.20", features=["derive"] }
-ggez = { version = "0.7.0", features = ["multithread-image-decoding"]}
-gfx_core = {version = "0.9.2", optional=true}
-gfx_device_gl = {version = "0.16.2", optional=true}
-imgui = {version = "0.8.2", optional=true}
-imgui-gfx-renderer = {version="0.8.2", optional=true}
-
-[features]
-ui-components = [ "gfx_core", "gfx_device_gl", "imgui", "imgui-gfx-renderer"]
-
-[lib]
-crate-type = ["lib"]
-bench = false
-
-[[bin]]
-name = "main"
-test = true
-bench = false
-path = "src/main.rs"
-required-features = ["ui-components"]
+minifb = {version = "0.23.0", optional=true}

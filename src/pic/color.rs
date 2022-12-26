@@ -1,6 +1,51 @@
-use ggez::graphics::Color;
 use rand::prelude::*;
 use rand::rngs::StdRng;
+
+/// Taken from https://docs.rs/ggez/0.8.1/src/ggez/graphics/types.rs.html#335-340
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct Color {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
+}
+
+impl Color {
+    /// White (#FFFFFFFF)
+    pub const WHITE: Color = Color {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    };
+    /// Red
+    pub const RED: Color = Color {
+        r: 1.0,
+        g: 0.0,
+        b: 0.0,
+        a: 1.0,
+    };
+    /// Cyan
+    pub const CYAN: Color = Color {
+        r: 0.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    };
+
+    /// Magenta
+    pub const MAGENTA: Color = Color {
+        r: 1.0,
+        g: 0.0,
+        b: 1.0,
+        a: 1.0,
+    };
+
+    /// Create a new `Color` from four `f32`'s in the range `[0.0-1.0]`
+    pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
+        Color { r, g, b, a }
+    }
+}
 
 pub fn lerp_color(a: Color, b: Color, pct: f32) -> Color {
     let red = a.r * (1.0 - pct) + b.r * pct;

@@ -391,10 +391,10 @@ impl APTNode {
         &self,
         coord: &CoordinateSystem,
         pics: Arc<HashMap<String, ActualPicture>>,
-        x: Option<usize>,
-        y: Option<usize>,
-        w: Option<usize>,
-        h: Option<usize>,
+        x: Option<u32>,
+        y: Option<u32>,
+        w: Option<u32>,
+        h: Option<u32>,
         t: Option<f32>,
     ) -> f32 {
         match self {
@@ -545,10 +545,10 @@ impl APTNode {
         &self,
         coord: &CoordinateSystem,
         pics: Arc<HashMap<String, ActualPicture>>,
-        x: Option<usize>,
-        y: Option<usize>,
-        w: Option<usize>,
-        h: Option<usize>,
+        x: Option<u32>,
+        y: Option<u32>,
+        w: Option<u32>,
+        h: Option<u32>,
         t: Option<f32>,
     ) -> APTNode {
         match (self, x, y, w, h, t) {

@@ -3,22 +3,19 @@ use rand::rngs::StdRng;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::constants::{
+    PIC_GRADIENT_COUNT_MAX, PIC_GRADIENT_COUNT_MIN, PIC_GRADIENT_SIZE, PIC_GRADIENT_STOP_CHANCE,
+};
 use crate::parser::aptnode::APTNode;
 use crate::pic::actual_picture::ActualPicture;
+use crate::pic::color::{get_random_color, lerp_color, Color};
 use crate::pic::coordinatesystem::{cartesian_to_polar, CoordinateSystem};
 use crate::pic::data::PicData;
-use crate::pic::ggez_utility::{get_random_color, lerp_color};
 use crate::pic::pic::Pic;
 use crate::vm::stackmachine::StackMachine;
 
-use ggez::graphics::Color;
 use rayon::prelude::*;
 use simdeez::Simd;
-
-const GRADIENT_STOP_CHANCE: usize = 5; // 1 in 5
-const MAX_GRADIENT_COUNT: usize = 10;
-const MIN_GRADIENT_COUNT: usize = 2;
-pub const GRADIENT_SIZE: usize = 512;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct GradientData {
@@ -31,11 +28,11 @@ impl PicData for GradientData {
     fn new(min: usize, max: usize, video: bool, rng: &mut StdRng, pic_names: &Vec<&String>) -> Pic {
         //todo cleanup
         //color theory?
-        let num_colors = rng.gen_range(MIN_GRADIENT_COUNT..MAX_GRADIENT_COUNT);
+        let num_colors = rng.gen_range(PIC_GRADIENT_COUNT_MIN..PIC_GRADIENT_COUNT_MAX);
         let mut colors = Vec::with_capacity(num_colors);
 
         for _ in 0..num_colors {
-            let stop = rng.gen_range(0..GRADIENT_STOP_CHANCE);
+            let stop = rng.gen_range(0..PIC_GRADIENT_STOP_CHANCE);
             if stop == 0 {
                 colors.push((get_random_color(rng), true));
             } else {
@@ -55,15 +52,15 @@ impl PicData for GradientData {
         &self,
         threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) -> Vec<u8> {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
             let hf = S::set1_ps(h as f32);
-            let vec_len = w * h * 4;
+            let vec_len = (w * h * 4) as usize;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
             let sm = StackMachine::<S>::build(&self.index);
@@ -74,7 +71,7 @@ impl PicData for GradientData {
 
             let color_count = self.colors.iter().filter(|(_, stop)| !stop).count();
             let mut gradient = Vec::<Color>::new(); //todo actually compute this
-            let step = (GRADIENT_SIZE as f32 / color_count as f32) / GRADIENT_SIZE as f32;
+            let step = (PIC_GRADIENT_SIZE as f32 / color_count as f32) / PIC_GRADIENT_SIZE as f32;
             let mut positions = Vec::<f32>::new();
             positions.push(0.0);
             let mut pos = step;
@@ -89,8 +86,8 @@ impl PicData for GradientData {
             }
             positions.push(1.0);
 
-            for i in 0..GRADIENT_SIZE {
-                let pct = i as f32 / GRADIENT_SIZE as f32;
+            for i in 0..PIC_GRADIENT_SIZE {
+                let pct = i as f32 / PIC_GRADIENT_SIZE as f32;
                 let color2pos = positions.iter().position(|n| *n >= pct).unwrap();
                 if color2pos == 0 {
                     gradient.push(self.colors[0].0);
@@ -125,15 +122,15 @@ impl PicData for GradientData {
                         sm.execute(&mut stack, pics.clone(), r, theta, ts, wf, hf)
                     };
                     let scaled_v = (v + S::set1_ps(1.0)) * S::set1_ps(0.5);
-                    let index = S::cvtps_epi32(scaled_v * S::set1_ps(GRADIENT_SIZE as f32));
+                    let index = S::cvtps_epi32(scaled_v * S::set1_ps(PIC_GRADIENT_SIZE as f32));
 
                     for j in 0..S::VF32_WIDTH {
-                        let j4 = j * 4;
-                        let ij4 = i + j4;
+                        let j4: usize = j * 4;
+                        let ij4 = i as usize + j4;
                         if ij4 >= chunk_len {
                             break;
                         }
-                        let c = gradient[index[j] as usize % GRADIENT_SIZE];
+                        let c = gradient[index[j] as usize % PIC_GRADIENT_SIZE];
                         chunk[ij4] = (c.r * 255.0) as u8;
                         chunk[ij4 + 1] = (c.g * 255.0) as u8;
                         chunk[ij4 + 2] = (c.b * 255.0) as u8;
@@ -144,9 +141,15 @@ impl PicData for GradientData {
             };
 
             if threaded {
-                result.par_chunks_mut(4 * w).enumerate().for_each(process);
+                result
+                    .par_chunks_mut(4 * w as usize)
+                    .enumerate()
+                    .for_each(process);
             } else {
-                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
+                result
+                    .chunks_exact_mut(4 * w as usize)
+                    .enumerate()
+                    .for_each(process);
             }
 
             // println!("min:{} max:{} range:{}",min,max,max-min);
@@ -156,8 +159,8 @@ impl PicData for GradientData {
     fn simplify<S: Simd>(
         &mut self,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) {
         self.index =

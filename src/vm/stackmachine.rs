@@ -67,7 +67,7 @@ impl<S: Simd> StackMachine<S> {
             None => (),
         }
         let instruction = StackMachine::get_instruction(node);
-        println!("pushing {:?}", node);
+        //println!("pushing {:?}", node);
         self.instructions.push(instruction)
     }
 

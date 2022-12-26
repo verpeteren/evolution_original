@@ -24,15 +24,15 @@ pub trait PicData {
         &self,
         threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) -> Vec<u8>;
     fn simplify<S: Simd>(
         &mut self,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     );
 }

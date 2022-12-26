@@ -8,9 +8,8 @@ use crate::pic::data::grayscale::GrayscaleData;
 use crate::pic::data::hsv::HSVData;
 use crate::pic::data::mono::MonoData;
 use crate::pic::data::rgb::RGBData;
+use crate::pic::color::Color;
 use crate::pic::pic::Pic;
-
-use ggez::graphics::Color;
 
 // Function pointer definition must be wrapped in a struct to be recursive
 struct StateFunction(fn(&mut Lexer) -> Option<StateFunction>);

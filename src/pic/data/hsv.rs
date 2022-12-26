@@ -35,15 +35,15 @@ impl PicData for HSVData {
         &self,
         threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) -> Vec<u8> {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
             let hf = S::set1_ps(h as f32);
-            let vec_len = w * h * 4;
+            let vec_len = (w * h * 4) as usize;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
 
@@ -102,8 +102,8 @@ impl PicData for HSVData {
                     gs = gs * S::set1_ps(255.0);
                     bs = bs * S::set1_ps(255.0);
                     for j in 0..S::VF32_WIDTH {
-                        let j4 = j * 4;
-                        let ij4 = i + j4;
+                        let j4: usize = j * 4;
+                        let ij4 = i as usize + j4;
                         if ij4 >= chunk_len {
                             break;
                         }
@@ -119,9 +119,15 @@ impl PicData for HSVData {
                 }
             };
             if threaded {
-                result.par_chunks_mut(4 * w).enumerate().for_each(process);
+                result
+                    .par_chunks_mut(4 * w as usize)
+                    .enumerate()
+                    .for_each(process);
             } else {
-                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
+                result
+                    .chunks_exact_mut(4 * w as usize)
+                    .enumerate()
+                    .for_each(process);
             }
 
             //   println!("img elapsed:{}", now.elapsed().as_millis());
@@ -131,13 +137,37 @@ impl PicData for HSVData {
     fn simplify<S: Simd>(
         &mut self,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) {
-        self.h = self.h.constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
-        self.s = self.s.constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
-        self.v = self.v.constant_fold::<S>(&self.coord, pics.clone(), None, None, Some(w), Some(h), Some(t));
+        self.h = self.h.constant_fold::<S>(
+            &self.coord,
+            pics.clone(),
+            None,
+            None,
+            Some(w),
+            Some(h),
+            Some(t),
+        );
+        self.s = self.s.constant_fold::<S>(
+            &self.coord,
+            pics.clone(),
+            None,
+            None,
+            Some(w),
+            Some(h),
+            Some(t),
+        );
+        self.v = self.v.constant_fold::<S>(
+            &self.coord,
+            pics.clone(),
+            None,
+            None,
+            Some(w),
+            Some(h),
+            Some(t),
+        );
     }
 }
 

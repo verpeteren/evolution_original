@@ -29,15 +29,15 @@ impl PicData for GrayscaleData {
         &self,
         threaded: bool,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) -> Vec<u8> {
         unsafe {
             let ts = S::set1_ps(t);
             let wf = S::set1_ps(w as f32);
             let hf = S::set1_ps(h as f32);
-            let vec_len = w * h * 4;
+            let vec_len = (w * h * 4) as usize;
             let mut result = Vec::<u8>::with_capacity(vec_len);
             result.set_len(vec_len);
             let sm = StackMachine::<S>::build(&self.c);
@@ -72,8 +72,8 @@ impl PicData for GrayscaleData {
                     let cs = (v + S::set1_ps(1.0)) * S::set1_ps(127.5);
 
                     for j in 0..S::VF32_WIDTH {
-                        let j4 = j * 4;
-                        let ij4 = i + j4;
+                        let j4: usize = j * 4;
+                        let ij4 = i as usize + j4;
                         if ij4 >= chunk_len {
                             break;
                         }
@@ -88,9 +88,15 @@ impl PicData for GrayscaleData {
             };
 
             if threaded {
-                result.par_chunks_mut(4 * w).enumerate().for_each(process);
+                result
+                    .par_chunks_mut(4 * w as usize)
+                    .enumerate()
+                    .for_each(process);
             } else {
-                result.chunks_exact_mut(4 * w).enumerate().for_each(process);
+                result
+                    .chunks_exact_mut(4 * w as usize)
+                    .enumerate()
+                    .for_each(process);
             }
             // println!("min:{} max:{} range:{}",min, max, max-min);
             result
@@ -99,11 +105,13 @@ impl PicData for GrayscaleData {
     fn simplify<S: Simd>(
         &mut self,
         pics: Arc<HashMap<String, ActualPicture>>,
-        w: usize,
-        h: usize,
+        w: u32,
+        h: u32,
         t: f32,
     ) {
-        self.c = self.c.constant_fold::<S>(&self.coord, pics, None, None, Some(w), Some(h), Some(t));
+        self.c =
+            self.c
+                .constant_fold::<S>(&self.coord, pics, None, None, Some(w), Some(h), Some(t));
     }
 }
 

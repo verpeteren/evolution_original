@@ -14,7 +14,7 @@ rustup install nightly
 
 ```bash
 export LD_LIBRARY_PATH=$(dirname $(locate libsleef.so.3 |grep release|head -n 1)
-cargo run --bin main --features="ui-components"
+cargo run --bin evolution --features="ui"
 ```
 ## Documentation
 
@@ -75,8 +75,10 @@ It is possible to create an animation by using the `--output` parameter:
 
 | Action | Select mode | Zoom Mode |
 | ------ | ----------- | --------- |
-| Right mouse click | Thumbnail is opened in Zoom mode | Go back to select mode |
-| Spacebar | Generate population | |
+| ESC               | Exit application                                                   |
+| Spacebar          | Generate population                       | No-Op                  |
+| Left mouse click  | Image and Sexpr files are written to disk                          |
+| Right mouse click | Thumbnail is opened in Zoom mode          | Go back to select mode |
 
 ### Input DSL
 
