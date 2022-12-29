@@ -1,11 +1,11 @@
 [package]
 name = "evolution"
 version = "0.0.1"
-authors = [ "Jack" ]
-edition="2018"
+authors = ["Jack"]
+edition = "2018"
 
 [features]
-ui = [ "minifb" ]
+ui = ["minifb"]
 
 [lib]
 crate-type = ["lib"]
@@ -23,9 +23,9 @@ rand = "0.8.5"
 simdeez = { features = ["sleef"], path = "../simdeez" }
 simdnoise = { path = "../rust-simd-noise" }
 variant_count = "1.1.0"
-rayon="1.6.1"
-image="0.24.5"
+rayon = "1.6.1"
+image = "0.24.5"
 notify = "5.0.0"
 readonly = "0.2.3"
-clap = { version = "4.0.32", features=["derive"] }
-minifb = { version = "0.23.0", optional=true }
+clap = { version = "4.0.32", features = ["derive"] }
+minifb = { version = "0.23.0", optional = true }
