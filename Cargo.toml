@@ -24,7 +24,7 @@ simdeez = { features = ["sleef"], path = "../simdeez" }
 simdnoise = { path = "../rust-simd-noise" }
 variant_count = "1.1.0"
 rayon="1.6.1"
-image="0.23.14"
+image="0.24.5"
 notify = "5.0.0"
 readonly = "0.2.3"
 clap = { version = "4.0.32", features=["derive"], optional=true }

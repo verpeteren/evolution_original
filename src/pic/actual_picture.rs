@@ -17,7 +17,7 @@ impl ActualPicture {
             .expect("Could not decode file");
 
         let (width, height) = img.dimensions();
-        let raw_bytes = img.to_bytes();
+        let raw_bytes = img.into_bytes();
         Self::new_from_bytes(&raw_bytes[0..], file_name, width as u16, height as u16)
     }
 

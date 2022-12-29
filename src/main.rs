@@ -29,7 +29,7 @@ use evolution::{
 };
 
 use clap::Parser;
-use image::gif::{GifEncoder, Repeat};
+use image::codecs::gif::{GifEncoder, Repeat};
 use image::{save_buffer_with_format, ColorType, Frame, ImageBuffer, ImageFormat};
 use minifb::{Key, Scale, Window, WindowOptions};
 use notify::{

@@ -57,8 +57,8 @@ fn _fsm_select_prep<'a, 'b>(state: &'a mut State, _window: &'b Window, pic: Opti
             overlay(
                 &mut state.image,
                 &img,
-                c as u32 * twidth,
-                r as u32 * theight,
+                (c as u32 * twidth) as i64,
+                (r as u32 * theight) as i64,
             );
         }
     }
