@@ -14,7 +14,7 @@ pub struct Args {
     #[clap(short, long, value_parser, default_value_t = DEFAULT_IMAGE_WIDTH, help="The width of the generated image")]
     pub width: u32,
 
-    #[clap(short, long, value_parser, default_value_t = DEFAULT_IMAGE_HEIGHT, help="The height of the generated image")]
+    #[clap(long, value_parser, default_value_t = DEFAULT_IMAGE_HEIGHT, help="The height of the generated image")]
     pub height: u32,
 
     #[clap(

@@ -36,7 +36,7 @@ OPTIONS:
             set the T variable (ms) [default: 0]
     -w, --width <WIDTH>
             The width of the generated image [default: 1920]
-    -h, --height <HEIGHT>
+        --height <HEIGHT>
             The height of the generated image [default: 1080]
     -i, --input <INPUT>
             filename to read sexpr from and disabling the UI; Use '-' to read from stdin.

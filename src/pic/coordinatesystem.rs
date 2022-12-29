@@ -2,11 +2,11 @@ use std::fmt::{Display, Formatter, Result as FResult};
 use std::ops::Not;
 use std::str::FromStr;
 
-use clap::ArgEnum;
+use clap::ValueEnum;
 use simdeez::Simd;
 use variant_count::VariantCount;
 
-#[derive(Clone, Debug, PartialEq, ArgEnum, VariantCount)]
+#[derive(Clone, Debug, PartialEq, ValueEnum, VariantCount)]
 pub enum CoordinateSystem {
     Polar,
     Cartesian,
