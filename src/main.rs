@@ -3,320 +3,41 @@
 // - cross breeding of picture expressions
 // - load up thumbnails in a background thread so ui isn't blocked
 
-extern crate ggez;
-
-mod actual_picture;
-mod apt;
-mod ggez_utility;
-mod imgui_wrapper;
-mod parser;
-mod pic;
-mod stack_machine;
 mod ui;
+extern crate evolution;
 
-use crate::actual_picture::*;
-use crate::imgui_wrapper::ImGuiWrapper;
-use crate::parser::*;
-use crate::pic::*;
-use crate::ui::*;
-use ggez::conf;
-use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
-use ggez::graphics::{self, Image};
-use ggez::timer;
-use ggez::{Context, GameResult};
-use rand::rngs::StdRng;
-use rand::SeedableRng;
-use rand::*;
-use rayon::*;
-use simdeez::avx2::*;
-use simdeez::scalar::*;
-use simdeez::sse2::*;
-use simdeez::sse41::*;
-use std::collections::HashMap;
-use std::env;
-use std::fs::{self};
-use std::io::*;
-use std::path::{self, Path};
-use std::sync::mpsc::*;
+extern crate image;
+extern crate minifb;
+
+use std::fs::{copy, create_dir_all, File};
+use std::io::prelude::*;
+use std::path::{Path, PathBuf};
+use std::process::exit;
 use std::sync::Arc;
-use std::sync::RwLock;
-use std::thread;
-use std::time::Instant;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1080;
-const VIDEO_DURATION: f32 = 5000.0; //milliseconds
+#[cfg(feature = "ui")]
+use evolution::ui::{fsm::FSM, state::State};
+use evolution::{
+    filename_to_copy_to, get_picture_path, keep_aspect_ratio, lisp_to_pic, load_pictures,
+    pic_get_rgba8_runtime_select, pic_get_video_runtime_select, pic_simplify_runtime_select,
+    ActualPicture, Args, Pic, DEFAULT_FILE_OUT, DEFAULT_FPS, DEFAULT_VIDEO_DURATION, EXEC_NAME,
+};
+#[cfg(feature = "ui")]
+use evolution::{
+    EXEC_UI_THUMB_COLS, EXEC_UI_THUMB_HEIGHT, EXEC_UI_THUMB_ROWS, EXEC_UI_THUMB_WIDTH,
+};
 
-const THUMB_ROWS: u16 = 6;
-const THUMB_COLS: u16 = 7;
+use clap::Parser;
+use image::codecs::gif::{GifEncoder, Repeat};
+use image::{save_buffer_with_format, ColorType, Frame, ImageBuffer, ImageFormat};
+use minifb::{Key, Scale, Window, WindowOptions};
+use notify::{
+    event::{AccessKind, AccessMode},
+    Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher,
+};
 
-const TREE_MIN: usize = 1;
-const TREE_MAX: usize = 40;
-
-struct RwArc<T>(Arc<RwLock<T>>);
-impl<T> RwArc<T> {
-    pub fn new(t: T) -> RwArc<T> {
-        RwArc(Arc::new(RwLock::new(t)))
-    }
-
-    pub fn read(&self) -> std::sync::RwLockReadGuard<T> {
-        self.0.read().unwrap()
-    }
-
-    pub fn write(&self, t: T) {
-        *self.0.write().unwrap() = t;
-    }
-
-    pub fn clone(&self) -> RwArc<T> {
-        RwArc(self.0.clone())
-    }
-}
-
-enum GameState {
-    Select,
-    Zoom,
-}
-
-enum BackgroundImage {
-    NotYet,
-    Almost(Vec<u8>),
-    Complete(graphics::Image),
-}
-
-struct MainState {
-    state: GameState,
-    mouse_state: MouseState,
-    imgui_wrapper: ImGuiWrapper,    
-    img_buttons: Vec<Button>,
-    pics: Vec<Pic>,
-    dt: std::time::Duration,
-    frame_elapsed: f32,
-    rng: StdRng,
-    zoom_image: RwArc<BackgroundImage>,
-    pictures: Arc<HashMap<String, ActualPicture>>,
-}
-
-impl MainState {
-    fn gen_population(&mut self, ctx: &mut Context) {
-        // todo make this layout code less dumb
-        let now = Instant::now();
-        self.img_buttons.clear();
-        let width = 1.0 / (THUMB_COLS as f32 * 1.01);
-        let height = 1.0 / (THUMB_ROWS as f32 * 1.01);
-        let mut y_pct = 0.01;
-        let pic_names = &self.pictures.keys().collect();
-        for _ in 0..THUMB_ROWS {
-            let mut x_pct = 0.01;
-            for _ in 0..THUMB_COLS {
-                let pic_type = self.rng.gen_range(0, 5);
-
-                //let pic_type = 4;
-                let pic = match pic_type {
-                    0 => Pic::new_mono(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    1 => Pic::new_gradient(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    2 => Pic::new_rgb(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    3 => Pic::new_hsv(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    4 => Pic::new_grayscale(TREE_MIN, TREE_MAX, false, &mut self.rng, pic_names),
-                    _ => panic!("invalid"),
-                };
-
-                let img = graphics::Image::from_rgba8(
-                    ctx,
-                    256 as u16,
-                    256 as u16,
-                    &pic.get_rgba8::<Avx2>(false, self.pictures.clone(), 256, 256, 0.0)[0..],
-                )
-                .unwrap();
-                self.pics.push(pic);
-                self.img_buttons
-                    .push(Button::new(img, x_pct, y_pct, width - 0.01, height - 0.01));
-                x_pct += width;
-            }
-            println!("--------------------");
-            y_pct += height;
-        }
-        println!("genpop elapsed:{}", now.elapsed().as_millis());
-    }
-
-    fn new(mut ctx: &mut Context) -> GameResult<MainState> {
-        let imgui_wrapper = ImGuiWrapper::new(&mut ctx);
-
-        let s = MainState {
-            state: GameState::Select,
-            imgui_wrapper,            
-            pics: Vec::new(),
-            img_buttons: Vec::new(),
-            dt: std::time::Duration::new(0, 0),
-            frame_elapsed: 0.0,
-            rng: StdRng::from_rng(rand::thread_rng()).unwrap(),
-            mouse_state: MouseState::Nothing,
-            zoom_image: RwArc::new(BackgroundImage::NotYet),
-            pictures: Arc::new(load_pictures(ctx)),
-        };
-        Ok(s)
-    }
-
-    fn update_select(&mut self, ctx: &mut Context) {
-        for (i, img_button) in self.img_buttons.iter().enumerate() {
-            if img_button.left_clicked(ctx, &self.mouse_state) {
-                println!("{}", self.pics[i].to_lisp());
-                println!("button left clicked");
-                break;
-            }
-            if img_button.right_clicked(ctx, &self.mouse_state) {
-                println!("button right clicked");
-                let pic = self.pics[i].clone();
-                let arc = self.zoom_image.clone();
-                let pics = self.pictures.clone();
-                thread::spawn(move || {
-                    println!("create image");
-                    let img_data = pic.get_rgba8::<Avx2>(true, pics, WIDTH, HEIGHT, 0.0);
-                    arc.write(BackgroundImage::Almost(img_data));
-                });
-                self.state = GameState::Zoom;
-                break;
-            }
-        }
-    }
-
-    fn update_zoom(&mut self, ctx: &mut Context) {
-        let maybe_img = match &*self.zoom_image.read() {
-            BackgroundImage::NotYet => None,
-            BackgroundImage::Almost(data) => {
-                println!("setting zoom image");
-                let img = graphics::Image::from_rgba8(ctx, WIDTH as u16, HEIGHT as u16, &data[0..])
-                    .unwrap();
-                Some(img)
-            }
-            BackgroundImage::Complete(_) => None,
-        };
-        match maybe_img {
-            None => (),
-            Some(img) => self.zoom_image.write(BackgroundImage::Complete(img)),
-        }
-        //todo just check for clicks on the zoom image
-        for (i, img_button) in self.img_buttons.iter().enumerate() {
-            if img_button.left_clicked(ctx, &self.mouse_state) {
-                println!("{}", self.pics[i].to_lisp());
-                println!("button left clicked");
-            }
-            if img_button.right_clicked(ctx, &self.mouse_state) {
-                println!("button right clicked");
-                self.zoom_image.write(BackgroundImage::NotYet);
-                self.state = GameState::Select;
-            }
-        }
-    }
-
-    fn draw_select(&mut self, ctx: &mut Context) {
-        for img_button in &self.img_buttons {
-            img_button.draw(ctx);
-        }
-        // Render game ui
-        {
-            let window = ggez::graphics::window(ctx);
-
-            self.imgui_wrapper.render(ctx,window.get_hidpi_factor() as f32);
-        }
-    }
-
-    fn draw_zoom(&self, ctx: &mut Context) {
-        match &*self.zoom_image.read() {
-            BackgroundImage::NotYet => (),
-            BackgroundImage::Almost(_) => (),
-            BackgroundImage::Complete(img) => {
-                let _ = graphics::draw(ctx, img, graphics::DrawParam::new());
-            }
-        }
-    }
-}
-
-impl EventHandler for MainState {
-    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        self.dt = timer::delta(ctx);
-        match self.state {
-            GameState::Select => self.update_select(ctx),
-            GameState::Zoom => self.update_zoom(ctx),
-        }
-        self.frame_elapsed = (self.frame_elapsed + self.dt.as_millis() as f32) % VIDEO_DURATION;
-        self.mouse_state = MouseState::Nothing;
-        Ok(())
-    }
-
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::BLACK);
-
-        match &self.state {
-            GameState::Select => self.draw_select(ctx),
-            GameState::Zoom => self.draw_zoom(ctx),
-        }
-
-        graphics::present(ctx)?;
-        Ok(())
-    }
-
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
-        self.imgui_wrapper.update_mouse_pos(x, y);
-    }
-
-    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
-        self.mouse_state = MouseState::Down(MouseButtonState {
-            which_button: button,
-            x,
-            y,
-        });
-
-        self.imgui_wrapper.update_mouse_down((
-            button == MouseButton::Left,
-            button == MouseButton::Right,
-            button == MouseButton::Middle,
-        ));
-    }
-
-    fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
-        self.mouse_state = MouseState::Up(MouseButtonState {
-            which_button: button,
-            x,
-            y,
-        });
-        self.imgui_wrapper.update_mouse_down((false, false, false));
-    }
-
-    fn key_down_event(
-        &mut self,
-        _ctx: &mut Context,
-        keycode: KeyCode,
-        _keymods: KeyMods,
-        _repeat: bool,
-    ) {
-        match keycode {
-            KeyCode::P => (),
-            _ => (),
-        }
-    }
-
-    fn text_input_event(&mut self, _ctx: &mut Context, ch: char) {
-        self.imgui_wrapper.update_keyboard(ch);
-    }
-}
-pub fn load_pictures(ctx: &mut Context) -> HashMap<String, ActualPicture> {
-    let pic_path = Path::new("pictures");
-    let mut pictures = HashMap::new();
-    match fs::read_dir(pic_path) {
-        Ok(files) => {
-            for file in files {
-                let file_name = file.unwrap().file_name().into_string().unwrap();
-                let img = graphics::Image::new(ctx, "/".to_string() + &file_name).unwrap();
-                let name = file_name.split(".").nth(0).unwrap().to_string();
-                pictures.insert(name.clone(), ActualPicture::new(ctx, img, name));
-            }
-        }
-        Err(_) => (),
-    }
-    pictures
-}
-
-pub fn main() -> ggez::GameResult {
+fn main_gui(args: &Args) -> Result<(), String> {
     match rayon::ThreadPoolBuilder::new()
         .num_threads(0)
         .build_global()
@@ -325,32 +46,326 @@ pub fn main() -> ggez::GameResult {
         Err(x) => panic!("{}", x),
     }
 
-    let pictures_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
-        let mut path = path::PathBuf::from(manifest_dir);
-        path.push("pictures");
-        path
-    } else {
-        path::PathBuf::from("./pictures")
+    let mut state = State::new(args)?;
+    let options = WindowOptions {
+        scale: Scale::X1,
+        resize: false,
+        ..WindowOptions::default()
     };
+    let mut window = Window::new(
+        EXEC_NAME,
+        args.width as usize,
+        args.height as usize,
+        options,
+    )
+    .unwrap_or_else(|e| {
+        panic!("{}", e);
+    });
+    let refresh_interval = 1_000_000 / DEFAULT_FPS as u64;
+    window.limit_update_rate(Some(std::time::Duration::from_micros(refresh_interval)));
+    window.topmost(true);
 
-    /*  let hidpi_factor: f32;
-    {
-        // Create a dummy window so we can get monitor scaling information
-        let cb = ggez::ContextBuilder::new("", "");
-        let (_ctx, events_loop) = &mut cb.build()?;
-        hidpi_factor = events_loop.get_primary_monitor().get_hidpi_factor() as f32;
-        println!("main hidpi_factor = {}", hidpi_factor);
-    }*/
+    let mut fsm = FSM::default();
+    while window.is_open() {
+        if window.is_key_down(Key::Escape) {
+            break;
+        }
+        fsm = (fsm.cb)(&mut state, &window, fsm.pic);
+        if fsm.stop {
+            break;
+        }
+        let u32_buffer: Vec<u32> = state
+            .image
+            .as_raw()
+            .chunks(4) // 3 -> 4
+            .map(|v| ((v[0] as u32) << 16) | ((v[1] as u32) << 8) | v[2] as u32)
+            .collect();
+        window
+            .update_with_buffer(&u32_buffer, args.width as usize, args.height as usize)
+            .unwrap();
+    }
+    Ok(())
+}
 
-    let cb = ggez::ContextBuilder::new("super_simple with imgui", "ggez")
-        .add_resource_path(pictures_dir)
-        .window_setup(conf::WindowSetup::default().title("super_simple with imgui"))
-        .window_mode(
-            conf::WindowMode::default().dimensions(WIDTH as f32 * 1.0, HEIGHT as f32 * 1.0),
+fn select_image_format(out_file: &Path) -> (ImageFormat, bool) {
+    match out_file.extension() {
+        Some(ext) => {
+            match ext
+                .to_str()
+                .expect("Invalid file extension")
+                .to_lowercase()
+                .as_str()
+            {
+                // support these?
+                "tga" => (ImageFormat::Tga, false),
+                "dds" => (ImageFormat::Dds, false),
+                "hdr" => (ImageFormat::Hdr, false),
+                "farb" => (ImageFormat::Farbfeld, false),
+                // these do imply video!
+                "gif" => (ImageFormat::Gif, true),
+                "avi" => (ImageFormat::Avif, false), // Todo: find out how to create avi writer
+                // commodity
+                "bmp" => (ImageFormat::Bmp, false),
+                "ico" => (ImageFormat::Ico, false),
+                "webp" => (ImageFormat::WebP, false),
+                "pnm" => (ImageFormat::Pnm, false),
+                "tif" | "tiff" => (ImageFormat::Tiff, false),
+                "jpg" | "jpeg" => (ImageFormat::Jpeg, false),
+                "png" => (ImageFormat::Png, false),
+                _ => (ImageFormat::Png, false),
+            }
+        }
+        None => (ImageFormat::Png, false),
+    }
+}
+
+fn main_cli(args: &Args) -> Result<(PathBuf, PathBuf), String> {
+    let out_filename = args.output.as_ref().expect("Invalid filename");
+    let input_filename = args.input.as_ref().expect("Invalid filename");
+    let (width, height, t) = (args.width, args.height, args.time);
+    assert!(t >= 0.0);
+    let pic_path = get_picture_path(&args);
+    let pictures = Arc::new(
+        load_pictures(pic_path.as_path())
+            .map_err(|e| format!("Cannot load picture folder. {:?}", e))?,
+    );
+    let mut contents = String::new();
+    if input_filename == "-" {
+        let _bytes = std::io::stdin()
+            .read_to_string(&mut contents)
+            .map_err(|e| format!("Cannot read from stdin. {}", e));
+    } else {
+        let mut file =
+            File::open(input_filename).map_err(|e| format!("Cannot open input filename. {}", e))?;
+        file.read_to_string(&mut contents)
+            .map_err(|e| format!("Cannot read input filename. {}", e))?;
+    }
+    let mut pic = lisp_to_pic(contents, args.coordinate_system.clone()).unwrap();
+    pic_simplify_runtime_select(&mut pic, pictures.clone(), width, height, t);
+    let out_file = Path::new(out_filename);
+    let (format, mut is_video) = select_image_format(out_file);
+    if is_video {
+        if !pic.can_animate() {
+            println!("warning: the T Operator is needed to make an animation");
+            is_video = false;
+        }
+    }
+    if is_video {
+        assert_eq!(format, ImageFormat::Gif);
+        let duration = if t == 0.0 { DEFAULT_VIDEO_DURATION } else { t };
+        let raw_frames =
+            pic_get_video_runtime_select(&pic, pictures, width, height, DEFAULT_FPS, duration);
+        if raw_frames.len() == 0 {
+            println!("warning: not enough frames to make a usefull gif");
+        } else {
+            let file_out = File::create(out_file).unwrap();
+            let mut encoder = GifEncoder::new(&file_out);
+            encoder.set_repeat(Repeat::Infinite).unwrap();
+            for rgba8 in raw_frames {
+                let gen_buf = ImageBuffer::from_raw(width, height, rgba8).unwrap();
+                let rgba_img = gen_buf.into();
+                let frame = Frame::new(rgba_img);
+                encoder.encode_frame(frame).unwrap();
+            }
+        }
+    } else {
+        let rgba8 = pic_get_rgba8_runtime_select(&pic, false, pictures, width, height, t);
+        save_buffer_with_format(
+            out_file,
+            &rgba8[0..],
+            width,
+            height,
+            ColorType::Rgba8,
+            format,
+        )
+        .map_err(|e| format!("Could not save {}", e))?;
+    }
+    Ok((
+        Path::new(input_filename).to_path_buf(),
+        out_file.to_path_buf(),
+    ))
+}
+
+pub fn main() {
+    let mut args = Args::parse();
+    let run_gui = match &args.input {
+        None => true,
+        Some(_x) => {
+            if args.output.is_none() {
+                args.output = Some(DEFAULT_FILE_OUT.to_string());
+            }
+            false
+        }
+    };
+    if run_gui {
+        let min_width = EXEC_UI_THUMB_ROWS as u32 * EXEC_UI_THUMB_WIDTH;
+        let min_height = EXEC_UI_THUMB_COLS as u32 * EXEC_UI_THUMB_HEIGHT;
+        if min_width <= args.width {
+            args.width = min_width;
+        }
+        if min_height <= args.height {
+            args.height = min_height;
+        }
+        //todo keep also aspect ratio for thumbs and recalculate dimensions
+        // calculate it once and set it to the the state to avoid usage of THUMBS constants
+        main_gui(&args).unwrap();
+    } else {
+        let input_filename = args.input.as_ref().unwrap();
+        let one_shot = input_filename == "-" || args.copy_path.is_none();
+        if one_shot {
+            let (_sexpr_filename, _img_filename) = main_cli(&args).unwrap();
+        } else {
+            let copy_path = args.copy_path.as_ref().unwrap();
+            let target_dir = Path::new(&copy_path);
+            if !target_dir.exists() {
+                println!("Creating {} directory", copy_path);
+                create_dir_all(target_dir).unwrap();
+            }
+            let input_file = Path::new(input_filename);
+            println!("Watching changes to {}", input_filename);
+            let (tx, rx) = std::sync::mpsc::channel();
+            let mut watcher = RecommendedWatcher::new(tx, Config::default()).unwrap();
+            watcher
+                .watch(input_file.as_ref(), RecursiveMode::NonRecursive)
+                .unwrap();
+            for res in rx {
+                match res {
+                    /*
+                    If you came here to find out why this runs only during the first save, welcome!
+                    Your editor is probably swapping files instead of actually writing them.
+                    Try these workarounds:
+                    - for vim users:
+                      set backupcopy=yes
+                      set nobackup
+                      set nowritebackup
+                    - use a real filesystem watcher like [entr](http://eradman.com/entrproject/)
+                    - fix this, preferably by commiting something to [notify](https://crates.io/crates/notify)
+                      watch the directory instead of a file, for every event, if the filename matches, then launch
+                    */
+                    Ok(event) => {
+                        match event.kind {
+                            EventKind::Access(AccessKind::Close(AccessMode::Write)) => {
+                                println!("file {} changed, rerunning", input_filename);
+                                let now = SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs();
+                                // todo better handle errors during run
+                                if let Ok((sexpr_filename, img_filename)) = main_cli(&args) {
+                                    let dest = filename_to_copy_to(
+                                        &target_dir,
+                                        now,
+                                        &sexpr_filename.file_name().unwrap().to_string_lossy(),
+                                    );
+                                    copy(&sexpr_filename, dest.as_path()).unwrap();
+
+                                    let dest = filename_to_copy_to(
+                                        &target_dir,
+                                        now,
+                                        &img_filename.file_name().unwrap().to_string_lossy(),
+                                    );
+                                    copy(img_filename, dest.as_path()).unwrap();
+                                    println!(
+                                        ".. ran and copied as {} and {}",
+                                        sexpr_filename.display(),
+                                        dest.display()
+                                    );
+                                }
+                            }
+                            EventKind::Remove(_) => {
+                                eprintln!("File was removed {:?}", input_filename);
+                                exit(1);
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("watch error: {:?}", e);
+                        exit(1);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_select_image_format() {
+        assert_eq!(
+            select_image_format(&Path::new("somefile.tga")),
+            (ImageFormat::Tga, false)
         );
-    let (ref mut ctx, event_loop) = &mut cb.build()?;
-
-    let state = &mut MainState::new(ctx).unwrap();
-    state.gen_population(ctx);
-    event::run(ctx, event_loop, state)
+        assert_eq!(
+            select_image_format(&Path::new("somefile.dds")),
+            (ImageFormat::Dds, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.hdr")),
+            (ImageFormat::Hdr, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.farb")),
+            (ImageFormat::Farbfeld, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.gif")),
+            (ImageFormat::Gif, true)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.avi")),
+            (ImageFormat::Avif, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.bmp")),
+            (ImageFormat::Bmp, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.ico")),
+            (ImageFormat::Ico, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.webp")),
+            (ImageFormat::WebP, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.pnm")),
+            (ImageFormat::Pnm, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.tiff")),
+            (ImageFormat::Tiff, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.tif")),
+            (ImageFormat::Tiff, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.jpeg")),
+            (ImageFormat::Jpeg, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.jpg")),
+            (ImageFormat::Jpeg, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.png")),
+            (ImageFormat::Png, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.Png")),
+            (ImageFormat::Png, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("somefile.PNG")),
+            (ImageFormat::Png, false)
+        );
+        assert_eq!(
+            select_image_format(&Path::new("./somedir")),
+            (ImageFormat::Png, false)
+        );
+    }
 }
